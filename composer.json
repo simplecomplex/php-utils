@@ -1,0 +1,24 @@
+{
+    "name": "simplecomplex/utils",
+    "type": "library",
+    "description": "Basic utilities: unicode, sanitize, cli.",
+    "keywords": ["utils","strict types"],
+    "homepage": "https://github.com/simplecomplex/php-utils",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jacob Friis Mathiasen",
+            "email": "jacob.friis@simplecomplex.net"
+        }
+    ],
+    "require": {
+        "php": ">=7.0",
+        "psr/log": "^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SimpleComplex\\Utils\\": "src/",
+            "SimpleComplex\\Utils\\Exception\\": "src/Exception/"
+        }
+    }
+}
