@@ -1,0 +1,5 @@
+
+# Respond 404 on all .hidden dirs and files.
+<IfModule mod_alias.c>
+  RedirectMatch 404 \/\..+$
+</IfModule>

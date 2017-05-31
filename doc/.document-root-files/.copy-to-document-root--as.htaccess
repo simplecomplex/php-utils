@@ -1,0 +1,13 @@
+
+# Respond 404 on all .hidden dirs and files.
+<IfModule mod_alias.c>
+  RedirectMatch 404 \/\..+$
+</IfModule>
+# Or deny all .hidden files.
+<IfModule !mod_alias.c>
+  <FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+    Satisfy All
+  </FilesMatch>
+</IfModule>

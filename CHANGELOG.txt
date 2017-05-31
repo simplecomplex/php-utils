@@ -1,0 +1,27 @@
+SimpleComplex/Utils 1.x, 2017-05-31
+-----------------------------------
+- Use parameter type declaration when possible, despite ambiguous effect for
+  method callers (coercion or TypeError).
+
+SimpleComplex/Utils 1.x, 2017-05-29
+-----------------------------------
+- GetInstanceTrait now separates instances by class, to prevent getInstance()
+  from returning instance of other class than the class the method is called on.
+
+SimpleComplex/Utils 1.x, 2017-05-27
+-----------------------------------
+- Added setLogger() methods, for providing logger after instantiation.
+
+SimpleComplex/Utils 1.x, 2017-05-25
+-----------------------------------
+- Exceptions moved to sub namespace \Exception.
+
+SimpleComplex/Utils 1.x, 2017-05-24
+-----------------------------------
+- Unicode and Sanitize methods now (optionally) log and err on bad args.
+- Unicode now (also) coerces subject arg to string.
+- New sanitizer numberToString().
+
+SimpleComplex/Utils 1.x, 2017-05-22
+-----------------------------------
+- Initial design complete, however not tested.
