@@ -9,253 +9,486 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Exception\InvalidArgumentException;
+use SimpleComplex\Utils\Exception\RuntimeException;
+use SimpleComplex\Utils\Exception\OutOfBoundsException;
+
 /**
  * CLI PHP utility.
  *
+ *
+ * @property array $shortOptToLongOpt
+ * @property-read array $arguments
+ * @property-read array $options
+ * @property-read array $currentWorkDir
+ * @property-read array $documentRoot
+ * @property-read array $documentRootDistance
+ *
  * @package SimpleComplex\Utils
  */
-class Cli {
+class Cli implements \Iterator, \Countable, \SeekableIterator {
+    /**
+     * @see GetInstanceTrait
+     *
+     * Reference to last instantiated instance of this class.
+     * @protected
+     * @static
+     * @var static $instanceByClass
+     *
+     * Get previously instantiated object or create new.
+     * @public
+     * @static
+     * @see GetInstanceTrait::getInstance()
+     */
+    use GetInstanceTrait;
 
 
-  // @todo: Make argsNOptions method, which uses $argv.
+    protected $index = [
+        'shortOptToLongOpt',
+        'arguments',
+        'options',
+        'arguments',
+        'currentWorkDir',
+        'documentRoot',
+        'documentRootDistance',
+    ];
 
+    /**
+     * @see Cli::__construct()
+     *
+     * @var array
+     */
+    protected $shortOptToLongOpt;
 
-  /**
-   * Is current execution context CLI?
-   *
-   * @return boolean
-   */
-  public static function cli() : bool {
-    return PHP_SAPI == 'cli';
-  }
+    /**
+     * Console arguments. Read only.
+     *
+     * @var array|null
+     */
+    protected $arguments;
 
-  /**
-   * Alternative to native getcwd(), which throws exception on failure,
-   * and secures forward slash directory separator.
-   *
-   * If document root is symlinked, this returns the resolved path,
-   * not the symbolic link.
-   *
-   * @throws \RuntimeException
-   *   If current working dir cannot be resolved.
-   *   Citing http://php.net/manual/en/function.getcwd.php:
-   *   On some Unix variants, getcwd() will return false if any one of the
-   *   parent directories does not have the readable or search mode set,
-   *   even if the current directory does.
-   *
-   * @return string
-   */
-  public static function getCurrentWorkingDir() : string {
-    $path = getcwd();
-    if ($path === false) {
-      throw new \RuntimeException('You are not in CLI mode.');
-    }
-    // Symlinked path cannot be detected because $_SERVER['SCRIPT_FILENAME']
-    // in cli mode only returns the filename; not path + filename.
+    /**
+     * Console options. Read only.
+     *
+     * @var array|null
+     */
+    protected $options;
 
-    if (DIRECTORY_SEPARATOR == '\\') {
-      $path = str_replace('\\', '/', $path);
-    }
-    return $path;
-  }
-
-  /**
-   * @var integer
-   */
-  const DIRECTORY_TRAVERSAL_LIMIT = 100;
-
-  /**
-   * @var string
-   */
-  protected static $documentRoot = '';
-
-  /**
-   * Find document root.
-   *
-   * PROBLEM
-   * A PHP CLI script has rarely any reliable means of discovering a site's
-   * document root.
-   * $_SERVER['DOCUMENT_ROOT'] will usually be empty, because that var is set
-   * (non-empty) by a webserver - and CLI PHP is not executed in the context
-   * of a webserver.
-   * And getcwd() will only tell the script's current position in the file
-   * system; only useful if the CLI script is placed right in (a) document root.
-   *
-   * SOLUTION
-   * Place a .document_root file in the site's document root - but only after
-   * checking that the webserver (or an Apache .htaccess file) is configured
-   * to hide .hidden files.
-   * See the files in this library's doc/.document-root-files dir.
-   *
-   * Document root in the root of the file system is not supported.
-   *
-   * @param boolean $noTaintEnvironment
-   *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
-   *
-   * @return string
-   */
-  public static function documentRoot($noTaintEnvironment = FALSE) : string {
-    if (static::$documentRoot) {
-      return static::$documentRoot;
-    }
-    if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-      static::$documentRoot = $root = $_SERVER['DOCUMENT_ROOT'];
-      // We don't expect DIRECTORY_SEPARATOR=\ issues for that server var.
-      return $root;
+    /**
+     * Cli constructor.
+     *
+     * @param array $shortOptToLongOpt {
+     *      @var string $a  Value: 'a_long_name'.
+     *      @var string $b  Value: 'b-long-name'.
+     * }
+     *      Key: one-letter short option.
+     *      Value: snake_cased or lisp-cased long option.
+     */
+    public function __construct(array $shortOptToLongOpt = [])
+    {
+        if ($shortOptToLongOpt) {
+            $this->__set('shortOptToLongOpt', $shortOptToLongOpt);
+        }
     }
 
-    $path = static::getCurrentWorkingDir();
-    if (DIRECTORY_SEPARATOR == '\\') {
-      $path = str_replace('\\', '/', $path);
+    //protected $documentRoot;
+
+    /**
+     * @param string $name
+     *
+     * @return array
+     */
+    public function __get(string $name)
+    {
+        switch ($name) {
+            case 'arguments':
+                if (!isset($this->arguments)) {
+                    $this->argsNOptions();
+                }
+                return $this->arguments;
+            case 'options':
+                if (!isset($this->options)) {
+                    $this->argsNOptions();
+                }
+                return $this->options;
+            case 'shortOptToLongOpt':
+                return $this->shortOptToLongOpt ?? [];
+        }
+        throw new OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
     }
 
-    // Go up/left.
-    $limit = static::DIRECTORY_TRAVERSAL_LIMIT;
-    do {
-      if (file_exists($path . '/.document_root') && is_file($path . '/.document_root')) {
-        static::$documentRoot = $path;
-        if (!$noTaintEnvironment) {
-          $_SERVER['DOCUMENT_ROOT'] = $path;
+    /**
+     * @param string $name
+     * @param mixed $value
+     */
+    public function __set(string $name, $value) /*: void*/ {
+        switch ($name) {
+            case 'shortOptToLongOpt':
+                if ($value) {
+                    if (!is_array($value)) {
+                        throw new InvalidArgumentException(get_class($this) . '->' . $name . ' must be array.');
+                    }
+                    $this->shortOptToLongOpt = [];
+                    // Nullify these two, to indicate for argsNOptions() that it
+                    // must update arguments and options on call.
+                    $this->arguments = null;
+                    $this->options = null;
+                    foreach ($value as $k => $v) {
+                        if (
+                            strlen($k) == 1 && ctype_alpha($k)
+                            && preg_match('/[a-z][a-z\d_\-]*/', $v)
+                        ) {
+                            $this->shortOptToLongOpt[$k] = str_replace('-', '_', $v);
+                        }
+                    }
+                }
+                return;
+        }
+        if (!in_array($name, $this->index, true)) {
+            throw new OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
+        }
+        throw new RuntimeException(get_class($this) . ' instance property[' . $name . '] is read-only.');
+    }
+
+    /**
+     * @param string|int $name
+     *
+     * @return bool
+     */
+    public function __isset($name) : bool {
+        return in_array($name, $this->index, true) && isset($this->{$name});
+    }
+
+    /**
+     * Resolve console arguments and options.
+     */
+    protected function argsNOptions() /*: void*/ {
+        if (empty($GLOBALS['argv'])) {
+            return;
+        }
+        // No need; shortOptToLongOpt has not been altered since last call.
+        if (isset($this->arguments)) {
+            return;
+        }
+        // Init args and opts.
+        $this->arguments = $this->options = [];
+
+        global $argv;
+        $n_args = count($argv);
+        $opts_long = $opts_short = array();
+        if ($n_args < 2) {
+            return;
+        }
+        for ($i_arg = 1; $i_arg < $n_args; ++$i_arg) {
+            $item = $argv[$i_arg];
+            $le = strlen($item);
+            if (!$le) {
+                continue;
+            }
+            if ($item{0} === '-') {
+                if ($le == 1) {
+                    // Ignore dash only.
+                    continue;
+                }
+                // Long option?
+                if ($item{1} === '-') {
+                    // Long option: require --[a-z\d_\-].*
+                    $item = substr($item, 2);
+                    $pos_equal = strpos($item, '=');
+                    if ($pos_equal === false) {
+                        $key = $item;
+                        $value = true;
+                    } else {
+                        $key = substr($item, 0, $pos_equal);
+                        $value = substr($item, $pos_equal + 1);
+                    }
+                    if (preg_match('/[a-z][a-z\d_\-]*/', $key)) {
+                        $opts_long[str_replace('-', '_', $key)] = $value;
+                    }
+                    // Otherwise ignore.
+                }
+                // Short option(s).
+                else {
+                    $item = substr($item, 1);
+                    --$le;
+                    if (ctype_alpha($item)) {
+                        for ($i = 0; $i < $le; ++$i) {
+                            $opts_short[$item{$i}] = true;
+                        }
+                    }
+                    // Otherwise ignore.
+                }
+            } else {
+                // No leading dash.
+                $this->arguments[] = $item;
+            }
+        }
+        // 'Translate' short option to long.
+        if ($opts_short && $this->shortOptToLongOpt) {
+            $shorts = array_keys($opts_short);
+            foreach ($shorts as $k) {
+                if (isset($this->shortOptToLongOpt[$k])) {
+                    $long = $this->shortOptToLongOpt[$k];
+                    if (!isset($opts_long[$long])) {
+                        $opts_long[$long] = true;
+                    }
+                    // else ignore; long option also set.
+                    // Remove short option, since it's long counterpart is set.
+                    unset($opts_short[$k]);
+                }
+            }
+        }
+        // Append 'untranslated' short to long.
+        if ($opts_long || $opts_short) {
+            if ($opts_long) {
+                if ($opts_short) {
+                    $this->options = array_merge($opts_long, $opts_short);
+                }
+                else {
+                    $this->options =& $opts_long;
+                }
+            }
+            else {
+                $this->options =& $opts_short;
+            }
+        }
+    }
+
+    /**
+     * Is current execution context CLI?
+     *
+     * @return boolean
+     */
+    public static function cli() : bool {
+        return PHP_SAPI == 'cli';
+    }
+
+    /**
+     * Alternative to native getcwd(), which throws exception on failure,
+     * and secures forward slash directory separator.
+     *
+     * If document root is symlinked, this returns the resolved path,
+     * not the symbolic link.
+     *
+     * @throws \RuntimeException
+     *   If current working dir cannot be resolved.
+     *   Citing http://php.net/manual/en/function.getcwd.php:
+     *   On some Unix variants, getcwd() will return false if any one of the
+     *   parent directories does not have the readable or search mode set,
+     *   even if the current directory does.
+     *
+     * @return string
+     */
+    public static function getCurrentWorkingDir() : string {
+        $path = getcwd();
+        if ($path === false) {
+            throw new \RuntimeException('You are not in CLI mode.');
+        }
+        // Symlinked path cannot be detected because $_SERVER['SCRIPT_FILENAME']
+        // in cli mode only returns the filename; not path + filename.
+
+        if (DIRECTORY_SEPARATOR == '\\') {
+            $path = str_replace('\\', '/', $path);
         }
         return $path;
-      }
-    } while((--$limit) && ($path = dirname($path)) && $path != '/');
-
-    // Can't go down/right without knowing document root beforehand.
-    return '';
-  }
-
-  /**
-   * Find distance from document root.
-   *
-   *  Values:
-   *  - zero: you're at document root
-   *  - positive: you're below (right of) document root
-   *  - negative: you're above (left of) document root
-   *  - null: not checked yet, or failed to find document root
-   *
-   * @param boolean $noTaintEnvironment
-   *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
-   *
-   * @return integer|null
-   *   Null: document root can't be determined, or you're not in the same
-   *     file system branch as document root.
-   */
-  public static function documentRootDistance($noTaintEnvironment = FALSE) /*: ?int*/ {
-    $root = static::$documentRoot;
-    if (!$root) {
-      $root = static::documentRoot($noTaintEnvironment);
-    }
-    if (!$root) {
-      return null;
     }
 
-    $path = static::getCurrentWorkingDir();
-    if (DIRECTORY_SEPARATOR == '\\') {
-      $path = str_replace('\\', '/', $path);
-    }
-    
-    if ($path == $root) {
-      return 0;
-    }
-    // Current path contains document root; you're below/to right.
-    if (strpos($path, $root) === 0) {
-      // +1 is for trailing slash.
-      $intermediates = substr($path, strlen($root) + 1);
-      return count(explode('/', $intermediates));
-    }
-    // Document root contains current path; you're above/to left.
-    if (strpos($root, $path) === 0) {
-      // +1 is for trailing slash.
-      $intermediates = substr($root, strlen($path) + 1);
-      return -count(explode('/', $intermediates));
-    }
-    // You're in another branch than document root.
-    // Can't determine distance.
-    return null;
-  }
+    /**
+     * @var integer
+     */
+    const DIRECTORY_TRAVERSAL_LIMIT = 100;
 
-  /**
-   * Change directory - chdir() - until at document root.
-   *
-   * @param boolean $noTaintEnvironment
-   *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
-   *
-   * @return boolean
-   *   False: document root can't be determined, or you're not in the same
-   *     file system branch as document root, or a chdir() call fails.
-   */
-  public static function documentRootChangeDirTo($noTaintEnvironment = FALSE) : bool {
-    $distance = static::documentRootDistance($noTaintEnvironment);
-    if ($distance === null) {
-      return false;
-    }
-    if ($distance) {
-      // Below/right.
-      if ($distance > 0) {
-        for ($i = 0; $i < $distance; ++$i) {
-          if (!chdir('../')) {
-            return false;
-          }
+    /**
+     * @var string
+     */
+    protected static $documentRoot = '';
+
+    /**
+     * Find document root.
+     *
+     * PROBLEM
+     * A PHP CLI script has rarely any reliable means of discovering a site's
+     * document root.
+     * $_SERVER['DOCUMENT_ROOT'] will usually be empty, because that var is set
+     * (non-empty) by a webserver - and CLI PHP is not executed in the context
+     * of a webserver.
+     * And getcwd() will only tell the script's current position in the file
+     * system; only useful if the CLI script is placed right in (a) document root.
+     *
+     * SOLUTION
+     * Place a .document_root file in the site's document root - but only after
+     * checking that the webserver (or an Apache .htaccess file) is configured
+     * to hide .hidden files.
+     * See the files in this library's doc/.document-root-files dir.
+     *
+     * Document root in the root of the file system is not supported.
+     *
+     * @param boolean $noTaintEnvironment
+     *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
+     *
+     * @return string
+     */
+    public static function documentRoot($noTaintEnvironment = FALSE) : string {
+        if (static::$documentRoot) {
+            return static::$documentRoot;
         }
-      }
-      // Above/to left.
-      else {
-        // Document root contains current path.
-        $intermediates = explode(
-          '/',
-          substr(static::$documentRoot, strlen(static::getCurrentWorkingDir()) + 1)
-        );
-        $distance *= -1;
-        for ($i = 0; $i < $distance; ++$i) {
-          if (!chdir($intermediates[$i])) {
-            return false;
-          }
+        if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+            static::$documentRoot = $root = $_SERVER['DOCUMENT_ROOT'];
+            // We don't expect DIRECTORY_SEPARATOR=\ issues for that server var.
+            return $root;
         }
-      }
+
+        $path = static::getCurrentWorkingDir();
+        if (DIRECTORY_SEPARATOR == '\\') {
+            $path = str_replace('\\', '/', $path);
+        }
+
+        // Go up/left.
+        $limit = static::DIRECTORY_TRAVERSAL_LIMIT;
+        do {
+            if (file_exists($path . '/.document_root') && is_file($path . '/.document_root')) {
+                static::$documentRoot = $path;
+                if (!$noTaintEnvironment) {
+                    $_SERVER['DOCUMENT_ROOT'] = $path;
+                }
+                return $path;
+            }
+        } while((--$limit) && ($path = dirname($path)) && $path != '/');
+
+        // Can't go down/right without knowing document root beforehand.
+        return '';
     }
-    // Sanity check.
-    return static::getCurrentWorkingDir() == static::$documentRoot;
-  }
 
-  /**
-   * @var array
-   */
-  protected static $outputSanitizeNeedles = [
-    '`',
-  ];
+    /**
+     * Find distance from document root.
+     *
+     *  Values:
+     *  - zero: you're at document root
+     *  - positive: you're below (right of) document root
+     *  - negative: you're above (left of) document root
+     *  - null: not checked yet, or failed to find document root
+     *
+     * @param boolean $noTaintEnvironment
+     *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
+     *
+     * @return integer|null
+     *   Null: document root can't be determined, or you're not in the same
+     *     file system branch as document root.
+     */
+    public static function documentRootDistance($noTaintEnvironment = FALSE) /*: ?int*/ {
+        $root = static::$documentRoot;
+        if (!$root) {
+            $root = static::documentRoot($noTaintEnvironment);
+        }
+        if (!$root) {
+            return null;
+        }
 
-  /**
-   * @var array
-   */
-  protected static $outputSanitizeReplace = [
-    "'",
-  ];
+        $path = static::getCurrentWorkingDir();
+        if (DIRECTORY_SEPARATOR == '\\') {
+            $path = str_replace('\\', '/', $path);
+        }
 
-  /**
-   * Sanitize string to be printed to console.
-   *
-   * @param mixed $output
-   *   Gets stringified.
-   *
-   * @return string
-   */
-  public static function outputSanitize($output) : string {
-    return str_replace(static::$outputSanitizeNeedles, static::$outputSanitizeReplace, '' . $output);
-  }
+        if ($path == $root) {
+            return 0;
+        }
+        // Current path contains document root; you're below/to right.
+        if (strpos($path, $root) === 0) {
+            // +1 is for trailing slash.
+            $intermediates = substr($path, strlen($root) + 1);
+            return count(explode('/', $intermediates));
+        }
+        // Document root contains current path; you're above/to left.
+        if (strpos($root, $path) === 0) {
+            // +1 is for trailing slash.
+            $intermediates = substr($root, strlen($path) + 1);
+            return -count(explode('/', $intermediates));
+        }
+        // You're in another branch than document root.
+        // Can't determine distance.
+        return null;
+    }
 
-  /**
-   * @param mixed $message
-   *   Gets stringified, and sanitized.
-   *
-   * @param boolean $skipTrailingNewline
-   *   Truthy: do no append newline.
-   *
-   * @return boolean
-   *   Will echo arg message.
-   */
-  public static function outputMessage($message, $skipTrailingNewline = false) : bool {
-    echo static::outputSanitize('' . $message) . (!$skipTrailingNewline ? "\n" : '');
-    return true;
-  }
+    /**
+     * Change directory - chdir() - until at document root.
+     *
+     * @param boolean $noTaintEnvironment
+     *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
+     *
+     * @return boolean
+     *   False: document root can't be determined, or you're not in the same
+     *     file system branch as document root, or a chdir() call fails.
+     */
+    public static function documentRootChangeDirTo($noTaintEnvironment = FALSE) : bool {
+        $distance = static::documentRootDistance($noTaintEnvironment);
+        if ($distance === null) {
+            return false;
+        }
+        if ($distance) {
+            // Below/right.
+            if ($distance > 0) {
+                for ($i = 0; $i < $distance; ++$i) {
+                    if (!chdir('../')) {
+                        return false;
+                    }
+                }
+            } else {
+                // Above/to left.
+                // Document root contains current path.
+                $intermediates = explode(
+                    '/',
+                    substr(static::$documentRoot, strlen(static::getCurrentWorkingDir()) + 1)
+                );
+                $distance *= -1;
+                for ($i = 0; $i < $distance; ++$i) {
+                    if (!chdir($intermediates[$i])) {
+                        return false;
+                    }
+                }
+            }
+        }
+        // Sanity check.
+        return static::getCurrentWorkingDir() == static::$documentRoot;
+    }
+
+    /**
+     * @var array
+     */
+    protected static $outputSanitizeNeedles = [
+        '`',
+    ];
+
+    /**
+     * @var array
+     */
+    protected static $outputSanitizeReplace = [
+        "'",
+    ];
+
+    /**
+     * Sanitize string to be printed to console.
+     *
+     * @param mixed $output
+     *   Gets stringified.
+     *
+     * @return string
+     */
+    public static function outputSanitize($output) : string {
+        return str_replace(static::$outputSanitizeNeedles, static::$outputSanitizeReplace, '' . $output);
+    }
+
+    /**
+     * @param mixed $message
+     *   Gets stringified, and sanitized.
+     *
+     * @param boolean $skipTrailingNewline
+     *   Truthy: do no append newline.
+     *
+     * @return boolean
+     *   Will echo arg message.
+     */
+    public static function outputMessage($message, $skipTrailingNewline = false) : bool {
+        echo static::outputSanitize('' . $message) . (!$skipTrailingNewline ? "\n" : '');
+        return true;
+    }
 }
