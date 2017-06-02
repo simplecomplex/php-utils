@@ -16,17 +16,24 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
 /**
  * CLI PHP utility.
  *
+ * Behaves as a foreachable and 'overloaded' collection; dynamic setters and getters for.
  *
  * @property array $shortOptToLongOpt
- * @property-read array $arguments
+ *
  * @property-read array $options
- * @property-read array $currentWorkDir
- * @property-read array $documentRoot
- * @property-read array $documentRootDistance
+ *
+ * @property-read array $arguments
+ *
+ * @property-read string $currentWorkingDir
+ *
+ * @property-read string $documentRoot
+ *
+ * @property-read int $documentRootDistance
  *
  * @package SimpleComplex\Utils
  */
-class Cli implements \Iterator, \Countable, \SeekableIterator {
+class Cli implements \Iterator, \Countable
+{
     /**
      * @see GetInstanceTrait
      *
@@ -42,17 +49,6 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      */
     use GetInstanceTrait;
 
-
-    protected $index = [
-        'shortOptToLongOpt',
-        'arguments',
-        'options',
-        'arguments',
-        'currentWorkDir',
-        'documentRoot',
-        'documentRootDistance',
-    ];
-
     /**
      * @see Cli::__construct()
      *
@@ -61,18 +57,22 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
     protected $shortOptToLongOpt;
 
     /**
-     * Console arguments. Read only.
-     *
+     * Read-only.
+     * @var array|null
+     */
+    protected $options;
+
+    /**
+     * Read-only.
      * @var array|null
      */
     protected $arguments;
 
     /**
-     * Console options. Read only.
-     *
-     * @var array|null
+     * Read-only.
+     * @var string
      */
-    protected $options;
+    protected $documentRoot;
 
     /**
      * Cli constructor.
@@ -91,37 +91,64 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
         }
     }
 
-    //protected $documentRoot;
+    /**
+     * @var array
+     */
+    protected $index = [
+        'shortOptToLongOpt',
+        'options',
+        'arguments',
+        'currentWorkingDir',
+        'documentRoot',
+        'documentRootDistance',
+    ];
 
     /**
+     * @throws OutOfBoundsException
+     *      If no such instance property.
+     *
      * @param string $name
      *
-     * @return array
+     * @return mixed
      */
     public function __get(string $name)
     {
         switch ($name) {
-            case 'arguments':
-                if (!isset($this->arguments)) {
-                    $this->argsNOptions();
-                }
-                return $this->arguments;
-            case 'options':
-                if (!isset($this->options)) {
-                    $this->argsNOptions();
-                }
-                return $this->options;
             case 'shortOptToLongOpt':
                 return $this->shortOptToLongOpt ?? [];
+            case 'options':
+                if (!isset($this->options)) {
+                    $this->resolveOptsNArgs();
+                }
+                return $this->options;
+            case 'arguments':
+                if (!isset($this->arguments)) {
+                    $this->resolveOptsNArgs();
+                }
+                return $this->arguments;
+            case 'currentWorkingDir':
+                return $this->getCurrentWorkingDir();
+            case 'documentRoot':
+                return $this->getDocumentRoot();
+            case 'documentRootDistance':
+                return $this->getDocumentRootDistance();
         }
         throw new OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
     }
 
     /**
+     * @throws OutOfBoundsException
+     *      If no such instance property.
+     * @throws RuntimeException
+     *      If that instance property is read-only.
+     *
      * @param string $name
      * @param mixed $value
+     *
+     * @return void
      */
-    public function __set(string $name, $value) /*: void*/ {
+    public function __set(string $name, $value) /*: void*/
+    {
         switch ($name) {
             case 'shortOptToLongOpt':
                 if ($value) {
@@ -129,7 +156,7 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
                         throw new InvalidArgumentException(get_class($this) . '->' . $name . ' must be array.');
                     }
                     $this->shortOptToLongOpt = [];
-                    // Nullify these two, to indicate for argsNOptions() that it
+                    // Nullify these two, to indicate for optsNArgs() that it
                     // must update arguments and options on call.
                     $this->arguments = null;
                     $this->options = null;
@@ -155,14 +182,83 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      *
      * @return bool
      */
-    public function __isset($name) : bool {
+    public function __isset($name) : bool
+    {
         return in_array($name, $this->index, true) && isset($this->{$name});
+    }
+
+
+    // Countable.---------------------------------------------------------------
+
+    /**
+     * @see \Countable::count()
+     *
+     * @return int
+     */
+    public function count()
+    {
+        return count($this->index);
+    }
+
+
+    // Foreachable (Iterator).--------------------------------------------------
+
+    /**
+     * @see \Iterator::key()
+     *
+     * @return string
+     */
+    public function key() : string
+    {
+        return current($this->index);
+    }
+
+    /**
+     * @see \Iterator::current()
+     *
+     * @return mixed
+     */
+    public function current()
+    {
+        return $this->__get(current($this->index));
+    }
+
+    /**
+     * @see \Iterator::next()
+     *
+     * @return void
+     */
+    public function next() /*: void*/
+    {
+        next($this->index);
+    }
+
+    /**
+     * @see \Iterator::rewind()
+     *
+     * @return void
+     */
+    public function rewind() /*: void*/
+    {
+        reset($this->index);
+    }
+
+    /**
+     * @see \Iterator::valid()
+     *
+     * @return bool
+     */
+    public function valid() : bool
+    {
+        $key = key($this->index);
+        return $key !== null && $key < count($this->index);
     }
 
     /**
      * Resolve console arguments and options.
      */
-    protected function argsNOptions() /*: void*/ {
+    protected function resolveOptsNArgs() /*: void*/
+    {
         if (empty($GLOBALS['argv'])) {
             return;
         }
@@ -255,15 +351,6 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
     }
 
     /**
-     * Is current execution context CLI?
-     *
-     * @return boolean
-     */
-    public static function cli() : bool {
-        return PHP_SAPI == 'cli';
-    }
-
-    /**
      * Alternative to native getcwd(), which throws exception on failure,
      * and secures forward slash directory separator.
      *
@@ -279,10 +366,11 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      *
      * @return string
      */
-    public static function getCurrentWorkingDir() : string {
+    protected function getCurrentWorkingDir() : string
+    {
         $path = getcwd();
         if ($path === false) {
-            throw new \RuntimeException('You are not in CLI mode.');
+            throw new \RuntimeException('Cannot resolve current working directory.');
         }
         // Symlinked path cannot be detected because $_SERVER['SCRIPT_FILENAME']
         // in cli mode only returns the filename; not path + filename.
@@ -294,14 +382,9 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
     }
 
     /**
-     * @var integer
+     * @var int
      */
     const DIRECTORY_TRAVERSAL_LIMIT = 100;
-
-    /**
-     * @var string
-     */
-    protected static $documentRoot = '';
 
     /**
      * Find document root.
@@ -310,10 +393,9 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      * A PHP CLI script has rarely any reliable means of discovering a site's
      * document root.
      * $_SERVER['DOCUMENT_ROOT'] will usually be empty, because that var is set
-     * (non-empty) by a webserver - and CLI PHP is not executed in the context
-     * of a webserver.
+     * by a webserver - and CLI PHP is not executed in context of a webserver.
      * And getcwd() will only tell the script's current position in the file
-     * system; only useful if the CLI script is placed right in (a) document root.
+     * system; only useful if the CLI script is placed right in document root.
      *
      * SOLUTION
      * Place a .document_root file in the site's document root - but only after
@@ -323,22 +405,24 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      *
      * Document root in the root of the file system is not supported.
      *
-     * @param boolean $noTaintEnvironment
+     * @param bool $noTaintEnvironment
      *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
      *
      * @return string
      */
-    public static function documentRoot($noTaintEnvironment = FALSE) : string {
-        if (static::$documentRoot) {
-            return static::$documentRoot;
-        }
-        if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-            static::$documentRoot = $root = $_SERVER['DOCUMENT_ROOT'];
-            // We don't expect DIRECTORY_SEPARATOR=\ issues for that server var.
-            return $root;
+    protected function getDocumentRoot($noTaintEnvironment = false) : string
+    {
+        if ($this->documentRoot) {
+            return $this->documentRoot;
         }
 
-        $path = static::getCurrentWorkingDir();
+        if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+            $this->documentRoot = $_SERVER['DOCUMENT_ROOT'];
+            // We don't expect DIRECTORY_SEPARATOR=\ issues for that server var.
+            return $this->documentRoot;
+        }
+
+        $path = $this->getCurrentWorkingDir();
         if (DIRECTORY_SEPARATOR == '\\') {
             $path = str_replace('\\', '/', $path);
         }
@@ -347,7 +431,7 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
         $limit = static::DIRECTORY_TRAVERSAL_LIMIT;
         do {
             if (file_exists($path . '/.document_root') && is_file($path . '/.document_root')) {
-                static::$documentRoot = $path;
+                $this->documentRoot = $path;
                 if (!$noTaintEnvironment) {
                     $_SERVER['DOCUMENT_ROOT'] = $path;
                 }
@@ -368,23 +452,24 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      *  - negative: you're above (left of) document root
      *  - null: not checked yet, or failed to find document root
      *
-     * @param boolean $noTaintEnvironment
+     * @param bool $noTaintEnvironment
      *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
      *
-     * @return integer|null
+     * @return int|null
      *   Null: document root can't be determined, or you're not in the same
      *     file system branch as document root.
      */
-    public static function documentRootDistance($noTaintEnvironment = FALSE) /*: ?int*/ {
-        $root = static::$documentRoot;
+    protected function getDocumentRootDistance($noTaintEnvironment = false) /*: ?int*/
+    {
+        $root = $this->documentRoot;
         if (!$root) {
-            $root = static::documentRoot($noTaintEnvironment);
+            $root = $this->getDocumentRoot($noTaintEnvironment);
         }
         if (!$root) {
             return null;
         }
 
-        $path = static::getCurrentWorkingDir();
+        $path = $this->getCurrentWorkingDir();
         if (DIRECTORY_SEPARATOR == '\\') {
             $path = str_replace('\\', '/', $path);
         }
@@ -410,17 +495,28 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
     }
 
     /**
-     * Change directory - chdir() - until at document root.
-     *
-     * @param boolean $noTaintEnvironment
-     *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
+     * Is current execution context CLI?
      *
      * @return boolean
+     */
+    public static function cli() : bool {
+        return PHP_SAPI == 'cli';
+    }
+
+    /**
+     * Change directory - chdir() - until at document root.
+     *
+     * @param bool $noTaintEnvironment
+     *   False: do set $_SERVER['DOCUMENT_ROOT'], if successful.
+     *
+     * @return bool
      *   False: document root can't be determined, or you're not in the same
      *     file system branch as document root, or a chdir() call fails.
      */
-    public static function documentRootChangeDirTo($noTaintEnvironment = FALSE) : bool {
-        $distance = static::documentRootDistance($noTaintEnvironment);
+    public function changeDirToDocumentRoot($noTaintEnvironment = false) : bool
+    {
+        $distance = $this->getDocumentRootDistance($noTaintEnvironment);
+        $root = $this->documentRoot;
         if ($distance === null) {
             return false;
         }
@@ -437,7 +533,7 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
                 // Document root contains current path.
                 $intermediates = explode(
                     '/',
-                    substr(static::$documentRoot, strlen(static::getCurrentWorkingDir()) + 1)
+                    substr($root, strlen(static::getCurrentWorkingDir()) + 1)
                 );
                 $distance *= -1;
                 for ($i = 0; $i < $distance; ++$i) {
@@ -448,7 +544,7 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
             }
         }
         // Sanity check.
-        return static::getCurrentWorkingDir() == static::$documentRoot;
+        return $this->getCurrentWorkingDir() === $root;
     }
 
     /**
@@ -473,7 +569,8 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      *
      * @return string
      */
-    public static function outputSanitize($output) : string {
+    public static function outputSanitize($output) : string
+    {
         return str_replace(static::$outputSanitizeNeedles, static::$outputSanitizeReplace, '' . $output);
     }
 
@@ -481,13 +578,14 @@ class Cli implements \Iterator, \Countable, \SeekableIterator {
      * @param mixed $message
      *   Gets stringified, and sanitized.
      *
-     * @param boolean $skipTrailingNewline
+     * @param bool $skipTrailingNewline
      *   Truthy: do no append newline.
      *
-     * @return boolean
+     * @return bool
      *   Will echo arg message.
      */
-    public static function outputMessage($message, $skipTrailingNewline = false) : bool {
+    public static function outputMessage($message, $skipTrailingNewline = false) : bool
+    {
         echo static::outputSanitize('' . $message) . (!$skipTrailingNewline ? "\n" : '');
         return true;
     }
