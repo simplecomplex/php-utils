@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use SimpleComplex\Utils\Explorable;
+use Psr\Log\LoggerInterface;
 use SimpleComplex\Utils\Exception\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
 use SimpleComplex\Utils\Exception\RuntimeException;
@@ -33,7 +33,7 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
  *
  * @package SimpleComplex\Utils
  */
-class Cli extends Explorable
+class CliEnvironment extends Explorable
 {
     /**
      * @see GetInstanceTrait
@@ -76,20 +76,43 @@ class Cli extends Explorable
     protected $documentRoot;
 
     /**
-     * Cli constructor.
+     * For logger 'type' context; like syslog RFC 5424 'facility code'.
      *
-     * @param array $shortOptToLongOpt {
-     *      @var string $a  Value: 'a_long_name'.
-     *      @var string $b  Value: 'b-long-name'.
-     * }
-     *      Key: one-letter short option.
-     *      Value: snake_cased or lisp-cased long option.
+     * @var string
      */
-    public function __construct(array $shortOptToLongOpt = [])
+    const LOG_TYPE = 'unicode';
+
+    /**
+     * @var LoggerInterface|null
+     */
+    protected $logger;
+
+    /**
+     * @see CliEnvironment::getInstance()
+     * @see CliEnvironment::setLogger()
+     *
+     * @param LoggerInterface|null
+     *      PSR-3 logger, if any.
+     * @param Cli[] $commands
+     */
+    public function __construct(/*?LoggerInterface*/ $logger = null, $commands = [])
     {
-        if ($shortOptToLongOpt) {
-            $this->__set('shortOptToLongOpt', $shortOptToLongOpt);
-        }
+        $this->logger = $logger;
+    }
+
+    /**
+     * Overcome mutual dependency, provide a logger after instantiation.
+     *
+     * This class does not need a logger at all. But errors are slightly more
+     * debuggable provided a logger.
+     *
+     * @param LoggerInterface $logger
+     *
+     * @return void
+     */
+    public function setLogger(LoggerInterface $logger) /*: void*/
+    {
+        $this->logger = $logger;
     }
 
     /**
@@ -119,12 +142,12 @@ class Cli extends Explorable
                 return $this->shortOptToLongOpt ?? [];
             case 'options':
                 if (!isset($this->options)) {
-                    $this->resolveOptsNArgs();
+                    $this->resolveArgsNOpts();
                 }
                 return $this->options;
             case 'arguments':
                 if (!isset($this->arguments)) {
-                    $this->resolveOptsNArgs();
+                    $this->resolveArgsNOpts();
                 }
                 return $this->arguments;
             case 'currentWorkingDir':
@@ -190,9 +213,18 @@ class Cli extends Explorable
     }
 
     /**
+     * @var array
+     */
+    const REGEX = [
+        'name' => '/^[a-z][a-z\d_\-]*$/',
+        'argument' => '/^[^\-].*$/',
+        'shortOpts' => '/^[a-zA-Z]+$/',
+    ];
+
+    /**
      * Resolve console arguments and options.
      */
-    protected function resolveOptsNArgs() /*: void*/
+    protected function resolveArgsNOpts() /*: void*/
     {
         if (empty($GLOBALS['argv'])) {
             return;
@@ -233,7 +265,7 @@ class Cli extends Explorable
                         $key = substr($item, 0, $pos_equal);
                         $value = substr($item, $pos_equal + 1);
                     }
-                    if (preg_match('/[a-z][a-z\d_\-]*/', $key)) {
+                    if (preg_match(static::REGEX['name'], $key)) {
                         $opts_long[str_replace('-', '_', $key)] = $value;
                     }
                     // Otherwise ignore.
@@ -242,7 +274,9 @@ class Cli extends Explorable
                 else {
                     $item = substr($item, 1);
                     --$le;
-                    if (ctype_alpha($item)) {
+                    // ctype_alpha() would actually do unless 'word' poluted
+                    // by locale non-ASCIIs.
+                    if (preg_match(static::REGEX['shortOpts'], $item)) {
                         for ($i = 0; $i < $le; ++$i) {
                             $opts_short[$item{$i}] = true;
                         }

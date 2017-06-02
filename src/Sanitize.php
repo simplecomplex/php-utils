@@ -258,4 +258,12 @@ class Sanitize
         // If within system precision, just string it.
         return ($v > -$precision && $v < $precision) ? $v : number_format($v, 0, '.', '');
     }
+
+    /**
+     * @param mixed $var
+     *      Gets stringified.
+     */
+    public function cli($var) {
+
+    }
 }
