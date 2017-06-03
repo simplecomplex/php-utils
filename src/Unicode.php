@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 use SimpleComplex\Utils\Exception\InvalidArgumentException;
 
 /**
- * Class Unicode
+ * Unicode string methods.
  *
  * @package SimpleComplex\Utils
  */
@@ -22,17 +22,12 @@ class Unicode
     /**
      * @see GetInstanceTrait
      *
-     * Reference to last instantiated instance of this class.
-     * @protected
-     * @static
-     * @var static $instanceByClass
-     *
-     * Get previously instantiated object or create new.
+     * First object instantiated via this method, disregarding class called on.
      * @public
      * @static
      * @see GetInstanceTrait::getInstance()
      */
-    use GetInstanceTrait;
+    use GetInstanceOfFamilyTrait;
 
     /**
      * For logger 'type' context; like syslog RFC 5424 'facility code'.
@@ -74,19 +69,31 @@ class Unicode
     }
 
     /**
+     * Bitmask:
+     * - 0: no support
+     * - 1: mbstring
+     * - 2: intl
+     * - 3: mbstring + intl
+     *
      * @var int
      */
-    protected static $mbString = -1;
+    protected static $nativeSupport = -1;
 
     /**
      * @return int
-     *      0|1.
      */
     public static function nativeSupport() : int
     {
-        $support = static::$mbString;
+        $support = static::$nativeSupport;
         if ($support == -1) {
-            static::$mbString = $support = (int) function_exists('mb_strlen');
+            $support = 0;
+            if (function_exists('mb_strlen')) {
+                $support += 1;
+            }
+            if (class_exists('IntlChar')) {
+                $support += 2;
+            }
+            static::$nativeSupport = $support;
         }
         return $support;
     }
@@ -105,7 +112,8 @@ class Unicode
         if ($v === '') {
             return 0;
         }
-        if (static::nativeSupport()) {
+        $native = static::nativeSupport();
+        if ($native && $native != 2) {
             return mb_strlen($v);
         }
 
@@ -182,7 +190,8 @@ class Unicode
         if (!$length || $v === '') {
             return '';
         }
-        if (static::nativeSupport()) {
+        $native = static::nativeSupport();
+        if ($native && $native != 2) {
             return !$length ? mb_substr($v, $start) : mb_substr($v, $start, $length);
         }
 
@@ -322,7 +331,8 @@ class Unicode
         if ($hstck === '' || $ndl === '') {
             return false;
         }
-        if (static::nativeSupport()) {
+        $native = static::nativeSupport();
+        if ($native && $native != 2) {
             return mb_strpos($hstck, $ndl);
         }
 

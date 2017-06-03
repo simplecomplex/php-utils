@@ -15,6 +15,10 @@
         "php": ">=7.0",
         "psr/log": "^1.0"
     },
+    "suggest": {
+        "ext-mbstring": "PHP native multibyte features.",
+        "ext-intl": "PHP native Unicode (UTF-8) features."
+    },
     "autoload": {
         "psr-4": {
             "SimpleComplex\\Utils\\": "src/",
