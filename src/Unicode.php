@@ -162,7 +162,6 @@ class Unicode
      */
     public function substr($var, int $start, /*?int*/ $length = null) : string
     {
-        echo "Unicode\n";
         if ($start < 0) {
             $msg = 'start is not non-negative integer.';
             if ($this->logger) {
