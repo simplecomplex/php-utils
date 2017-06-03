@@ -14,6 +14,11 @@ use SimpleComplex\Utils\Exception\InvalidArgumentException;
 /**
  * Cli command specification.
  *
+ * Behaves as a foreachable and 'overloaded' collection;
+ * dynamic getters and setters for protected members.
+ *
+ * @see Explorable
+ *
  * @package SimpleComplex\Utils
  */
 class CliCommand extends Explorable
@@ -23,8 +28,8 @@ class CliCommand extends Explorable
      */
     protected $explorableIndex = [
         'name',
-        'arguments',
         'description',
+        'arguments',
         'options',
         'shortToLongOption',
     ];
@@ -32,27 +37,27 @@ class CliCommand extends Explorable
     /**
      * @var string
      */
-    protected $name;
+    public $name;
 
     /**
      * @var string
      */
-    protected $description;
+    public $description;
 
     /**
      * @var array
      */
-    protected $arguments = [];
+    public $arguments = [];
 
     /**
      * @var array
      */
-    protected $options = [];
+    public $options = [];
 
     /**
      * @var array
      */
-    protected $shortToLongOption = [];
+    public $shortToLongOption = [];
 
     /**
      * @var array
@@ -80,7 +85,7 @@ class CliCommand extends Explorable
      *      Value: option name.
      */
     public function __construct(
-        string $name, string $description, array $arguments, array $options = [], array $shortToLongOption = []
+        string $name, string $description, array $arguments = [], array $options = [], array $shortToLongOption = []
     ) {
         if (!$name || !preg_match(static::REGEX['name'], $name)) {
             throw new InvalidArgumentException('Arg name is not a valid name.');
@@ -89,7 +94,7 @@ class CliCommand extends Explorable
         if (!$description) {
             throw new InvalidArgumentException('Arg description is not non-empty.');
         }
-        $this->name = $name;
+        $this->description = $description;
 
         $i = -1;
         foreach ($arguments as $k => $v) {
@@ -148,23 +153,32 @@ class CliCommand extends Explorable
         }
     }
 
+    const FORMAT = [
+        'newline' => "\n",
+        'indent' => ' ',
+        'midLine' => 35,
+        'wrap' => 90,
+    ];
+
     /**
      * @param string $indent
      * @param int $descriptionStart
+     * @param int $wrap
      *
      * @return string
      */
-    public function help(string $indent = ' ', int $descriptionStart = 40) : string {
+    public function help(string $indent = ' ', int $descriptionStart = 35, int $wrap = 90) : string {
         $line = $indent . $this->name;
         $output = "\n" . "\n" . $line . str_repeat(' ', $descriptionStart - strlen($line))
-            . str_replace("\n", "\n" . str_repeat($indent, $descriptionStart), $this->description)
+            . wordwrap($this->description, $wrap - $descriptionStart, "\n" . str_repeat(' ', $descriptionStart))
             . "\n" . $indent . $indent . 'Arguments:';
         if (!count($this->arguments)) {
             $output .= ' none';
         } else {
             foreach ($this->arguments as $name => $dscrptn) {
                 $line = str_repeat($indent, 3) . $name;
-                $output .= "\n" . str_repeat(' ', $descriptionStart - strlen($line)) . $dscrptn;
+                $output .= "\n" . $line . str_repeat(' ', $descriptionStart - strlen($line))
+                    . wordwrap($dscrptn, $wrap - $descriptionStart, "\n" . str_repeat(' ', $descriptionStart));
             }
         }
         $output .= "\n" . $indent . $indent . 'Options:';
@@ -178,7 +192,8 @@ class CliCommand extends Explorable
                         $line .= ' -' . $short;
                     }
                 }
-                $output .= "\n" . str_repeat(' ', $descriptionStart - strlen($line)) . $dscrptn;
+                $output .= "\n" . $line . str_repeat(' ', $descriptionStart - strlen($line))
+                    . wordwrap($dscrptn, $wrap - $descriptionStart, "\n" . str_repeat(' ', $descriptionStart));
             }
         }
         return $output;

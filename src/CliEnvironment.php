@@ -77,7 +77,7 @@ class CliEnvironment extends Explorable
      *
      * @var string
      */
-    const LOG_TYPE = 'unicode';
+    const LOG_TYPE = 'cli-environment';
 
     /**
      * @var LoggerInterface|null
@@ -85,16 +85,48 @@ class CliEnvironment extends Explorable
     protected $logger;
 
     /**
+     * @var Sanitize
+     */
+    protected $sanitize;
+
+    /**
+     * @var CliCommand[]
+     */
+    protected $commands = [];
+
+    /**
      * @see CliEnvironment::getInstance()
      * @see CliEnvironment::setLogger()
      *
      * @param LoggerInterface|null
      *      PSR-3 logger, if any.
-     * @param Cli[] $commands
+     * @param CliCommand[]|null ...$commands
      */
-    public function __construct(/*?LoggerInterface*/ $logger = null, $commands = [])
+    public function __construct(/*?LoggerInterface*/ $logger = null, CliCommand ...$commands)
     {
         $this->logger = $logger;
+
+        $jsonLogPretty = \SimpleComplex\JsonLog\JsonLogPretty::getInstance();
+        $inspect = \SimpleComplex\Inspect\Inspect::getInstance();
+
+        $jsonLogPretty->warning($inspect->inspect($commands));
+
+        /*$le = count($commands);
+        for ($i = 0; $i < $le; ++$i) {
+            $this->commands[
+            $command->name =
+                $command
+            ];
+        }*/
+
+        foreach ($commands as $command) {
+            $this->commands[
+                $command->name
+            ] =
+                $command;
+        }
+
+        $this->sanitize = Sanitize::getInstance();
     }
 
     /**
@@ -544,33 +576,6 @@ class CliEnvironment extends Explorable
     }
 
     /**
-     * @var array
-     */
-    protected static $outputSanitizeNeedles = [
-        '`',
-    ];
-
-    /**
-     * @var array
-     */
-    protected static $outputSanitizeReplace = [
-        "'",
-    ];
-
-    /**
-     * Sanitize string to be printed to console.
-     *
-     * @param mixed $output
-     *   Gets stringified.
-     *
-     * @return string
-     */
-    public static function outputSanitize($output) : string
-    {
-        return str_replace(static::$outputSanitizeNeedles, static::$outputSanitizeReplace, '' . $output);
-    }
-
-    /**
      * @param mixed $message
      *      Gets stringified, and sanitized.
      *
@@ -580,9 +585,9 @@ class CliEnvironment extends Explorable
      * @return bool
      *      Will echo arg message.
      */
-    public static function echo($message, $skipTrailingNewline = false) : bool
+    public function echo($message, $skipTrailingNewline = false) : bool
     {
-        echo static::outputSanitize('' . $message) . (!$skipTrailingNewline ? "\n" : '');
+        echo $this->sanitize->cli('' . $message) . (!$skipTrailingNewline ? "\n" : '');
         return true;
     }
 }
