@@ -7,10 +7,13 @@
  */
 declare(strict_types=1);
 
-namespace SimpleComplex\Utils;
+namespace SimpleComplex\Utils\Traits;
 
 /**
  * Provides static getInstance() method for reusing instance by class family.
+ *
+ * Facilitates loosely coupled singleton pattern.
+ * First instantiation sets the base for all later requests for an instance.
  *
  * @package SimpleComplex\Utils
  */

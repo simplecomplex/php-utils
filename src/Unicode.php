@@ -15,19 +15,21 @@ use SimpleComplex\Utils\Exception\InvalidArgumentException;
 /**
  * Unicode string methods.
  *
+ * Intended as singleton - ::getInstance() - but constructor not protected.
+ *
  * @package SimpleComplex\Utils
  */
 class Unicode
 {
     /**
-     * @see GetInstanceTrait
+     * @see GetInstanceOfFamilyTrait
      *
      * First object instantiated via this method, disregarding class called on.
      * @public
      * @static
-     * @see GetInstanceTrait::getInstance()
+     * @see GetInstanceOfFamilyTrait::getInstance()
      */
-    use GetInstanceOfFamilyTrait;
+    use Traits\GetInstanceOfFamilyTrait;
 
     /**
      * For logger 'type' context; like syslog RFC 5424 'facility code'.
@@ -51,6 +53,8 @@ class Unicode
     public function __construct(/*?LoggerInterface*/ $logger = null)
     {
         $this->logger = $logger;
+        // Init class-wide.
+        static::nativeSupport();
     }
 
     /**
@@ -69,31 +73,30 @@ class Unicode
     }
 
     /**
-     * Bitmask:
-     * - 0: no support
-     * - 1: mbstring
-     * - 2: intl
-     * - 3: mbstring + intl
-     *
-     * @var int
+     * @var bool[] {
+     *      @var bool $mbstring
+     *      @var bool $intl
+     * }
      */
-    protected static $nativeSupport = -1;
+    protected static $nativeSupport = [];
 
     /**
-     * @return int
+     * @param string $ext
+     *      Values: mbstring|intl. Default: empty.
+     *
+     * @return bool|bool[]
+     *      Array: on empty arg ext.
      */
-    public static function nativeSupport() : int
+    public static function nativeSupport(string $ext = '')
     {
         $support = static::$nativeSupport;
-        if ($support == -1) {
-            $support = 0;
-            if (function_exists('mb_strlen')) {
-                $support += 1;
-            }
-            if (class_exists('IntlChar')) {
-                $support += 2;
-            }
+        if (!$support) {
+            $support['mbstring'] = function_exists('mb_strlen');
+            $support['intl'] = class_exists('IntlChar');
             static::$nativeSupport = $support;
+        }
+        if ($ext) {
+            return !empty($support[$ext]);
         }
         return $support;
     }
@@ -112,8 +115,7 @@ class Unicode
         if ($v === '') {
             return 0;
         }
-        $native = static::nativeSupport();
-        if ($native && $native != 2) {
+        if (static::$nativeSupport['mbstring']) {
             return mb_strlen($v);
         }
 
@@ -160,6 +162,7 @@ class Unicode
      */
     public function substr($var, int $start, /*?int*/ $length = null) : string
     {
+        echo "Unicode\n";
         if ($start < 0) {
             $msg = 'start is not non-negative integer.';
             if ($this->logger) {
@@ -190,8 +193,7 @@ class Unicode
         if (!$length || $v === '') {
             return '';
         }
-        $native = static::nativeSupport();
-        if ($native && $native != 2) {
+        if (static::$nativeSupport['mbstring']) {
             return !$length ? mb_substr($v, $start) : mb_substr($v, $start, $length);
         }
 
@@ -331,8 +333,7 @@ class Unicode
         if ($hstck === '' || $ndl === '') {
             return false;
         }
-        $native = static::nativeSupport();
-        if ($native && $native != 2) {
+        if (static::$nativeSupport['mbstring']) {
             return mb_strpos($hstck, $ndl);
         }
 

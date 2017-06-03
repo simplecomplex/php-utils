@@ -10,7 +10,8 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * Extend to expose a set list of protected/public members to count and foreach.
+ * Extend to expose a set list of protected/public members for counting
+ * and foreach'ing.
  *
  * @package SimpleComplex\Utils
  */

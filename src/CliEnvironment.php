@@ -21,6 +21,8 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
  * Behaves as a foreachable and 'overloaded' collection;
  * dynamic getters and setters for protected members.
  *
+ * Intended as singleton - ::getInstance() - but constructor not protected.
+ *
  * @see Explorable
  *
  * @property array $shortOptToLongOpt
@@ -36,19 +38,14 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
 class CliEnvironment extends Explorable
 {
     /**
-     * @see GetInstanceTrait
+     * @see GetInstanceOfFamilyTrait
      *
-     * Reference to last instantiated instance of this class.
-     * @protected
-     * @static
-     * @var static $instanceByClass
-     *
-     * Get previously instantiated object or create new.
+     * First object instantiated via this method, disregarding class called on.
      * @public
      * @static
-     * @see GetInstanceTrait::getInstance()
+     * @see GetInstanceOfFamilyTrait::getInstance()
      */
-    use GetInstanceTrait;
+    use Traits\GetInstanceOfFamilyTrait;
 
     /**
      * @see Cli::__construct()

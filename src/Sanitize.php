@@ -20,19 +20,14 @@ use SimpleComplex\Utils\Exception\InvalidArgumentException;
 class Sanitize
 {
     /**
-     * @see GetInstanceTrait
+     * @see GetInstanceOfFamilyTrait
      *
-     * Reference to last instantiated instance of this class.
-     * @protected
-     * @static
-     * @var static $instanceByClass
-     *
-     * Get previously instantiated object or create new.
+     * First object instantiated via this method, disregarding class called on.
      * @public
      * @static
-     * @see GetInstanceTrait::getInstance()
+     * @see GetInstanceOfFamilyTrait::getInstance()
      */
-    use GetInstanceTrait;
+    use Traits\GetInstanceOfFamilyTrait;
 
     /**
      * For logger 'type' context; like syslog RFC 5424 'facility code'.
@@ -260,10 +255,14 @@ class Sanitize
     }
 
     /**
+     * Sanitize var to be printed in CLI console.
+     *
      * @param mixed $var
      *      Gets stringified.
+     *
+     * @return string
      */
-    public function cli($var) {
-
+    public function cli($var) : string {
+        return str_replace('`', '´', '' . $var);
     }
 }

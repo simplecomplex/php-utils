@@ -7,17 +7,25 @@
  */
 declare(strict_types=1);
 
-namespace SimpleComplex\Utils;
+namespace SimpleComplex\Utils\Traits;
 
 /**
- * Provides static getInstance() method for reusing instance.
+ * Provides static getInstance() method for reusing instance by class called on.
+ *
+ * Not recommended for general/production purposes, because high probability
+ * of unintended instantiation and use of multiple parent/child objects.
+ *
+ * @see GetInstanceOfFamilyTrait
+ *
+ * @deprecated
  *
  * @package SimpleComplex\Utils
  */
-trait GetInstanceTrait
+trait GetInstanceOfClassTrait
 {
     /**
-     * Reference to last instantiated instance of this class.
+     * Reference to first object instantiated via the getInstance() method,
+     * when called on current class.
      *
      * Keeping the instance(s) in list by class name secures that parent/child
      * class' getInstance() returns new/the instance of the class getInstance()
@@ -27,10 +35,10 @@ trait GetInstanceTrait
      *      @var Object $className
      * }
      */
-    protected static $instanceByClass = [];
+    protected static $instanceOfClass = [];
 
     /**
-     * Get previously instantiated object or create new.
+     * First object instantiated via this method, called on current class.
      *
      * @param mixed ...$constructorParams
      *
@@ -39,12 +47,10 @@ trait GetInstanceTrait
     public static function getInstance(...$constructorParams)
     {
         $class = get_called_class();
-        if (isset(static::$instanceByClass[$class])) {
-            return static::$instanceByClass[$class];
+        if (isset(static::$instanceOfClass[$class])) {
+            return static::$instanceOfClass[$class];
         }
-
-        static::$instanceByClass[$class] = $nstnc = new static(...$constructorParams);
-
+        static::$instanceOfClass[$class] = $nstnc = new static(...$constructorParams);
         return $nstnc;
     }
 }
