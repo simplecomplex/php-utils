@@ -55,7 +55,7 @@ class CliCommand extends Explorable
     public $options = [];
 
     /**
-     * @var array
+     * @var array|null
      */
     public $shortToLongOption = [];
 
@@ -155,8 +155,8 @@ class CliCommand extends Explorable
     const FORMAT = [
         'newline' => "\n",
         'indent' => ' ',
-        'midLine' => 35,
-        'wrap' => 90,
+        'midLine' => 40,
+        'wrap' => 100,
     ];
 
     /**
@@ -166,9 +166,9 @@ class CliCommand extends Explorable
         $nl = static::FORMAT['newline'];
 
         $line = static::FORMAT['indent'] . $this->name;
-        $output = $nl . $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
+        $output = $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
             . wordwrap(
-                $this->description,
+                str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $this->description),
                 static::FORMAT['wrap'] - static::FORMAT['midLine'],
                 $nl . str_repeat(' ', static::FORMAT['midLine'])
             );
@@ -181,7 +181,7 @@ class CliCommand extends Explorable
                 $line = str_repeat(static::FORMAT['indent'], 3) . $name;
                 $output .= $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
                     . wordwrap(
-                        $dscrptn,
+                        str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $dscrptn),
                         static::FORMAT['wrap'] - static::FORMAT['midLine'],
                         $nl . str_repeat(' ', static::FORMAT['midLine'])
                     );
@@ -201,7 +201,7 @@ class CliCommand extends Explorable
                 }
                 $output .= $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
                     . wordwrap(
-                        $dscrptn,
+                        str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $dscrptn),
                         static::FORMAT['wrap'] - static::FORMAT['midLine'],
                         $nl . str_repeat(' ', static::FORMAT['midLine'])
                     );

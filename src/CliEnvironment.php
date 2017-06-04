@@ -10,16 +10,24 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 use SimpleComplex\Utils\Exception\ConfigurationException;
+use SimpleComplex\Utils\Exception\LogicException;
 use SimpleComplex\Utils\Exception\RuntimeException;
 use SimpleComplex\Utils\Exception\OutOfBoundsException;
 
 /**
  * CLI PHP utility.
  *
+ * Provides means for:
+ * - mapping command line input to one or more predefined commands
+ * - finding/navigating to a site's document root
+ *
  * Behaves as a foreachable and 'overloaded' collection;
  * dynamic getters and setters for protected members.
  *
- * Intended as singleton - ::getInstance() - but constructor not protected.
+ * Example, getting document root:
+ * @code
+ * $doc_root = CliEnvironment::getInstance()->documentRoot;
+ * @endcode
  *
  * @see Explorable
  *
@@ -30,6 +38,8 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
  * @property-read string $currentWorkingDir
  * @property-read string $documentRoot
  * @property-read int $documentRootDistance
+ *
+ * Intended as singleton - ::getInstance() - but constructor not protected.
  *
  * @package SimpleComplex\Utils
  */
@@ -104,6 +114,7 @@ class CliEnvironment extends Explorable
 
     /**
      * @var CliCommand|null
+     *      Null if no command mapped.
      */
     protected $command;
 
@@ -156,18 +167,18 @@ class CliEnvironment extends Explorable
     {
         switch ($name) {
             case 'command':
-                if (!isset($this->inputArguments)) {
-                    $this->resolveArgsNOpts();
+                if (!$this->inputResolved) {
+                    $this->resolveInput();
                 }
                 if (!isset($this->command)) {
-                    $this->resolveArgsNOpts();
+                    $this->mapInputToCommand();
                 }
                 return $this->command;
             case 'inputArguments':
             case 'inputOptions':
             case 'inputOptionsShort':
-                if (!isset($this->{$name})) {
-                    $this->resolveArgsNOpts();
+                if (!$this->inputResolved) {
+                    $this->resolveInput();
                 }
                 return $this->{$name};
             case 'currentWorkingDir':
@@ -211,16 +222,24 @@ class CliEnvironment extends Explorable
     // Commands.----------------------------------------------------------------
 
     /**
-     * @var CliCommand[]|null
+     * @var bool|null
      */
-    protected $commandsAvailable;
+    protected $inputResolved;
+
+    /**
+     * @var CliCommand[]
+     */
+    protected $commandsAvailable = [];
 
     /**
      * @var string
      */
-    protected $help;
+    protected $commandHelp;
 
     /**
+     * @throws LogicException
+     *      If not in cli mode.
+     *
      * @see CliEnvironment::getInstance()
      * @see CliEnvironment::setCommandsAvailable()
      *
@@ -228,8 +247,10 @@ class CliEnvironment extends Explorable
      */
     public function __construct(CliCommand ...$commandsAvailable)
     {
+        if (!static::cli()) {
+            throw new LogicException('This class is for cli mode only.');
+        }
         $this->sanitize = Sanitize::getInstance();
-
         if ($commandsAvailable) {
             $this->setCommandsAvailable(...$commandsAvailable);
         }
@@ -254,38 +275,72 @@ class CliEnvironment extends Explorable
     /**
      * Print 'help' to console.
      *
+     * @param string $preface
+     *
      * @return void
      */
-    public function help() /*: void*/
+    public function echoHelp(string $preface = '') /*: void*/
     {
-        if ($this->help) {
-            $help = $this->help;
+        // Important.
+        if (!$this->inputResolved) {
+            $this->resolveInput();
         }
+
+        if ($preface) {
+            if ($preface{strlen($preface) - 1} !== "\n") {
+                $preface .= "\n";
+            }
+        } else {
+            $preface = get_class($this) . "\n" . 'Commands: ';
+        }
+
+        // There's a mapped command?
+        if ($this->commandHelp) {
+            $help = $this->commandHelp;
+        }
+        // Print all commands' help.
         else {
-            $class_command = static::CLASS_CLI_COMMAND;
-            $help = '' . new $class_command(
-                    'help',
-                    'Lists commands available. First argument is always the command name.',
-                    [],
-                    ['help' => ' '],
-                    ['h' => ' ']
-                );
+            $help = '';
+            if (!isset($this->commandsAvailable['help'])) {
+                $class_command = static::CLASS_CLI_COMMAND;
+                $help = "\n\n" . new $class_command(
+                        'help',
+                        'Lists commands available.' . "\n"
+                        . 'Example: php script.phpsh command_name --some-option=\'whatever\' \'first arg value\' -x',
+                        [],
+                        ['help' => ' '],
+                        ['h' => 'help']
+                    );
+            }
+            foreach ($this->commandsAvailable as $command) {
+                $help .= "\n\n" . $command;
+                //$help .= $command;
+            }
         }
-        $this->echoMessage(
-            __NAMESPACE__ . '\\' . get_class($this) . "\n" . $help
-        );
+        $this->echoMessage($preface . $help . "\n");
     }
 
     /**
      * Resolve console input arguments and options.
      *
+     * @throww RuntimeException
+     *      If globals argv is empty or non-existent.
+     *
      * @return void
      */
-    protected function resolveArgsNOpts() /*: void*/
+    protected function resolveInput() /*: void*/
     {
         if (empty($GLOBALS['argv'])) {
-            return;
+            throw new RuntimeException(
+                'Global argv '
+                . (isset($GLOBALS['argv']) ?
+                    ' is empty, should at least contain a bucket holding name of executed script file.' :
+                    ' does not exist.'
+                )
+            );
         }
+        $this->inputResolved = true;
+
         // No need; shortOptToLongOpt has not been altered since last call.
         if (isset($this->inputArguments)) {
             return;
@@ -354,12 +409,15 @@ class CliEnvironment extends Explorable
     /**
      * Map input arguments and options to a configured command.
      *
+     * If fitting CliCommand found, the command's arguments and options will be
+     * alterd (filtered) according to input arguments and options.
+     *
      * @return void
      */
     protected function mapInputToCommand() /*: void*/
     {
-        if (isset($this->inputArguments)) {
-            $this->resolveArgsNOpts();
+        if (!$this->inputResolved) {
+            $this->resolveInput();
         }
 
         $any_commands = !!$this->commandsAvailable;
@@ -370,17 +428,17 @@ class CliEnvironment extends Explorable
             $class_command = static::CLASS_CLI_COMMAND;
             $help = new $class_command(
                 'help',
-                'Lists commands available. First argument is always the command name.',
+                'Lists commands available.' . "\n"
+                . 'Example: php script.phpsh command_name --some-option=\'whatever\' \'first arg value\' -x',
                 [],
                 ['help' => ' '],
-                ['h' => ' ']
+                ['h' => 'help']
             );
             if (!$this->commandsAvailable) {
                 $this->commandsAvailable['help'] = $help;
             } else {
-                $this->commandsAvailable = [$help] + $this->commandsAvailable;
+                $this->commandsAvailable = ['help' => $help] + $this->commandsAvailable;
             }
-
         }
         // Do input options indicate (general or specific) 'help'?
         $do_help = isset($this->inputOptions['help']) || isset($this->inputOptions['h']);
@@ -398,7 +456,7 @@ class CliEnvironment extends Explorable
                 $command = $this->commandsAvailable[$command_arg];
                 // Save 'help' output, in case user decides to print that
                 // instead of acting on the command.
-                $this->help = '' . $command;
+                $this->commandHelp = '' . $command;
 
                 if ($command->arguments) {
                     $args_input = $this->inputArguments;
@@ -407,6 +465,8 @@ class CliEnvironment extends Explorable
                     $n_args_available = count($command->arguments);
                     $le = min($n_args_available, $n_args_input);
                     for ($i = 0; $i < $le; ++$i) {
+                        // Overwrite the CliCommand argument's description with
+                        // input value.
                         $command->arguments[$i] = $args_input[$i];
                     }
                     if ($n_args_available > $n_args_input) {
@@ -420,6 +480,8 @@ class CliEnvironment extends Explorable
                         $opt_keys = array_keys($command->options);
                         foreach ($opt_keys as $opt) {
                             if (isset($this->inputOptions[$opt])) {
+                                // Overwrite the CliCommand option's description
+                                // with input value.
                                 $options_selected[$opt] = $this->inputOptions[$opt];
                             }
                         }
@@ -430,6 +492,8 @@ class CliEnvironment extends Explorable
                             if (isset($command->shortToLongOption[$opt_short])) {
                                 $opt = $command->shortToLongOption[$opt_short];
                                 if (!isset($options_selected[$opt])) {
+                                    // Overwrite the CliCommand option's
+                                    // description with true.
                                     $options_selected[$opt] = true;
                                 }
                             }
@@ -438,7 +502,7 @@ class CliEnvironment extends Explorable
                 }
                 $command->options = $options_selected;
                 // Not useful any more.
-                $command->shortToLongOption = [];
+                $command->shortToLongOption = null;
                 return;
             }
         }
@@ -449,7 +513,7 @@ class CliEnvironment extends Explorable
     }
 
 
-    // Document root.-----------------------------------------------------------
+    // Document root et al.-----------------------------------------------------
 
     /**
      * Alternative to native getcwd(), which throws exception on failure,
