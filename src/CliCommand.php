@@ -65,8 +65,8 @@ class CliCommand extends Explorable
     const REGEX = [
         'name' => '/^[a-z][a-z\d_\-]*$/',
         'argument' => '/^[^\-].*$/',
-        // h an H are not allowed, because they are use generically for 'help'.
-        'shortOpts' => '/^[a-gi-zA-GI-Z]+$/',
+        'option' => '/^[a-z][a-z\d_\-]*$/',
+        'shortOpts' => '/^[a-zA-Z]+$/',
     ];
 
     /**
@@ -88,7 +88,7 @@ class CliCommand extends Explorable
         string $name, string $description, array $arguments = [], array $options = [], array $shortToLongOption = []
     ) {
         if (!$name || !preg_match(static::REGEX['name'], $name)) {
-            throw new InvalidArgumentException('Arg name is not a valid name.');
+            throw new InvalidArgumentException('Arg name is not a valid command name, regex ' . static::REGEX['name'] . '.');
         }
         $this->name = $name;
         if (!$description) {
@@ -103,11 +103,11 @@ class CliCommand extends Explorable
             $arg_dscrptn = '' . $v;
             if (!$arg_name || !preg_match(static::REGEX['argument'], $arg_name)) {
                 throw new InvalidArgumentException('Arg arguments element . ' . $i
-                    . ' key (argument name) is not a valid name.');
+                    . ' key (argument name) is not valid; regex ' . static::REGEX['argument'] . '.');
             }
             if (!$arg_dscrptn) {
                 throw new InvalidArgumentException('Arg arguments element . ' . $i
-                    . ' value (argument description) is not a non-empty.');
+                    . ' value (argument description) is not non-empty.');
             }
             $this->arguments[$arg_name] = $arg_dscrptn;
         }
@@ -117,17 +117,13 @@ class CliCommand extends Explorable
             ++$i;
             $opt_name = '' . $k;
             $opt_dscrptn = '' . $v;
-            if (!$opt_name || !preg_match(static::REGEX['name'], $opt_name)) {
+            if (!$opt_name || !preg_match(static::REGEX['option'], $opt_name)) {
                 throw new InvalidArgumentException('Arg options element . ' . $i
-                    . ' key (option name) is not a valid name.');
-            }
-            if (!$opt_name == 'help') {
-                throw new InvalidArgumentException('Arg options element . ' . $i
-                    . ' key (option name) \'help\' is not allowed because used for generic purposes.');
+                    . ' key (option name) is not valid; regex ' . static::REGEX['option'] . '.');
             }
             if (!$opt_dscrptn) {
                 throw new InvalidArgumentException('Arg options element . ' . $i
-                    . ' value (option description) is not a non-empty.');
+                    . ' value (option description) is not non-empty.');
             }
             $this->options[$opt_name] = $opt_dscrptn;
         }
@@ -141,9 +137,9 @@ class CliCommand extends Explorable
                 throw new InvalidArgumentException('Arg shortToLongOption element . ' . $i
                     . ' key (short) is not a single ASCII letter.');
             }
-            if (!$opt_name || !preg_match(static::REGEX['name'], $opt_name)) {
+            if (!$opt_name || !preg_match(static::REGEX['option'], $opt_name)) {
                 throw new InvalidArgumentException('Arg shortToLongOption element . ' . $i
-                    . ' value (option name) is not a valid name.');
+                    . ' value (option name) is not valid; regex ' . static::REGEX['option'] . '.');
             }
             if (!isset($this->options[$opt_name])) {
                 throw new InvalidArgumentException('Arg shortToLongOption element . ' . $i
@@ -153,6 +149,9 @@ class CliCommand extends Explorable
         }
     }
 
+    /**
+     * @var array
+     */
     const FORMAT = [
         'newline' => "\n",
         'indent' => ' ',
@@ -161,41 +160,54 @@ class CliCommand extends Explorable
     ];
 
     /**
-     * @param string $indent
-     * @param int $descriptionStart
-     * @param int $wrap
-     *
      * @return string
      */
-    public function help(string $indent = ' ', int $descriptionStart = 35, int $wrap = 90) : string {
-        $line = $indent . $this->name;
-        $output = "\n" . "\n" . $line . str_repeat(' ', $descriptionStart - strlen($line))
-            . wordwrap($this->description, $wrap - $descriptionStart, "\n" . str_repeat(' ', $descriptionStart))
-            . "\n" . $indent . $indent . 'Arguments:';
+    public function __toString() : string {
+        $nl = static::FORMAT['newline'];
+
+        $line = static::FORMAT['indent'] . $this->name;
+        $output = $nl . $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
+            . wordwrap(
+                $this->description,
+                static::FORMAT['wrap'] - static::FORMAT['midLine'],
+                $nl . str_repeat(' ', static::FORMAT['midLine'])
+            );
+
+        $output .= $nl . static::FORMAT['indent'] . static::FORMAT['indent'] . 'Arguments:';
         if (!count($this->arguments)) {
             $output .= ' none';
         } else {
             foreach ($this->arguments as $name => $dscrptn) {
-                $line = str_repeat($indent, 3) . $name;
-                $output .= "\n" . $line . str_repeat(' ', $descriptionStart - strlen($line))
-                    . wordwrap($dscrptn, $wrap - $descriptionStart, "\n" . str_repeat(' ', $descriptionStart));
+                $line = str_repeat(static::FORMAT['indent'], 3) . $name;
+                $output .= $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
+                    . wordwrap(
+                        $dscrptn,
+                        static::FORMAT['wrap'] - static::FORMAT['midLine'],
+                        $nl . str_repeat(' ', static::FORMAT['midLine'])
+                    );
             }
         }
-        $output .= "\n" . $indent . $indent . 'Options:';
+
+        $output .= $nl . static::FORMAT['indent'] . static::FORMAT['indent'] . 'Options:';
         if (!count($this->options)) {
             $output .= ' none';
         } else {
             foreach ($this->options as $name => $dscrptn) {
-                $line = str_repeat($indent, 3) . '--' . $name;
+                $line = str_repeat(static::FORMAT['indent'], 3) . '--' . $name;
                 foreach ($this->shortToLongOption as $short => $long) {
                     if ($long == $name) {
                         $line .= ' -' . $short;
                     }
                 }
-                $output .= "\n" . $line . str_repeat(' ', $descriptionStart - strlen($line))
-                    . wordwrap($dscrptn, $wrap - $descriptionStart, "\n" . str_repeat(' ', $descriptionStart));
+                $output .= $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
+                    . wordwrap(
+                        $dscrptn,
+                        static::FORMAT['wrap'] - static::FORMAT['midLine'],
+                        $nl . str_repeat(' ', static::FORMAT['midLine'])
+                    );
             }
         }
+
         return $output;
     }
 }
