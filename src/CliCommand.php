@@ -150,6 +150,20 @@ class CliCommand extends Explorable
     }
 
     /**
+     * Tell that this command has been mapped successfully.
+     *
+     * @see CliEnvironment::mapInputToCommand()
+     *
+     * @return void
+     */
+    public function setMapped() /*: void*/
+    {
+        // Remove these now redundants from explorations.
+        array_splice($this->explorableIndex, array_search('description', $this->explorableIndex), 1);
+        array_splice($this->explorableIndex, array_search('shortToLongOption', $this->explorableIndex), 1);
+    }
+
+    /**
      * @var array
      */
     const FORMAT = [

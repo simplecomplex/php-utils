@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-06-04
+-----------------------------------
+- CliEnvironment and CliCommand.
+
 SimpleComplex/Utils 1.x, 2017-05-31
 -----------------------------------
 - Use parameter type declaration when possible, despite ambiguous effect for

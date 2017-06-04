@@ -29,6 +29,9 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
  * $doc_root = CliEnvironment::getInstance()->documentRoot;
  * @endcode
  *
+ * Example, CLI command using this command mapping interface:
+ * @see \SimpleComplex\JsonLog\Cli\JsonLogCli
+ *
  * @see Explorable
  *
  * @property-read CliCommand|null $command
@@ -82,11 +85,16 @@ class CliEnvironment extends Explorable
      * @var array
      */
     const MESSAGE_STATUS = [
-        'error' => '',
-        'warning' => '',
-        'notice' => '',
-        'info' => '',
-        'success' => '',
+        // Light red.
+        'error' => "\033[01;31m[error]\033[0m",
+        // Light yellow.
+        'warning' => "\033[01;33m[warning]\033[0m",
+        // Light blue.
+        'notice' => "\033[01;34m[notice]\033[0m",
+        // White.
+        'info' => "\033[01;37m[info]\033[0m",
+        // Light green.
+        'success' => "\033[01;32m[success]\033[0m",
     ];
 
     /**
@@ -104,7 +112,7 @@ class CliEnvironment extends Explorable
             if (!isset(static::MESSAGE_STATUS[$status])) {
                 $status = 'error';
             }
-            echo '[' . static::MESSAGE_STATUS[$status] . '] ';
+            echo static::MESSAGE_STATUS[$status] . ' ';
         }
         echo $this->sanitize->cli('' . $message) . "\n";
     }
@@ -244,6 +252,7 @@ class CliEnvironment extends Explorable
      * @see CliEnvironment::setCommandsAvailable()
      *
      * @param CliCommand[] ...$commandsAvailable
+     *      Any number of, also none.
      */
     public function __construct(CliCommand ...$commandsAvailable)
     {
@@ -270,16 +279,15 @@ class CliEnvironment extends Explorable
         }
     }
 
-    // @todo: add section about document root.
-
     /**
-     * Print 'help' to console.
+     * Get commmand help.
      *
      * @param string $preface
+     *      Use 'none' for no preface.
      *
-     * @return void
+     * @return string
      */
-    public function echoHelp(string $preface = '') /*: void*/
+    public function commandHelp(string $preface = '') : string
     {
         // Important.
         if (!$this->inputResolved) {
@@ -287,21 +295,37 @@ class CliEnvironment extends Explorable
         }
 
         if ($preface) {
-            if ($preface{strlen($preface) - 1} !== "\n") {
-                $preface .= "\n";
+            if ($preface == 'none') {
+                $preface = '';
+            }
+            else {
+                $preface = rtrim($preface) . "\n";
             }
         } else {
-            $preface = get_class($this) . "\n" . 'Commands: ';
+            $preface = get_class($this) . "\n";
         }
+        $preface .= 'Commands:';
 
         // There's a mapped command?
         if ($this->commandHelp) {
-            $help = $this->commandHelp;
+            $help = "\n\n" . $this->commandHelp;
         }
-        // Print all commands' help.
+        // Concat all commands' help.
         else {
             $help = '';
-            if (!isset($this->commandsAvailable['help'])) {
+            $n_availables = count($this->commandsAvailable);
+            // Skip general 'help' if any other (specific) command is
+            // available.
+            if ($n_availables) {
+                foreach ($this->commandsAvailable as $command) {
+                    if ($n_availables == 1 || $command->name != 'help') {
+                        $help .= "\n\n" . $command;
+                    }
+                    //$help .= $command;
+                }
+            }
+            // Print general 'help' if none.
+            else {
                 $class_command = static::CLASS_CLI_COMMAND;
                 $help = "\n\n" . new $class_command(
                         'help',
@@ -312,16 +336,16 @@ class CliEnvironment extends Explorable
                         ['h' => 'help']
                     );
             }
-            foreach ($this->commandsAvailable as $command) {
-                $help .= "\n\n" . $command;
-                //$help .= $command;
-            }
         }
-        $this->echoMessage($preface . $help . "\n");
+        return $preface . $help;
     }
 
     /**
      * Resolve console input arguments and options.
+     *
+     * Casts values of options:
+     * - 'true'|'false': bool
+     * - stringed int: int
      *
      * @throww RuntimeException
      *      If globals argv is empty or non-existent.
@@ -378,6 +402,19 @@ class CliEnvironment extends Explorable
                     } else {
                         $key = substr($item, 0, $pos_equal);
                         $value = substr($item, $pos_equal + 1);
+                        // Prevent weird option value errors.
+                        switch ($value) {
+                            case 'true':
+                                $value = true;
+                                break;
+                            case 'false':
+                                $value = false;
+                                break;
+                            default:
+                                if (ctype_digit($value)) {
+                                    $value = (int) $value;
+                                }
+                        }
                     }
                     if (preg_match($regex['option'], $key)) {
                         $this->inputOptions[str_replace('-', '_', $key)] = $value;
@@ -457,7 +494,6 @@ class CliEnvironment extends Explorable
                 // Save 'help' output, in case user decides to print that
                 // instead of acting on the command.
                 $this->commandHelp = '' . $command;
-
                 if ($command->arguments) {
                     $args_input = $this->inputArguments;
                     array_shift($args_input);
@@ -503,6 +539,9 @@ class CliEnvironment extends Explorable
                 $command->options = $options_selected;
                 // Not useful any more.
                 $command->shortToLongOption = null;
+
+                $command->setMapped();
+                $this->command = $command;
                 return;
             }
         }
