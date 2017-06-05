@@ -7,7 +7,7 @@ namespace SimpleComplex\Utils\Exception;
  *
  * Please do not use - throw - in code of another package/library.
  *
- * @package SimpleComplex\Inspect
+ * @package SimpleComplex\Utils
  */
 class LogicException extends \LogicException
 {

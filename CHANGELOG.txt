@@ -8,6 +8,8 @@ SimpleComplex/Utils 1.x, 2017-06-05
 - getInstance() in trait document return value 'object' (not 'static'); or IDE
   might not resolve class when instance is a member of another object than
   the object it is used in.
+- Environment variable based configuration class, implementing PSR Simple Cache
+  interface.
 
 SimpleComplex/Utils 1.x, 2017-06-04
 -----------------------------------
