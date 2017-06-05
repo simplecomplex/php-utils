@@ -259,7 +259,14 @@ class CliEnvironment extends Explorable
         if (!static::cli()) {
             throw new LogicException('This class is for cli mode only.');
         }
-        $this->sanitize = Sanitize::getInstance();
+
+        // Dependencies.--------------------------------------------------------
+        // Extending class' constructor might provide instance by other means.
+        if (!$this->sanitize) {
+            $this->sanitize = Sanitize::getInstance();
+        }
+
+        // Business.------------------------------------------------------------
         if ($commandsAvailable) {
             $this->setCommandsAvailable(...$commandsAvailable);
         }

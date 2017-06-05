@@ -9,11 +9,10 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use Psr\Log\LoggerInterface;
 use SimpleComplex\Utils\Exception\InvalidArgumentException;
 
 /**
- * Class Sanitize
+ * Sanitize strings, numbers et al.
  *
  * @package SimpleComplex\Utils
  */
@@ -30,42 +29,10 @@ class Sanitize
     use Traits\GetInstanceOfFamilyTrait;
 
     /**
-     * For logger 'type' context; like syslog RFC 5424 'facility code'.
-     *
-     * @var string
-     */
-    const LOG_TYPE = 'sanitize';
-
-    /**
-     * @var LoggerInterface|null
-     */
-    protected $logger;
-
-    /**
      * @see Sanitize::getInstance()
-     * @see Sanitize::setLogger()
-     *
-     * @param LoggerInterface|null
-     *      PSR-3 logger, if any.
      */
-    public function __construct(/*?LoggerInterface*/ $logger = null)
+    public function __construct()
     {
-        $this->logger = $logger;
-    }
-
-    /**
-     * Overcome mutual dependency, provide a logger after instantiation.
-     *
-     * This class does not need a logger at all. But errors are slightly more
-     * debuggable provided a logger.
-     *
-     * @param LoggerInterface $logger
-     *
-     * @return void
-     */
-    public function setLogger(LoggerInterface $logger) /*: void*/
-    {
-        $this->logger = $logger;
     }
 
     /**
@@ -97,16 +64,7 @@ class Sanitize
         // preg_replace() emits old-school warning on error; we want exception.
         $s = preg_replace('/[^[:ascii:]]/', '', '' . $var);
         if (!$s && $s === null) {
-            $msg = 'var made native regex function fail.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'var' => $var,
-                    ],
-                ]);
-            }
-            throw new \RuntimeException('Arg ' . $msg);
+            throw new \RuntimeException('PHP native regex function failed.');
         }
         return $s;
     }
@@ -151,16 +109,7 @@ class Sanitize
         );
         // preg_replace() emits old-school warning on error; we want exception.
         if (!$s && $s === null) {
-            $msg = 'var made native regex function fail.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'var' => $var,
-                    ],
-                ]);
-            }
-            throw new \RuntimeException('Arg ' . $msg);
+            throw new \RuntimeException('PHP native regex function failed.');
         }
         return $s;
     }
@@ -204,16 +153,7 @@ class Sanitize
         );
         // preg_replace() emits old-school warning on error; we want exception.
         if (!$s && $s === null) {
-            $msg = 'var made native regex function fail.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'var' => $var,
-                    ],
-                ]);
-            }
-            throw new \RuntimeException('Arg ' . $msg);
+            throw new \RuntimeException('PHP native regex function failed.');
         }
         return $s;
     }
@@ -238,16 +178,7 @@ class Sanitize
         }
         $v = '' . $var;
         if (!is_numeric($v)) {
-            $msg = 'var is not integer/float nor number-like when stringified.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'var' => $var,
-                    ],
-                ]);
-            }
-            throw new InvalidArgumentException('Arg ' . $msg);
+            throw new InvalidArgumentException('Arg var is not integer/float nor number-like when stringified.');
         }
 
         // If within system precision, just string it.

@@ -9,13 +9,10 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use Psr\Log\LoggerInterface;
 use SimpleComplex\Utils\Exception\InvalidArgumentException;
 
 /**
  * Unicode string methods.
- *
- * Intended as singleton - ::getInstance() - but constructor not protected.
  *
  * @package SimpleComplex\Utils
  */
@@ -32,44 +29,10 @@ class Unicode
     use Traits\GetInstanceOfFamilyTrait;
 
     /**
-     * For logger 'type' context; like syslog RFC 5424 'facility code'.
-     *
-     * @var string
-     */
-    const LOG_TYPE = 'unicode';
-
-    /**
-     * @var LoggerInterface|null
-     */
-    protected $logger;
-
-    /**
      * @see Unicode::getInstance()
-     * @see Unicode::setLogger()
-     *
-     * @param LoggerInterface|null
-     *      PSR-3 logger, if any.
      */
-    public function __construct(/*?LoggerInterface*/ $logger = null)
+    public function __construct()
     {
-        $this->logger = $logger;
-        // Init class-wide.
-        static::nativeSupport();
-    }
-
-    /**
-     * Overcome mutual dependency, provide a logger after instantiation.
-     *
-     * This class does not need a logger at all. But errors are slightly more
-     * debuggable provided a logger.
-     *
-     * @param LoggerInterface $logger
-     *
-     * @return void
-     */
-    public function setLogger(LoggerInterface $logger) /*: void*/
-    {
-        $this->logger = $logger;
     }
 
     /**
@@ -163,30 +126,10 @@ class Unicode
     public function substr($var, int $start, /*?int*/ $length = null) : string
     {
         if ($start < 0) {
-            $msg = 'start is not non-negative integer.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'start' => $start,
-                        'length' => $length,
-                    ],
-                ]);
-            }
-            throw new InvalidArgumentException('Arg ' . $msg);
+            throw new InvalidArgumentException('Arg start is not non-negative integer.');
         }
         if ($length !== null && (!is_int($length) || $length < 0)) {
-            $msg = 'length is not non-negative integer or null.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'start' => $start,
-                        'length' => $length,
-                    ],
-                ]);
-            }
-            throw new InvalidArgumentException('Arg ' . $msg);
+            throw new InvalidArgumentException('Arg length is not non-negative integer or null.');
         }
         $v = '' . $var;
         if (!$length || $v === '') {
@@ -259,16 +202,7 @@ class Unicode
     public function truncateToByteLength($var, int $length)
     {
         if ($length < 0) {
-            $msg = 'length is not non-negative integer.';
-            if ($this->logger) {
-                $this->logger->error(get_class($this) . '->' . __FUNCTION__ . '() arg ' . $msg, [
-                    'type' => static::LOG_TYPE,
-                    'variable' => [
-                        'length' => $length,
-                    ],
-                ]);
-            }
-            throw new InvalidArgumentException('Arg ' . $msg);
+            throw new InvalidArgumentException('Arg length is not non-negative integer.');
         }
 
         $v = '' . $var;
@@ -344,5 +278,4 @@ class Unicode
             preg_split('//u', substr($hstck, 0, $pos), null, PREG_SPLIT_NO_EMPTY)
         );
     }
-
 }
