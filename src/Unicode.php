@@ -19,17 +19,28 @@ use SimpleComplex\Utils\Exception\InvalidArgumentException;
 class Unicode
 {
     /**
-     * @see GetInstanceOfFamilyTrait
+     * Reference to first object instantiated via the getInstance() method,
+     * no matter which parent/child class the method was/is called on.
      *
-     * First object instantiated via this method, disregarding class called on.
-     * @public
-     * @static
-     * @see GetInstanceOfFamilyTrait::getInstance()
-     *
-     * @function Unicode::getInstance()
-     * @return Unicode
+     * @var Unicode
      */
-    use Traits\GetInstanceOfFamilyTrait;
+    protected static $instance;
+
+    /**
+     * First object instantiated via this method, disregarding class called on.
+     *
+     * @param mixed ...$constructorParams
+     *
+     * @return Unicode
+     *      static, really, but IDE might not resolve that.
+     */
+    public static function getInstance(...$constructorParams)
+    {
+        if (!static::$instance) {
+            static::$instance = new static(...$constructorParams);
+        }
+        return static::$instance;
+    }
 
     /**
      * @see Unicode::getInstance()

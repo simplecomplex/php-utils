@@ -18,8 +18,33 @@ use SimpleComplex\Utils\Exception\ConfigInvalidArgumentException;
  *
  * @package SimpleComplex\Utils
  */
-class EnvVarConfig implements CacheInterface
+class EnvVarConfig implements CacheInterface, ConfigDomainDelimiterInterface
 {
+    /**
+     * Reference to first object instantiated via the getInstance() method,
+     * no matter which parent/child class the method was/is called on.
+     *
+     * @var EnvVarConfig
+     */
+    protected static $instance;
+
+    /**
+     * First object instantiated via this method, disregarding class called on.
+     *
+     * @param mixed ...$constructorParams
+     *
+     * @return EnvVarConfig
+     *      static, really, but IDE might not resolve that.
+     */
+    public static function getInstance(...$constructorParams)
+    {
+        if (!static::$instance) {
+            static::$instance = new static(...$constructorParams);
+        }
+        return static::$instance;
+    }
+
+
     // CacheInterface.----------------------------------------------------------
 
     /**
@@ -149,6 +174,18 @@ class EnvVarConfig implements CacheInterface
     // Custom/business.---------------------------------------------------------
 
     /**
+     * For domain:key namespaced use. Delimiter between domain and key.
+     */
+    const KEY_DOMAIN_DELIMITER = '__';
+
+    /**
+     * @return string
+     */
+    public function keyDomainDelimiter() : string {
+        return static::KEY_DOMAIN_DELIMITER;
+    }
+
+    /**
      * Legal non-alphanumeric characters of a key.
      *
      * These keys are selected because they would work in the most basic cache
@@ -173,7 +210,7 @@ class EnvVarConfig implements CacheInterface
      *
      * @return bool
      */
-    public function keyValidate(mixed $key) : bool
+    public function keyValidate($key) : bool
     {
         $k = '' . $key;
         if (!$k && $k === '') {
@@ -193,14 +230,14 @@ class EnvVarConfig implements CacheInterface
      *
      * @return string
      */
-    public function keyConvert(mixed $key) : string
+    public function keyConvert($key) : string
     {
         $k = '' . $key;
         if (!$k && $k === '') {
             throw new ConfigInvalidArgumentException('Arg key resolves to empty string.');
         }
         $k = str_replace(static::KEY_VALID_NON_ALPHANUM, '_', $k);
-        if (!ctype_alnum($k)) {
+        if (!ctype_alnum(str_replace('_', '', $k))) {
             throw new ConfigInvalidArgumentException('Arg key contains invalid character(s).');
         }
         return $k;

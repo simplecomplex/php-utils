@@ -38,6 +38,7 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
  * @property-read array $inputArguments
  * @property-read array $inputOptions
  * @property-read array $inputOptionsShort
+ * @property-read array $inputErrors
  * @property-read string $currentWorkingDir
  * @property-read string $documentRoot
  * @property-read int $documentRootDistance
@@ -49,14 +50,28 @@ use SimpleComplex\Utils\Exception\OutOfBoundsException;
 class CliEnvironment extends Explorable
 {
     /**
-     * @see GetInstanceOfFamilyTrait
+     * Reference to first object instantiated via the getInstance() method,
+     * no matter which parent/child class the method was/is called on.
      *
-     * First object instantiated via this method, disregarding class called on.
-     * @public
-     * @static
-     * @see GetInstanceOfFamilyTrait::getInstance()
+     * @var CliEnvironment
      */
-    use Traits\GetInstanceOfFamilyTrait;
+    protected static $instance;
+
+    /**
+     * First object instantiated via this method, disregarding class called on.
+     *
+     * @param mixed ...$constructorParams
+     *
+     * @return CliEnvironment
+     *      static, really, but IDE might not resolve that.
+     */
+    public static function getInstance(...$constructorParams)
+    {
+        if (!static::$instance) {
+            static::$instance = new static(...$constructorParams);
+        }
+        return static::$instance;
+    }
 
 
     // General stuff.-----------------------------------------------------------
@@ -146,6 +161,12 @@ class CliEnvironment extends Explorable
 
     /**
      * Read-only.
+     * @var array
+     */
+    protected $inputErrors = [];
+
+    /**
+     * Read-only.
      * @var string
      */
     protected $documentRoot;
@@ -158,6 +179,7 @@ class CliEnvironment extends Explorable
         'inputArguments',
         'inputOptions',
         'inputOptionsShort',
+        'inputErrors',
         'currentWorkingDir',
         'documentRoot',
         'documentRootDistance',
@@ -189,6 +211,10 @@ class CliEnvironment extends Explorable
                     $this->resolveInput();
                 }
                 return $this->{$name};
+            case 'inputErrors':
+                // Copy.
+                $inputErrors = $this->inputErrors;
+                return $inputErrors;
             case 'currentWorkingDir':
                 return $this->getCurrentWorkingDir();
             case 'documentRoot':
@@ -287,7 +313,7 @@ class CliEnvironment extends Explorable
     }
 
     /**
-     * Get commmand help.
+     * Get commmand help. Will echo error message if input errors detected.
      *
      * @param string $preface
      *      Use 'none' for no preface.
@@ -299,6 +325,13 @@ class CliEnvironment extends Explorable
         // Important.
         if (!$this->inputResolved) {
             $this->resolveInput();
+        }
+
+        if ($this->inputErrors) {
+            foreach ($this->inputErrors as $msg) {
+                $this->echoMessage($msg, 'warning');
+            }
+            echo "\n";
         }
 
         if ($preface) {
@@ -328,7 +361,6 @@ class CliEnvironment extends Explorable
                     if ($n_availables == 1 || $command->name != 'help') {
                         $help .= "\n\n" . $command;
                     }
-                    //$help .= $command;
                 }
             }
             // Print general 'help' if none.
@@ -344,7 +376,7 @@ class CliEnvironment extends Explorable
                     );
             }
         }
-        return $preface . $help;
+        return $preface . $help . "\n";
     }
 
     /**
@@ -494,6 +526,11 @@ class CliEnvironment extends Explorable
             return;
         }
 
+        // Get out if previously recorded input error(s).
+        if ($this->inputErrors) {
+            return;
+        }
+
         if ($this->inputArguments) {
             $command_arg = reset($this->inputArguments);
             if (isset($this->commandsAvailable[$command_arg])) {
@@ -515,21 +552,39 @@ class CliEnvironment extends Explorable
                     if ($n_args_available > $n_args_input) {
                         array_splice($command->arguments, $n_args_input);
                     }
+                    if ($n_args_input > $n_args_available) {
+                        $this->inputErrors[] = 'Command \'' . $command_arg . '\' only accepts '
+                            . $n_args_available . ' arguments, saw ' . $n_args_input . '.';
+                    }
+                } else {
+                    $n_args_input = count($this->inputArguments);
+                    if ($n_args_input > 1) {
+                        $this->inputErrors[] = 'Command \'' . $command_arg . '\' accepts no arguments, saw '
+                            . ($n_args_input - 1) . '.';
+                    }
                 }
 
                 $options_selected = [];
                 if ($command->options) {
                     if ($this->inputOptions) {
+                        $input_opts_rest = $this->inputOptions;
                         $opt_keys = array_keys($command->options);
                         foreach ($opt_keys as $opt) {
                             if (isset($this->inputOptions[$opt])) {
                                 // Overwrite the CliCommand option's description
                                 // with input value.
                                 $options_selected[$opt] = $this->inputOptions[$opt];
+                                unset($input_opts_rest[$opt]);
                             }
                         }
+                        if ($input_opts_rest) {
+                            $this->inputErrors[] = 'Command \'' . $command_arg . '\' doesn\'t support option(s): '
+                                . join(', ', array_keys($input_opts_rest)) . '.';
+                        }
+                        unset($input_opts_rest);
                     }
                     if ($command->shortToLongOption && $this->inputOptionsShort) {
+                        $input_opts_rest = [];
                         $opt_keys = array_keys($this->inputOptionsShort);
                         foreach ($opt_keys as $opt_short) {
                             if (isset($command->shortToLongOption[$opt_short])) {
@@ -539,16 +594,32 @@ class CliEnvironment extends Explorable
                                     // description with true.
                                     $options_selected[$opt] = true;
                                 }
+                            } else {
+                                $input_opts_rest[] = $opt_short;
                             }
                         }
+                        if ($input_opts_rest) {
+                            $this->inputErrors[] = 'Command \'' . $command_arg . '\' doesn\'t support short options(s): '
+                                . join(', ', $input_opts_rest) . '.';
+                        }
+                        unset($input_opts_rest);
                     }
                 }
+
+                if ($this->inputErrors) {
+                    return;
+                }
+
                 $command->options = $options_selected;
                 // Not useful any more.
                 $command->shortToLongOption = null;
 
                 $command->setMapped();
                 $this->command = $command;
+                return;
+            }
+            else {
+                $this->inputErrors[] = 'Command \'' . $command_arg . '\' not defined.';
                 return;
             }
         }

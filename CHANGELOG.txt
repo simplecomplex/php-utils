@@ -10,6 +10,10 @@ SimpleComplex/Utils 1.x, 2017-06-05
   the object it is used in.
 - Environment variable based configuration class, implementing PSR Simple Cache
   interface.
+- EnvVarConfig also implement config-domain-delimiter interface.
+- Stopped including getInstance() trait; IDE cannot resolve classes beyond
+  1 level of reference.
+- CliEnvironment now records input errors and aborts mapping command on such.
 
 SimpleComplex/Utils 1.x, 2017-06-04
 -----------------------------------
