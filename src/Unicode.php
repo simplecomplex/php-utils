@@ -25,6 +25,9 @@ class Unicode
      * @public
      * @static
      * @see GetInstanceOfFamilyTrait::getInstance()
+     *
+     * @function Unicode::getInstance()
+     * @return Unicode
      */
     use Traits\GetInstanceOfFamilyTrait;
 
@@ -33,6 +36,8 @@ class Unicode
      */
     public function __construct()
     {
+        // Init class-wide.
+        static::nativeSupport();
     }
 
     /**
