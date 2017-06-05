@@ -5,6 +5,9 @@ SimpleComplex/Utils 1.x, 2017-06-05
   and the extra complexity of a dependency is (was) considerable.
 - CliEnvironment allow extending constructur to provide dependency by other
   means.
+- getInstance() in trait document return value 'object' (not 'static'); or IDE
+  might not resolve class when instance is a member of another object than
+  the object it is used in.
 
 SimpleComplex/Utils 1.x, 2017-06-04
 -----------------------------------

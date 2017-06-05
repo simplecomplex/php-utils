@@ -23,7 +23,7 @@ trait GetInstanceOfFamilyTrait
      * Reference to first object instantiated via the getInstance() method,
      * no matter which parent/child class the method was/is called on.
      *
-     * @var static|null
+     * @var object
      */
     protected static $instance;
 
@@ -32,7 +32,8 @@ trait GetInstanceOfFamilyTrait
      *
      * @param mixed ...$constructorParams
      *
-     * @return static
+     * @return object
+     *      static, really, but IDE might not resolve that.
      */
     public static function getInstance(...$constructorParams)
     {

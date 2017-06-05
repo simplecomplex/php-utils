@@ -32,7 +32,7 @@ trait GetInstanceOfClassTrait
      * is called on (not just any last instance).
      *
      * @var array {
-     *      @var Object $className
+     *      @var object $className
      * }
      */
     protected static $instanceOfClass = [];
@@ -42,7 +42,8 @@ trait GetInstanceOfClassTrait
      *
      * @param mixed ...$constructorParams
      *
-     * @return static
+     * @return object
+     *      static, really, but IDE might not resolve that.
      */
     public static function getInstance(...$constructorParams)
     {
