@@ -213,8 +213,8 @@ class CliEnvironment extends Explorable
                 return $this->{$name};
             case 'inputErrors':
                 // Copy.
-                $inputErrors = $this->inputErrors;
-                return $inputErrors;
+                $input_errors = $this->inputErrors;
+                return $input_errors;
             case 'currentWorkingDir':
                 return $this->getCurrentWorkingDir();
             case 'documentRoot':
