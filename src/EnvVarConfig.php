@@ -203,7 +203,7 @@ class EnvVarConfig implements CacheInterface, ConfigDomainDelimiterInterface
     ];
 
     /**
-     * Checks that stringified key is non-empty and only contains legal chars.
+     * Checks that key is string, and that length and content is legal.
      *
      * @param string $key
      *
@@ -211,7 +211,8 @@ class EnvVarConfig implements CacheInterface, ConfigDomainDelimiterInterface
      */
     public function keyValidate(string $key) : bool
     {
-        if (!$key && $key === '') {
+        $le = strlen($key);
+        if ($le < 2 || $le > 64) {
             return false;
         }
         // Faster than a regular expression.

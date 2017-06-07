@@ -171,6 +171,9 @@ class CliEnvironment extends Explorable
      */
     protected $documentRoot;
 
+
+    // Explorable.--------------------------------------------------------------
+
     /**
      * @var array
      */
@@ -186,12 +189,12 @@ class CliEnvironment extends Explorable
     ];
 
     /**
-     * @throws OutOfBoundsException
-     *      If no such instance property.
-     *
      * @param string $name
      *
      * @return mixed
+     *
+     * @throws OutOfBoundsException
+     *      If no such instance property.
      */
     public function __get(string $name)
     {
@@ -228,21 +231,27 @@ class CliEnvironment extends Explorable
     /**
      * All accessible members are read-only.
      *
-     * @throws RuntimeException
-     *      Every time.
-     *
      * @param string $name
      * @param mixed $value
      *
      * @return void
+     *
+     * @throws OutOfBoundsException
+     *      If no such instance property.
+     * @throws RuntimeException
+     *      If that instance property is read-only.
      */
     public function __set(string $name, $value) /*: void*/
     {
+        if (isset($this->explorableIndex[$name])) {
+            throw new OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
+        }
         throw new RuntimeException(get_class($this) . ' instance property[' . $name . '] is read-only.');
     }
 
     /**
      * @see \Iterator::current()
+     * @see Explorable::current()
      *
      * @return mixed
      */

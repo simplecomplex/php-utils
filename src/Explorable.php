@@ -102,4 +102,32 @@ abstract class Explorable implements \Countable, \Iterator
         $key = key($this->explorableIndex);
         return $key !== null && $key < count($this->explorableIndex);
     }
+
+
+    // Do implement magic getter and setter if any exposed property is protected.
+
+    /**
+     * @param $name
+     *
+     * @return mixed
+     *
+     * @throws \OutOfBoundsException
+     *      If no such instance property exposed.
+     *
+     * abstract function __get(string $name);
+     */
+
+    /**
+     * @param string $name
+     * @param mixed $value
+     *
+     * @return void
+     *
+     * @throws \OutOfBoundsException
+     *      If no such instance property.
+     * @throws \RuntimeException
+     *      If that instance property is read-only.
+     *
+     * abstract function __set(string $name, $value);
+     */
 }
