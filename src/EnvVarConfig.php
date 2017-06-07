@@ -205,19 +205,17 @@ class EnvVarConfig implements CacheInterface, ConfigDomainDelimiterInterface
     /**
      * Checks that stringified key is non-empty and only contains legal chars.
      *
-     * @param mixed $key
-     *      Gets stringified.
+     * @param string $key
      *
      * @return bool
      */
-    public function keyValidate($key) : bool
+    public function keyValidate(string $key) : bool
     {
-        $k = '' . $key;
-        if (!$k && $k === '') {
+        if (!$key && $key === '') {
             return false;
         }
         // Faster than a regular expression.
-        return !!ctype_alnum('A' . str_replace(static::KEY_VALID_NON_ALPHANUM, '', $k));
+        return !!ctype_alnum('A' . str_replace(static::KEY_VALID_NON_ALPHANUM, '', $key));
     }
 
     /**
@@ -225,21 +223,19 @@ class EnvVarConfig implements CacheInterface, ConfigDomainDelimiterInterface
      *
      * @throws ConfigInvalidArgumentException
      *
-     * @param mixed $key
-     *      Gets stringified.
+     * @param string $key
      *
      * @return string
      */
-    public function keyConvert($key) : string
+    public function keyConvert(string $key) : string
     {
-        $k = '' . $key;
-        if (!$k && $k === '') {
-            throw new ConfigInvalidArgumentException('Arg key resolves to empty string.');
+        if (!$key && $key === '') {
+            throw new ConfigInvalidArgumentException('Arg key is empty.');
         }
-        $k = str_replace(static::KEY_VALID_NON_ALPHANUM, '_', $k);
-        if (!ctype_alnum(str_replace('_', '', $k))) {
+        $key = str_replace(static::KEY_VALID_NON_ALPHANUM, '_', $key);
+        if (!ctype_alnum(str_replace('_', '', $key))) {
             throw new ConfigInvalidArgumentException('Arg key contains invalid character(s).');
         }
-        return $k;
+        return $key;
     }
 }
