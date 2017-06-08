@@ -2,7 +2,7 @@
     "name": "simplecomplex/utils",
     "type": "library",
     "description": "Basic utilities: unicode, sanitize, cli.",
-    "keywords": ["utils","strict types"],
+    "keywords": ["utils","strict types", "PHP"],
     "homepage": "https://github.com/simplecomplex/php-utils",
     "license": "MIT",
     "authors": [

@@ -109,7 +109,7 @@ abstract class Explorable implements \Countable, \Iterator
     /**
      * @param $name
      *
-     * @return mixed
+     * @return mixed|null
      *
      * @throws \OutOfBoundsException
      *      If no such instance property exposed.
@@ -119,7 +119,7 @@ abstract class Explorable implements \Countable, \Iterator
 
     /**
      * @param string $name
-     * @param mixed $value
+     * @param mixed|null $value
      *
      * @return void
      *

@@ -196,7 +196,7 @@ class Sanitize
         }
 
         // If within system precision, just string it.
-        return ($v > -$precision && $v < $precision) ? $v : number_format($v, 0, '.', '');
+        return ($v > -$precision && $v < $precision) ? $v : number_format((float) $v, 0, '.', '');
     }
 
     /**

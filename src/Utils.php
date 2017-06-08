@@ -1,0 +1,130 @@
+<?php
+/**
+ * SimpleComplex PHP Utils
+ * @link      https://github.com/simplecomplex/php-utils
+ * @copyright Copyright (c) 2017 Jacob Friis Mathiasen
+ * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
+ */
+declare(strict_types=1);
+
+namespace SimpleComplex\Utils;
+
+use SimpleComplex\Utils\Exception\OutOfBoundsException;
+
+/**
+ * Various helpers that to not deserve a class of their own.
+ *
+ * @package SimpleComplex\Utils
+ */
+class Utils
+{
+    /**
+     * Reference to first object instantiated via the getInstance() method,
+     * no matter which parent/child class the method was/is called on.
+     *
+     * @var Utils
+     */
+    protected static $instance;
+
+    /**
+     * First object instantiated via this method, disregarding class called on.
+     *
+     * @param mixed ...$constructorParams
+     *
+     * @return Utils
+     *      static, really, but IDE might not resolve that.
+     */
+    public static function getInstance(...$constructorParams)
+    {
+        if (!static::$instance) {
+            static::$instance = new static(...$constructorParams);
+        }
+        return static::$instance;
+    }
+
+    /**
+     * Fixes that native parse_ini_file() doesn't support raw + typed scanning.
+     *
+     * Inserting values of arbitrary constants into arbitrary variables seem
+     * anything but safe; typical old-school PHP idio##.
+     *
+     * Using native parse_ini_string/parse_ini_file() with anything but
+     * INI_SCANNER_RAW also do weird things to characters
+     * ?{}|&~![()^"
+     * Those characters have - undocumented - 'special meaning'.
+     *
+     * @see parse_ini_file()
+     *
+     * @param string $filename
+     * @param bool $processSections
+     * @param bool $typed
+     *      False: like INI_SCANNER_RAW; default.
+     *      True: like INI_SCANNER_RAW | INI_SCANNER_TYPED; but without failure.
+     *
+     * @return array|bool
+     *      False on error.
+     */
+    public function parseIniFile(string $filename, bool $processSections = false, bool $typed = false)
+    {
+        $arr = parse_ini_file($filename, $processSections, INI_SCANNER_RAW);
+        if (!$arr && !is_array($arr)) {
+            return false;
+        }
+        if ($typed) {
+            $this->typeArrayValues($arr);
+        }
+        return $arr;
+    }
+
+    /**
+     * @var int
+     */
+    const ARRAY_RECURSION_LIMIT = 10;
+
+    /**
+     * Casts bucket values that are 'null', 'NULL', 'true', 'false', 'numeric',
+     * recursively.
+     *
+     * @param array &$arr
+     *      By reference.
+     * @param int $depth
+     *
+     * @return void
+     *
+     * @throws OutOfBoundsException
+     *      Exceeded recursion limit.
+     */
+    protected function typeArrayValues(array &$arr, int $depth = 0) /*:void*/
+    {
+        if ($depth > static::ARRAY_RECURSION_LIMIT) {
+            throw new OutOfBoundsException(
+                'Stopped recursive typing of array values at limit[' . static::ARRAY_RECURSION_LIMIT . '].'
+            );
+        }
+        foreach ($arr as &$val) {
+            if ($val !== '') {
+                if (is_array($val)) {
+                    $this->typeArrayValues($val, $depth + 1);
+                } else {
+                    switch ('' . $val) {
+                        case 'null':
+                        case 'NULL':
+                            $val = null;
+                            break;
+                        case 'true':
+                            $val = true;
+                            break;
+                        case 'false':
+                            $val = false;
+                            break;
+                        default:
+                            if (is_numeric($val)) {
+                                $val = ctype_digit($val) ? (int) $val : (float) $val;
+                            }
+                    }
+                }
+            }
+        }
+        unset($val);
+    }
+}
