@@ -77,11 +77,6 @@ class CliEnvironment extends Explorable
     // General stuff.-----------------------------------------------------------
 
     /**
-     * @var Sanitize
-     */
-    protected $sanitize;
-
-    /**
      * @var string
      */
     const CLASS_CLI_COMMAND = CliCommand::class;
@@ -113,6 +108,8 @@ class CliEnvironment extends Explorable
     ];
 
     /**
+     * @uses Sanitize::cli()
+     *
      * @param mixed $message
      *      Gets stringified, and sanitized.
      *
@@ -129,7 +126,7 @@ class CliEnvironment extends Explorable
             }
             echo static::MESSAGE_STATUS[$status] . ' ';
         }
-        echo $this->sanitize->cli('' . $message) . "\n";
+        echo Sanitize::getInstance()->cli('' . $message) . "\n";
     }
 
 
@@ -296,10 +293,10 @@ class CliEnvironment extends Explorable
         }
 
         // Dependencies.--------------------------------------------------------
-        // Extending class' constructor might provide instance by other means.
-        if (!$this->sanitize) {
-            $this->sanitize = Sanitize::getInstance();
-        }
+        /**
+         * @uses Sanitize
+         * @see CliEnvironment::echoMessage
+         */
 
         // Business.------------------------------------------------------------
         if ($commandsAvailable) {

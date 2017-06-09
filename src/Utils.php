@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Exception\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\OutOfBoundsException;
 
 /**
@@ -40,6 +41,18 @@ class Utils
             static::$instance = new static(...$constructorParams);
         }
         return static::$instance;
+    }
+
+    /**
+     * is_iterable() for PHP <7.1.
+     *
+     * @param $var
+     *
+     * @return bool
+     */
+    public function isIterable($var)
+    {
+        return is_array($var) || is_a($var, \Traversable::class);
     }
 
     /**
@@ -127,4 +140,110 @@ class Utils
         }
         unset($val);
     }
+
+    /**
+     * Convert array or iterable object to ini-file formatted string.
+     *
+     * @param iterable $collection
+     * @param bool $useSections
+     *
+     * @return string
+     *
+     * @throws \TypeError
+     *      Arg collection isn't iterable.
+     */
+    public function iterableToIniString(/*iterable*/ $collection, bool $useSections = false) : string
+    {
+        // PHP <7.1.
+        if (!$this->isIterable($collection)) {
+            throw new \TypeError(
+                'Arg collection type[' . (!is_object($collection) ? gettype($collection) : get_class($collection))
+                . '] is not an iterable.'
+            );
+        }
+
+        if (!$useSections) {
+            return $this->iterableToIniRecursive($collection);
+        }
+        $buffer = '';
+        foreach ($collection as $section => $children) {
+            $buffer .= '[' . $section . ']' . "\n";
+            foreach ($children as $values) {
+                $buffer .= $this->iterableToIniRecursive($values);
+            }
+            $buffer .= "\n";
+        }
+        return $buffer;
+    }
+
+    /**
+     * @param iterable $collection
+     * @param string|int|null $parentKey
+     *
+     * @return string
+     *
+     * @throws OutOfBoundsException
+     *      The ini format only supports two layers below sections.
+     * @throws InvalidArgumentException
+     *      A bucket value isn't scalar, iterable or null.
+     */
+    protected function iterableToIniRecursive(/*iterable*/ $collection, $parentKey = null) : string
+    {
+        $already_child = $parentKey !== null;
+        $buffer = '';
+        foreach ($collection as $key => $val) {
+            $type = gettype($val);
+            switch ($type) {
+                case 'boolean':
+                    $v = !$val ? 'false' : 'true';
+                    break;
+                case 'integer':
+                case 'double':
+                case 'float':
+                    $v = '' . $val;
+                    break;
+                case 'string':
+                    $v = $val;
+                    break;
+                case 'null':
+                case 'NULL':
+                    $v = 'null';
+                    break;
+                case 'array':
+                    if ($already_child) {
+                        throw new OutOfBoundsException(
+                            'Ini format only supports two layers below section, iterable bucket['
+                            . $key . '] type[' . $type . '] should be scalar or null.'
+                        );
+                    }
+                    $buffer .= $this->iterableToIniRecursive($val, $key);
+                    continue 2;
+                case 'object':
+                    if (!is_a($val, \Traversable::class)) {
+                        throw new InvalidArgumentException(
+                            'Iterable bucket[' . $key . '] type[' . get_class($val) . '] is not supported.'
+                        );
+                    }
+                    if ($already_child) {
+                        throw new OutOfBoundsException(
+                            'Ini format only supports two layers below section, iterable bucket['
+                            . $key . '] type[' . get_class($val) . '] should be scalar or null.'
+                        );
+                    }
+                    $buffer .= $this->iterableToIniRecursive($val, $key);
+                    continue 2;
+                default:
+                    throw new InvalidArgumentException(
+                        'Iterable bucket[' . $key . '] type[' . $type . '] is not supported.'
+                    );
+            }
+            if (!$already_child) {
+                $buffer .= $key . ' = ' . $v . "\n";
+            } else {
+                $buffer .= $parentKey . '[' . $key . '] = ' . $v . "\n";
+            }
+        }
+        return $buffer;
+    }
+
 }
