@@ -9,8 +9,6 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use SimpleComplex\Utils\Exception\InvalidArgumentException;
-
 /**
  * Sanitize strings, numbers et al.
  *
@@ -65,13 +63,13 @@ class Sanitize
     /**
      * Full ASCII; 0-127.
      *
-     * @throws \RuntimeException
-     *      If native regex function fails.
-     *
      * @param mixed $var
      *      Gets stringified.
      *
      * @return string
+     *
+     * @throws \RuntimeException
+     *      If native regex function fails.
      */
     public function ascii($var) : string
     {
@@ -103,14 +101,14 @@ class Sanitize
     /**
      * ASCII printable that allows newline and (default) carriage return.
      *
-     * @throws \RuntimeException
-     *      If native regex function fails.
-     *
      * @param mixed $var
      *      Gets stringified.
      * @param bool $noCarriageReturn
      *
      * @return string
+     *
+     * @throws \RuntimeException
+     *      If native regex function fails.
      */
     public function asciiMultiLine($var, $noCarriageReturn = false) : string
     {
@@ -176,13 +174,13 @@ class Sanitize
      * Convert number to string avoiding E-notation for numbers outside system
      * precision range.
      *
-     * @throws InvalidArgumentException
-     *      If arg var isn't integer/float nor number-like when stringified.
-     *
      * @param mixed $var
      *      Gets stringified.
      *
      * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      If arg var isn't integer/float nor number-like when stringified.
      */
     public function numberToString($var) : string
     {
@@ -192,7 +190,7 @@ class Sanitize
         }
         $v = '' . $var;
         if (!is_numeric($v)) {
-            throw new InvalidArgumentException('Arg var is not integer/float nor number-like when stringified.');
+            throw new \InvalidArgumentException('Arg var is not integer/float nor number-like when stringified.');
         }
 
         // If within system precision, just string it.

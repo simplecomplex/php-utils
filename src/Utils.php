@@ -9,11 +9,6 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use SimpleComplex\Utils\Exception\InvalidArgumentException;
-use SimpleComplex\Utils\Exception\LogicException;
-use SimpleComplex\Utils\Exception\OutOfBoundsException;
-use SimpleComplex\Utils\Exception\RuntimeException;
-
 /**
  * Various helpers that to not deserve a class of their own.
  *
@@ -75,30 +70,30 @@ class Utils
      *
      * @return void
      *
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      *      If arg absolutePath isn't absolute.
      *      If a directory part is . or ..
      *      If arg mode isn't at least 0100.
-     * @throws RuntimeException
+     * @throws \RuntimeException
      *      If an existing path part is file, not directory.
      *      Failing to create directory.
      *      Failing to chmod directory.
-     * @throws OutOfBoundsException
+     * @throws \OutOfBoundsException
      *      Exceeded maximum recursion limit, possibly due to too many dir parts
      *      in arg absolutePath.
-     * @throws LogicException
+     * @throws \LogicException
      *      Exceeded maximum recursion limit, positively due to algo error.
      */
     public function ensurePath(string $absolutePath, int $mode = 0700) /*:void*/
     {
         if (strlen($absolutePath) < 2) {
-            throw new InvalidArgumentException(
+            throw new \InvalidArgumentException(
                 'Arg absolutePath cannot be shorter than 2 chars, path[' . $absolutePath . '].'
             );
         }
         // 0100 ~ 64.
         if (!$mode || $mode < 64) {
-            throw new InvalidArgumentException(
+            throw new \InvalidArgumentException(
                 'Arg mode must be positive and consist of leading zero plus minimum 3 digits, mode[' . $mode . '].'
             );
         }
@@ -112,14 +107,14 @@ class Utils
             if (DIRECTORY_SEPARATOR == '\\') {
                 $path = str_replace('\\', '/', $absolutePath);
                 if ($path{1} !== ':') {
-                    throw new InvalidArgumentException(
+                    throw new \InvalidArgumentException(
                         'Arg absolutePath is not absolute, path[' . $absolutePath . '].'
                     );
                 }
                 $parts = explode('/', $path);
             } else {
                 if ($absolutePath{0} !== '/') {
-                    throw new InvalidArgumentException(
+                    throw new \InvalidArgumentException(
                         'Arg absolutePath is not absolute, path[' . $absolutePath . '].'
                     );
                 }
@@ -133,7 +128,7 @@ class Utils
             $limit = 0;
             do {
                 if ((++$limit) > static::ENSURE_PATH_LIMIT) {
-                    throw new OutOfBoundsException(
+                    throw new \OutOfBoundsException(
                         'Exceeded maximum path recursion limit[' . static::ENSURE_PATH_LIMIT . '].'
                     );
                 }
@@ -142,32 +137,32 @@ class Utils
             } while (!file_exists($existing));
 
             if (!is_dir($existing)) {
-                throw new RuntimeException('Ancestor path exists but is not directory[' . $existing . '].');
+                throw new \RuntimeException('Ancestor path exists but is not directory[' . $existing . '].');
             }
             do {
                 $limit = 0;
                 if ((++$limit) > static::ENSURE_PATH_LIMIT) {
-                    throw new LogicException(
+                    throw new \LogicException(
                         'Exceeded maximum path recursion limit[' . static::ENSURE_PATH_LIMIT . '].'
                     );
                 }
                 $dir = array_pop($trailing);
                 $existing .= '/' . $dir;
                 if ($dir == '.' || $dir == '..') {
-                    throw new InvalidArgumentException(
+                    throw new \InvalidArgumentException(
                         'Arg absolutePath contains . or .. directory part[' . $existing . '].'
                     );
                 }
                 if (!mkdir($existing, $mode)) {
-                    throw new RuntimeException('Failed to create dir[' . $existing . '].');
+                    throw new \RuntimeException('Failed to create dir[' . $existing . '].');
                 }
                 if ($group_write && !chmod($existing, $mode)) {
-                    throw new RuntimeException('Failed to chmod dir[' . $existing . '] to mode[' . $mode . '].');
+                    throw new \RuntimeException('Failed to chmod dir[' . $existing . '] to mode[' . $mode . '].');
                 }
             } while ($trailing);
         }
         elseif (!is_dir($absolutePath)) {
-            throw new RuntimeException('Path exists but is not directory[' . $absolutePath . '].');
+            throw new \RuntimeException('Path exists but is not directory[' . $absolutePath . '].');
         }
     }
 
@@ -220,13 +215,13 @@ class Utils
      *
      * @return void
      *
-     * @throws OutOfBoundsException
+     * @throws \OutOfBoundsException
      *      Exceeded recursion limit.
      */
     protected function typeArrayValues(array &$arr, int $depth = 0) /*:void*/
     {
         if ($depth > static::ARRAY_RECURSION_LIMIT) {
-            throw new OutOfBoundsException(
+            throw new \OutOfBoundsException(
                 'Stopped recursive typing of array values at limit[' . static::ARRAY_RECURSION_LIMIT . '].'
             );
         }
@@ -298,9 +293,9 @@ class Utils
      *
      * @return string
      *
-     * @throws OutOfBoundsException
+     * @throws \OutOfBoundsException
      *      The ini format only supports two layers below sections.
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      *      A bucket value isn't scalar, iterable or null.
      */
     protected function iterableToIniRecursive(/*iterable*/ $collection, $parentKey = null) : string
@@ -327,7 +322,7 @@ class Utils
                     break;
                 case 'array':
                     if ($already_child) {
-                        throw new OutOfBoundsException(
+                        throw new \OutOfBoundsException(
                             'Ini format only supports two layers below section, iterable bucket['
                             . $key . '] type[' . $type . '] should be scalar or null.'
                         );
@@ -336,12 +331,12 @@ class Utils
                     continue 2;
                 case 'object':
                     if (!is_a($val, \Traversable::class)) {
-                        throw new InvalidArgumentException(
+                        throw new \InvalidArgumentException(
                             'Iterable bucket[' . $key . '] type[' . get_class($val) . '] is not supported.'
                         );
                     }
                     if ($already_child) {
-                        throw new OutOfBoundsException(
+                        throw new \OutOfBoundsException(
                             'Ini format only supports two layers below section, iterable bucket['
                             . $key . '] type[' . get_class($val) . '] should be scalar or null.'
                         );
@@ -349,7 +344,7 @@ class Utils
                     $buffer .= $this->iterableToIniRecursive($val, $key);
                     continue 2;
                 default:
-                    throw new InvalidArgumentException(
+                    throw new \InvalidArgumentException(
                         'Iterable bucket[' . $key . '] type[' . $type . '] is not supported.'
                     );
             }

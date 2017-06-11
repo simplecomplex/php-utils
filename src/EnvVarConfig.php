@@ -222,11 +222,11 @@ class EnvVarConfig implements CacheInterface, ConfigDomainDelimiterInterface
     /**
      * Replaces all legal non-alphanumeric chars with underscore.
      *
-     * @throws ConfigInvalidArgumentException
-     *
      * @param string $key
      *
      * @return string
+     *
+     * @throws ConfigInvalidArgumentException
      */
     public function keyConvert(string $key) : string
     {

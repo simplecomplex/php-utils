@@ -9,8 +9,6 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use SimpleComplex\Utils\Exception\InvalidArgumentException;
-
 /**
  * Cli command specification.
  *
@@ -83,16 +81,18 @@ class CliCommand extends Explorable
      * @param array $shortToLongOption
      *      Key: short option. 'h' and 'H' are not allowed.
      *      Value: option name.
+     *
+     * @throws \InvalidArgumentException
      */
     public function __construct(
         string $name, string $description, array $arguments = [], array $options = [], array $shortToLongOption = []
     ) {
         if (!$name || !preg_match(static::REGEX['name'], $name)) {
-            throw new InvalidArgumentException('Arg name is not a valid command name, regex ' . static::REGEX['name'] . '.');
+            throw new \InvalidArgumentException('Arg name is not a valid command name, regex ' . static::REGEX['name'] . '.');
         }
         $this->name = $name;
         if (!$description) {
-            throw new InvalidArgumentException('Arg description is not non-empty.');
+            throw new \InvalidArgumentException('Arg description is not non-empty.');
         }
         $this->description = $description;
 
@@ -102,11 +102,11 @@ class CliCommand extends Explorable
             $arg_name = '' . $k;
             $arg_dscrptn = '' . $v;
             if (!$arg_name || !preg_match(static::REGEX['argument'], $arg_name)) {
-                throw new InvalidArgumentException('Arg arguments element . ' . $i
+                throw new \InvalidArgumentException('Arg arguments element . ' . $i
                     . ' key (argument name) is not valid; regex ' . static::REGEX['argument'] . '.');
             }
             if (!$arg_dscrptn) {
-                throw new InvalidArgumentException('Arg arguments element . ' . $i
+                throw new \InvalidArgumentException('Arg arguments element . ' . $i
                     . ' value (argument description) is not non-empty.');
             }
             $this->arguments[$arg_name] = $arg_dscrptn;
@@ -118,11 +118,11 @@ class CliCommand extends Explorable
             $opt_name = '' . $k;
             $opt_dscrptn = '' . $v;
             if (!$opt_name || !preg_match(static::REGEX['option'], $opt_name)) {
-                throw new InvalidArgumentException('Arg options element . ' . $i
+                throw new \InvalidArgumentException('Arg options element . ' . $i
                     . ' key (option name) is not valid; regex ' . static::REGEX['option'] . '.');
             }
             if (!$opt_dscrptn) {
-                throw new InvalidArgumentException('Arg options element . ' . $i
+                throw new \InvalidArgumentException('Arg options element . ' . $i
                     . ' value (option description) is not non-empty.');
             }
             $this->options[$opt_name] = $opt_dscrptn;
@@ -134,15 +134,15 @@ class CliCommand extends Explorable
             $short = '' . $k;
             $opt_name = '' . $v;
             if (strlen($short) != 1 || !preg_match(static::REGEX['shortOpts'], $short)) {
-                throw new InvalidArgumentException('Arg shortToLongOption element . ' . $i
+                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
                     . ' key (short) is not a single ASCII letter.');
             }
             if (!$opt_name || !preg_match(static::REGEX['option'], $opt_name)) {
-                throw new InvalidArgumentException('Arg shortToLongOption element . ' . $i
+                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
                     . ' value (option name) is not valid; regex ' . static::REGEX['option'] . '.');
             }
             if (!isset($this->options[$opt_name])) {
-                throw new InvalidArgumentException('Arg shortToLongOption element . ' . $i
+                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
                     . ' value (option name) is not declared as option in the (previous) options arg.');
             }
             $this->shortToLongOption[$short] = $opt_name;

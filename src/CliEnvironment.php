@@ -10,9 +10,6 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 use SimpleComplex\Utils\Exception\ConfigurationException;
-use SimpleComplex\Utils\Exception\LogicException;
-use SimpleComplex\Utils\Exception\RuntimeException;
-use SimpleComplex\Utils\Exception\OutOfBoundsException;
 
 /**
  * CLI PHP utility.
@@ -190,7 +187,7 @@ class CliEnvironment extends Explorable
      *
      * @return mixed
      *
-     * @throws OutOfBoundsException
+     * @throws \OutOfBoundsException
      *      If no such instance property.
      */
     public function __get(string $name)
@@ -222,7 +219,7 @@ class CliEnvironment extends Explorable
             case 'documentRootDistance':
                 return $this->getDocumentRootDistance();
         }
-        throw new OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
+        throw new \OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
     }
 
     /**
@@ -233,17 +230,17 @@ class CliEnvironment extends Explorable
      *
      * @return void
      *
-     * @throws OutOfBoundsException
+     * @throws \OutOfBoundsException
      *      If no such instance property.
-     * @throws RuntimeException
+     * @throws \RuntimeException
      *      If that instance property is read-only.
      */
     public function __set(string $name, $value) /*: void*/
     {
         if (isset($this->explorableIndex[$name])) {
-            throw new OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
+            throw new \OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
         }
-        throw new RuntimeException(get_class($this) . ' instance property[' . $name . '] is read-only.');
+        throw new \RuntimeException(get_class($this) . ' instance property[' . $name . '] is read-only.');
     }
 
     /**
@@ -277,19 +274,19 @@ class CliEnvironment extends Explorable
     protected $commandHelp;
 
     /**
-     * @throws LogicException
-     *      If not in cli mode.
-     *
      * @see CliEnvironment::getInstance()
      * @see CliEnvironment::setCommandsAvailable()
      *
      * @param CliCommand[] ...$commandsAvailable
      *      Any number of, also none.
+     *
+     * @throws \LogicException
+     *      If not in cli mode.
      */
     public function __construct(CliCommand ...$commandsAvailable)
     {
         if (!static::cli()) {
-            throw new LogicException('This class is for cli mode only.');
+            throw new \LogicException('This class is for cli mode only.');
         }
 
         // Dependencies.--------------------------------------------------------
@@ -305,8 +302,6 @@ class CliEnvironment extends Explorable
     }
 
     /**
-     * Only allowed once, throws exception on second call.
-     *
      * @param CliCommand[] ...$commandsAvailable
      *
      * @return void
@@ -392,7 +387,7 @@ class CliEnvironment extends Explorable
      * - 'true'|'false': bool
      * - stringed int: int
      *
-     * @throww RuntimeException
+     * @throww \RuntimeException
      *      If globals argv is empty or non-existent.
      *
      * @return void
@@ -400,7 +395,7 @@ class CliEnvironment extends Explorable
     protected function resolveInput() /*: void*/
     {
         if (empty($GLOBALS['argv'])) {
-            throw new RuntimeException(
+            throw new \RuntimeException(
                 'Global argv '
                 . (isset($GLOBALS['argv']) ?
                     ' is empty, should at least contain a bucket holding name of executed script file.' :
@@ -645,14 +640,14 @@ class CliEnvironment extends Explorable
      * If document root is symlinked, this returns the resolved path,
      * not the symbolic link.
      *
+     * @return string
+     *
      * @throws ConfigurationException
      *      If current working dir cannot be resolved.
      *      Citing http://php.net/manual/en/function.getcwd.php:
      *      On some Unix variants, getcwd() will return false if any one of the
      *      parent directories does not have the readable or search mode set,
      *      even if the current directory does.
-     *
-     * @return string
      */
     protected function getCurrentWorkingDir() : string
     {
@@ -699,9 +694,6 @@ class CliEnvironment extends Explorable
      * See the files in this library's doc/.document-root-files dir.
      *
      * Document root in the root of the file system is not supported.
-     *
-     * @throws ConfigurationException
-     *      Propagated.
      * @see Cli::getCurrentWorkingDir()
      *
      * @param bool $noTaintEnvironment
@@ -709,6 +701,9 @@ class CliEnvironment extends Explorable
      *
      * @return string
      *      Empty: document root cannot be resolved.
+     *
+     * @throws ConfigurationException
+     *      Propagated.
      */
     protected function getDocumentRoot($noTaintEnvironment = false) : string
     {
@@ -751,9 +746,6 @@ class CliEnvironment extends Explorable
      *  - positive: you're below (right of) document root
      *  - negative: you're above (left of) document root
      *  - null: not checked yet, or failed to find document root
-     *
-     * @throws ConfigurationException
-     *      Propagated.
      * @see Cli::getCurrentWorkingDir()
      *
      * @param bool $noTaintEnvironment
@@ -762,6 +754,9 @@ class CliEnvironment extends Explorable
      * @return int|null
      *      Null: document root can't be determined, or you're not in the same
      *          file system branch as document root.
+     *
+     * @throws ConfigurationException
+     *      Propagated.
      */
     protected function getDocumentRootDistance($noTaintEnvironment = false) /*: ?int*/
     {
@@ -800,13 +795,6 @@ class CliEnvironment extends Explorable
 
     /**
      * Change directory - chdir() - until at document root.
-     *
-     * @throws ConfigurationException
-     *      If document root cannot be resolved; that is:
-     *      'DOCUMENT_ROOT' environment var is non-existent/empty and there
-     *      hasn't been placed a .document_root file in document root.
-     * @throws ConfigurationException
-     *      Propagated.
      * @see Cli::getCurrentWorkingDir()
      *
      * @param bool $noTaintEnvironment
@@ -815,6 +803,13 @@ class CliEnvironment extends Explorable
      * @return bool
      *      False: document root can't be determined, or you're not in the same
      *          file system branch as document root, or a chdir() call fails.
+     *
+     * @throws ConfigurationException
+     *      If document root cannot be resolved; that is:
+     *      'DOCUMENT_ROOT' environment var is non-existent/empty and there
+     *      hasn't been placed a .document_root file in document root.
+     * @throws ConfigurationException
+     *      Propagated.
      */
     public function changeDirDocumentRoot($noTaintEnvironment = false) : bool
     {

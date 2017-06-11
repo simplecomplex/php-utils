@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2017-06-11
+-----------------------------------
+- New class Utils, for helpers that to not deserve a class of their own.
+- Don't declare own exception types for no reason.
+
 SimpleComplex/Utils 1.x, 2017-06-05
 -----------------------------------
 - Unicode and Sanitize shan't use a logger. The benefit of logging argument

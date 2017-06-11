@@ -9,8 +9,6 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use SimpleComplex\Utils\Exception\InvalidArgumentException;
-
 /**
  * Unicode string methods.
  *
@@ -128,9 +126,6 @@ class Unicode
      *
      * Does not check if arg $v is valid UTF-8.
      *
-     * @throws InvalidArgumentException
-     *      Bad arg start or length.
-     *
      * @param mixed $var
      *      Gets stringified.
      * @param int $start
@@ -138,14 +133,17 @@ class Unicode
      *      Default: null; until end of arg str.
      *
      * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      Bad arg start or length.
      */
     public function substr($var, int $start, /*?int*/ $length = null) : string
     {
         if ($start < 0) {
-            throw new InvalidArgumentException('Arg start is not non-negative integer.');
+            throw new \InvalidArgumentException('Arg start is not non-negative integer.');
         }
         if ($length !== null && (!is_int($length) || $length < 0)) {
-            throw new InvalidArgumentException('Arg length is not non-negative integer or null.');
+            throw new \InvalidArgumentException('Arg length is not non-negative integer or null.');
         }
         $v = '' . $var;
         if (!$length || $v === '') {
@@ -205,20 +203,20 @@ class Unicode
      *
      * Does not check if arg $v is valid UTF-8.
      *
-     * @throws InvalidArgumentException
-     *      Bad arg length.
-     *
      * @param mixed $var
      *      Gets stringified.
      * @param int $length
      *      Byte length (~ ASCII char length).
      *
      * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      Bad arg length.
      */
     public function truncateToByteLength($var, int $length)
     {
         if ($length < 0) {
-            throw new InvalidArgumentException('Arg length is not non-negative integer.');
+            throw new \InvalidArgumentException('Arg length is not non-negative integer.');
         }
 
         $v = '' . $var;
