@@ -128,7 +128,7 @@ class Utils
                 $trailing[] = array_pop($parts);
                 $existing = join('/', $parts);
             } while (!file_exists($existing));
-            
+
             if (!is_dir($existing)) {
                 throw new RuntimeException('Ancestor path exists but is not directory[' . $existing . '].');
             }
