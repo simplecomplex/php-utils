@@ -158,7 +158,7 @@ class Utils
         if (!$this->isIterable($collection)) {
             throw new \TypeError(
                 'Arg collection type[' . (!is_object($collection) ? gettype($collection) : get_class($collection))
-                . '] is not an iterable.'
+                . '] is not iterable.'
             );
         }
 
