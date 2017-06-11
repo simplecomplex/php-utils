@@ -10,7 +10,9 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 use SimpleComplex\Utils\Exception\InvalidArgumentException;
+use SimpleComplex\Utils\Exception\LogicException;
 use SimpleComplex\Utils\Exception\OutOfBoundsException;
+use SimpleComplex\Utils\Exception\RuntimeException;
 
 /**
  * Various helpers that to not deserve a class of their own.
@@ -53,6 +55,108 @@ class Utils
     public function isIterable($var)
     {
         return is_array($var) || is_a($var, \Traversable::class);
+    }
+
+    /**
+     * Recursion limiter for ensurePath().
+     *
+     * @var int
+     */
+    const ENSURE_PATH_LIMIT = 20;
+
+    /**
+     * Ensure that a directory path exists, create and set mode recursively
+     * if non-existent.
+     *
+     * Does not resolve /./ nor /../.
+     *
+     * @param string $absolutePath
+     * @param int $mode
+     *      Default: user-only read/write/execute.
+     *
+     * @return void
+     *
+     * @throws InvalidArgumentException
+     *      If arg absolutePath isn't absolute.
+     *      If a directory part is . or ..
+     * @throws RuntimeException
+     *      If an existing path part is file, not directory.
+     *      Failing to create directory.
+     *      Failing to chmod directory.
+     * @throws OutOfBoundsException
+     *      Exceeded maximum recursion limit, possibly due to too many dir parts
+     *      in arg absolutePath.
+     * @throws LogicException
+     *      Exceeded maximum recursion limit, positively due to algo error.
+     */
+    public function ensurePath(string $absolutePath, int $mode = 0700) /*:void*/
+    {
+        if (strlen($absolutePath) < 2) {
+            throw new InvalidArgumentException(
+                'Arg absolutePath cannot be shorter than 2 chars, path[' . $absolutePath . '].'
+            );
+        }
+        if (!file_exists($absolutePath)) {
+            if (DIRECTORY_SEPARATOR == '\\') {
+                $path = str_replace('\\', '/', $absolutePath);
+                if ($path{1} !== ':') {
+                    throw new InvalidArgumentException(
+                        'Arg absolutePath is not absolute, path[' . $absolutePath . '].'
+                    );
+                }
+                $parts = explode('/', $path);
+            } else {
+                if ($absolutePath{0} !== '/') {
+                    throw new InvalidArgumentException(
+                        'Arg absolutePath is not absolute, path[' . $absolutePath . '].'
+                    );
+                }
+                $parts = explode('/', $absolutePath);
+                // Remove first empty bucket; before root slash.
+                array_shift($parts);
+                $parts[0] = '/' . $parts[0];
+            }
+
+            $trailing = [];
+            $limit = 0;
+            do {
+                if ((++$limit) > static::ENSURE_PATH_LIMIT) {
+                    throw new OutOfBoundsException(
+                        'Exceeded maximum path recursion limit[' . static::ENSURE_PATH_LIMIT . '].'
+                    );
+                }
+                $trailing[] = array_pop($parts);
+                $existing = join('/', $parts);
+            } while (!file_exists($existing));
+            
+            if (!is_dir($existing)) {
+                throw new RuntimeException('Ancestor path exists but is not directory[' . $existing . '].');
+            }
+            do {
+                $limit = 0;
+                if ((++$limit) > static::ENSURE_PATH_LIMIT) {
+                    throw new LogicException(
+                        'Exceeded maximum path recursion limit[' . static::ENSURE_PATH_LIMIT . '].'
+                    );
+                }
+                $dir = array_pop($trailing);
+                $existing .= '/' . $dir;
+                if ($dir == '.' || $dir == '..') {
+                    throw new InvalidArgumentException(
+                        'Arg absolutePath contains . or .. directory part[' . $existing . '].'
+                    );
+                }
+                if (!mkdir($existing, $mode)) {
+                    throw new RuntimeException('Failed to create dir[' . $existing . '].');
+                }
+                if (!chmod($existing, $mode)) {
+                    throw new RuntimeException('Failed to chmod dir[' . $existing . '] to mode[' . $mode . '].');
+                }
+            } while ($trailing);
+        }
+        elseif (!is_dir($absolutePath)) {
+            throw new RuntimeException('Path exists but is not directory[' . $absolutePath . '].');
+        }
     }
 
     /**
