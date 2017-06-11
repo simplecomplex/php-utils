@@ -65,8 +65,7 @@ class Utils
     const ENSURE_PATH_LIMIT = 20;
 
     /**
-     * Ensure that a directory path exists, create and set mode recursively
-     * if non-existent.
+     * Recursively ensure that a directory path exists, create if non-existent.
      *
      * Does not resolve /./ nor /../.
      *
@@ -79,6 +78,7 @@ class Utils
      * @throws InvalidArgumentException
      *      If arg absolutePath isn't absolute.
      *      If a directory part is . or ..
+     *      If arg mode isn't at least 0100.
      * @throws RuntimeException
      *      If an existing path part is file, not directory.
      *      Failing to create directory.
@@ -96,6 +96,18 @@ class Utils
                 'Arg absolutePath cannot be shorter than 2 chars, path[' . $absolutePath . '].'
             );
         }
+        // 0100 ~ 64.
+        if (!$mode || $mode < 64) {
+            throw new InvalidArgumentException(
+                'Arg mode must be positive and consist of leading zero plus minimum 3 digits, mode[' . $mode . '].'
+            );
+        }
+        // Setting mode - chmod'ing - upon directory creation only seems to be
+        // necessary when mode is group-write.
+        // Group-write is second-to-last octal digit is 7.
+        $mode_str = decoct($mode);
+        $group_write = $mode_str{strlen($mode_str) - 2} == '7';
+
         if (!file_exists($absolutePath)) {
             if (DIRECTORY_SEPARATOR == '\\') {
                 $path = str_replace('\\', '/', $absolutePath);
@@ -149,7 +161,7 @@ class Utils
                 if (!mkdir($existing, $mode)) {
                     throw new RuntimeException('Failed to create dir[' . $existing . '].');
                 }
-                if (!chmod($existing, $mode)) {
+                if ($group_write && !chmod($existing, $mode)) {
                     throw new RuntimeException('Failed to chmod dir[' . $existing . '] to mode[' . $mode . '].');
                 }
             } while ($trailing);
