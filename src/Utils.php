@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Exception\ConfigurationException;
+
 /**
  * Various helpers that to not deserve a class of their own.
  *
@@ -53,6 +55,68 @@ class Utils
     }
 
     /**
+     * Resolve path, convert relative (to document root) to absolute path.
+     *
+     * @param string $relativePath
+     *
+     * @return string
+     *      Whether the path exists already.
+     *
+     * @throws ConfigurationException
+     *      If document root cannot be determined.
+     * @throws \LogicException
+     *      Algo or configuration error, can't determine whether path is
+     *      absolute or relative.
+     * @throws \RuntimeException
+     *      Path not resolvable to absolute path.
+     */
+    public function resolvePath(string $relativePath) : string
+    {
+        $path = $relativePath;
+        // Absolute.
+        if (
+            strpos($path, '/') !== 0
+            && (DIRECTORY_SEPARATOR === '/' || strpos($path, ':') !== 1)
+        ) {
+            // Document root.
+            if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+                $doc_root = $_SERVER['DOCUMENT_ROOT'];
+                if (DIRECTORY_SEPARATOR == '/') {
+                    $doc_root = str_replace('\\', '/', $doc_root);
+                }
+            } elseif (CliEnvironment::cli()) {
+                $doc_root = (new CliEnvironment())->documentRoot;
+                if (!$doc_root) {
+                    throw new ConfigurationException(
+                        'Cannot resolve document root, probably no .document_root file in document root.');
+                }
+            } else {
+                throw new ConfigurationException(
+                    'Cannot resolve document root, _SERVER[DOCUMENT_ROOT] non-existent or empty.');
+            }
+            // Relative above document root.
+            if (strpos($path, '../') === 0) {
+                $path = dirname($doc_root) . substr($path, 2);
+            }
+            // Relative to self of document root.
+            elseif (strpos($path, './') === 0) {
+                $path = $doc_root . substr($path, 1);
+            }
+            else {
+                throw new \LogicException(
+                    'Algo or configuration error, failed to determine whether path[' . $path
+                    . '] is absolute or relative.'
+                );
+            }
+        }
+        if (strpos($path, '/./') || strpos($path, '/../')) {
+            throw new \RuntimeException('Path doesn\'t resolve to an absolute path[' . $path . ']');
+        }
+
+        return $path;
+    }
+
+    /**
      * Recursion limiter for ensurePath().
      *
      * @var int
@@ -84,7 +148,7 @@ class Utils
      * @throws \LogicException
      *      Exceeded maximum recursion limit, positively due to algo error.
      */
-    public function ensurePath(string $absolutePath, int $mode = 0700) /*:void*/
+    public function ensurePath(string $absolutePath, int $mode = 0700) /*: void*/
     {
         if (strlen($absolutePath) < 2) {
             throw new \InvalidArgumentException(
@@ -218,7 +282,7 @@ class Utils
      * @throws \OutOfBoundsException
      *      Exceeded recursion limit.
      */
-    protected function typeArrayValues(array &$arr, int $depth = 0) /*:void*/
+    protected function typeArrayValues(array &$arr, int $depth = 0) /*: void*/
     {
         if ($depth > static::ARRAY_RECURSION_LIMIT) {
             throw new \OutOfBoundsException(
