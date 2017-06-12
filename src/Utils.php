@@ -231,7 +231,7 @@ class Utils
     }
 
     /**
-     * Fixes that native parse_ini_file() doesn't support raw + typed scanning.
+     * Fixes that native parse_ini_string() doesn't support raw + typed scanning.
      *
      * Inserting values of arbitrary constants into arbitrary variables seem
      * anything but safe; typical old-school PHP idio##.
@@ -241,6 +241,33 @@ class Utils
      * ?{}|&~![()^"
      * Those characters have - undocumented - 'special meaning'.
      *
+     * @see parse_ini_string()
+     *
+     * @param string $ini
+     * @param bool $processSections
+     * @param bool $typed
+     *      False: like INI_SCANNER_RAW; default.
+     *      True: like INI_SCANNER_RAW | INI_SCANNER_TYPED; but without failure.
+     *
+     * @return array|bool
+     *      False on error.
+     */
+    public function parseIniString(string $ini, bool $processSections = false, bool $typed = false)
+    {
+        $arr = parse_ini_string($ini, $processSections, INI_SCANNER_RAW);
+        if (!$arr && !is_array($arr)) {
+            return false;
+        }
+        if ($typed) {
+            $this->typeArrayValues($arr);
+        }
+        return $arr;
+    }
+
+    /**
+     * Fixes that native parse_ini_file() doesn't support raw + typed scanning.
+     *
+     * @see Utils::parseIniString()
      * @see parse_ini_file()
      *
      * @param string $filename
