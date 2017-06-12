@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-06-12
+-----------------------------------
+- EnvVarConfig class belongs to the config package, not this package.
+
 SimpleComplex/Utils 1.x, 2017-06-11
 -----------------------------------
 - New class Utils, for helpers that to not deserve a class of their own.
