@@ -14,7 +14,7 @@ use Psr\Log\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
 
 /**
- * Various helpers that to not deserve a class of their own.
+ * Various helpers that do not deserve a class of their own.
  *
  * @package SimpleComplex\Utils
  */
