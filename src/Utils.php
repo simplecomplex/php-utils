@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use Psr\Log\LogLevel;
+use Psr\Log\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
 
 /**
@@ -52,6 +54,88 @@ class Utils
     public function isIterable($var)
     {
         return is_array($var) || is_a($var, \Traversable::class);
+    }
+
+    /**
+     * PSR-3 LogLevel doesn't define numeric values of levels,
+     * but RFC 5424 'emergency' is 0 and 'debug' is 7.
+     *
+     * @see \Psr\Log\LogLevel
+     *
+     * @var array
+     */
+    const LOG_LEVEL_BY_SEVERITY = [
+        LogLevel::EMERGENCY,
+        LogLevel::ALERT,
+        LogLevel::CRITICAL,
+        LogLevel::ERROR,
+        LogLevel::WARNING,
+        LogLevel::NOTICE,
+        LogLevel::INFO,
+        LogLevel::DEBUG,
+    ];
+
+    /**
+     * LogLevel word.
+     *
+     * @throws \Psr\Log\InvalidArgumentException
+     *      Invalid level argument; as proscribed by PSR-3.
+     *
+     * @param mixed $level
+     *      String (word): value as defined by Psr\Log\LogLevel class constants.
+     *      Integer|stringed integer: between zero and seven; RFC 5424.
+     *
+     * @return string
+     *      Equivalent to a Psr\Log\LogLevel class constant.
+     */
+    public function logLevelToString($level) : string
+    {
+        // Support RFC 5424 integer as well as words defined by PSR-3.
+        $lvl = '' . $level;
+
+        // RFC 5424 integer.
+        if (ctype_digit($lvl)) {
+            if ($lvl >= 0 && $lvl < count(static::LOG_LEVEL_BY_SEVERITY)) {
+                return static::LOG_LEVEL_BY_SEVERITY[$lvl];
+            }
+        }
+        // Word defined by PSR-3.
+        elseif (in_array($lvl, static::LOG_LEVEL_BY_SEVERITY)) {
+            return $lvl;
+        }
+
+        throw new InvalidArgumentException('Invalid log level argument [' . $level . '].');
+    }
+
+    /**
+     * RFC 5424 integer.
+     *
+     * @throws \Psr\Log\InvalidArgumentException
+     *      Invalid level argument; as proscribed by PSR-3.
+     *
+     * @param mixed $level
+     *      String (word): value as defined by Psr\Log\LogLevel class constants.
+     *      Integer|stringed integer: between zero and seven; RFC 5424.
+     *
+     * @return int
+     */
+    public function logLevelToInteger($level) : int
+    {
+        // Support RFC 5424 integer as well as words defined by PSR-3.
+        $lvl = '' . $level;
+
+        if (ctype_digit($lvl)) {
+            if ($lvl >= 0 && $lvl < count(static::LOG_LEVEL_BY_SEVERITY)) {
+                return (int) $lvl;
+            }
+        } else {
+            $index = array_search($lvl, static::LOG_LEVEL_BY_SEVERITY);
+            if ($index !== false) {
+                return $index;
+            }
+        }
+
+        throw new InvalidArgumentException('Invalid log level argument [' . $level . '].');
     }
 
     /**
