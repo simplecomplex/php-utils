@@ -219,7 +219,7 @@ class CliEnvironment extends Explorable
             case 'documentRootDistance':
                 return $this->getDocumentRootDistance();
         }
-        throw new \OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
+        throw new \OutOfBoundsException(get_class($this) . ' instance exposes no property[' . $name . '].');
     }
 
     /**
