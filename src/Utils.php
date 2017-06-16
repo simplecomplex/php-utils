@@ -78,15 +78,15 @@ class Utils
     /**
      * LogLevel word.
      *
-     * @throws \Psr\Log\InvalidArgumentException
-     *      Invalid level argument; as proscribed by PSR-3.
-     *
      * @param mixed $level
      *      String (word): value as defined by Psr\Log\LogLevel class constants.
      *      Integer|stringed integer: between zero and seven; RFC 5424.
      *
      * @return string
      *      Equivalent to a Psr\Log\LogLevel class constant.
+     *
+     * @throws \Psr\Log\InvalidArgumentException
+     *      Invalid level argument; as proscribed by PSR-3.
      */
     public function logLevelToString($level) : string
     {
@@ -110,14 +110,14 @@ class Utils
     /**
      * RFC 5424 integer.
      *
-     * @throws \Psr\Log\InvalidArgumentException
-     *      Invalid level argument; as proscribed by PSR-3.
-     *
      * @param mixed $level
      *      String (word): value as defined by Psr\Log\LogLevel class constants.
      *      Integer|stringed integer: between zero and seven; RFC 5424.
      *
      * @return int
+     *
+     * @throws \Psr\Log\InvalidArgumentException
+     *      Invalid level argument; as proscribed by PSR-3.
      */
     public function logLevelToInteger($level) : int
     {
