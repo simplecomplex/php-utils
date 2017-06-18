@@ -114,7 +114,7 @@ abstract class Explorable implements \Countable, \Iterator
      * @throws \OutOfBoundsException
      *      If no such instance property exposed.
      *
-     * abstract function __get(string $name);
+     * abstract function __get($name);
      */
 
     /**
@@ -128,6 +128,6 @@ abstract class Explorable implements \Countable, \Iterator
      * @throws \RuntimeException
      *      If that instance property is read-only.
      *
-     * abstract function __set(string $name, $value);
+     * abstract function __set($name, $value);
      */
 }

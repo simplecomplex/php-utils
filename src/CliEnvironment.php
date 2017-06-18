@@ -190,9 +190,9 @@ class CliEnvironment extends Explorable
      * @throws \OutOfBoundsException
      *      If no such instance property.
      */
-    public function __get(string $name)
+    public function __get($name)
     {
-        switch ($name) {
+        switch ('' . $name) {
             case 'command':
                 if (!$this->inputResolved) {
                     $this->resolveInput();
@@ -207,7 +207,7 @@ class CliEnvironment extends Explorable
                 if (!$this->inputResolved) {
                     $this->resolveInput();
                 }
-                return $this->{$name};
+                return $this->{'' . $name};
             case 'inputErrors':
                 // Copy.
                 $input_errors = $this->inputErrors;
@@ -235,9 +235,9 @@ class CliEnvironment extends Explorable
      * @throws \RuntimeException
      *      If that instance property is read-only.
      */
-    public function __set(string $name, $value) /*: void*/
+    public function __set($name, $value) /*: void*/
     {
-        if (isset($this->explorableIndex[$name])) {
+        if (isset($this->explorableIndex['' . $name])) {
             throw new \OutOfBoundsException(get_class($this) . ' instance has no property[' . $name . '].');
         }
         throw new \RuntimeException(get_class($this) . ' instance property[' . $name . '] is read-only.');

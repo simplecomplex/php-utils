@@ -1,3 +1,21 @@
+SimpleComplex/Utils 1.x, 2017-06-18
+-----------------------------------
+- PathFileList class to list files in dirs simply and securely, avoiding
+  extremely complicated and in-flexible N times *iterator procedures.
+
+SimpleComplex/Utils 1.x, 2017-06-16
+-----------------------------------
+- Removed stuff that's either obsolete or naturally belonging to the config
+  package.
+
+SimpleComplex/Utils 1.x, 2017-06-14
+-----------------------------------
+- PSR-3 LogLevel converters.
+
+SimpleComplex/Utils 1.x, 2017-06-13
+-----------------------------------
+- Custom .ini parser because PHP native doesn't support raw + typed scanning.
+
 SimpleComplex/Utils 1.x, 2017-06-12
 -----------------------------------
 - EnvVarConfig class belongs to the config package, not this package.
