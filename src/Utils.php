@@ -141,10 +141,12 @@ class Utils
     /**
      * Resolve path, convert relative (to document root) to absolute path.
      *
+     * NB: doesn't check if the resolved absolute path exists and is directory.
+     *
      * @param string $relativePath
      *
      * @return string
-     *      Whether the path exists already.
+     *      Absolute path.
      *
      * @throws ConfigurationException
      *      If document root cannot be determined.
