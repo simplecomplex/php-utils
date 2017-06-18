@@ -53,7 +53,7 @@ class Utils
      */
     public function isIterable($var)
     {
-        return is_array($var) || is_a($var, \Traversable::class);
+        return is_array($var) || $var instanceof \Traversable;
     }
 
     /**
@@ -430,29 +430,29 @@ class Utils
     /**
      * Convert array or iterable object to ini-file formatted string.
      *
-     * @param iterable $collection
+     * @param iterable $container
      * @param bool $useSections
      *
      * @return string
      *
      * @throws \TypeError
-     *      Arg collection isn't iterable.
+     *      Arg container isn't iterable.
      */
-    public function iterableToIniString(/*iterable*/ $collection, bool $useSections = false) : string
+    public function iterableToIniString(/*iterable*/ $container, bool $useSections = false) : string
     {
         // PHP <7.1.
-        if (!$this->isIterable($collection)) {
+        if (!$this->isIterable($container)) {
             throw new \TypeError(
-                'Arg collection type[' . (!is_object($collection) ? gettype($collection) : get_class($collection))
+                'Arg container type[' . (!is_object($container) ? gettype($container) : get_class($container))
                 . '] is not iterable.'
             );
         }
 
         if (!$useSections) {
-            return $this->iterableToIniRecursive($collection);
+            return $this->iterableToIniRecursive($container);
         }
         $buffer = '';
-        foreach ($collection as $section => $children) {
+        foreach ($container as $section => $children) {
             $buffer .= '[' . $section . ']' . "\n";
             foreach ($children as $values) {
                 $buffer .= $this->iterableToIniRecursive($values);
@@ -463,7 +463,7 @@ class Utils
     }
 
     /**
-     * @param iterable $collection
+     * @param iterable $container
      * @param string|int|null $parentKey
      *
      * @return string
@@ -473,11 +473,11 @@ class Utils
      * @throws \InvalidArgumentException
      *      A bucket value isn't scalar, iterable or null.
      */
-    protected function iterableToIniRecursive(/*iterable*/ $collection, $parentKey = null) : string
+    protected function iterableToIniRecursive(/*iterable*/ $container, $parentKey = null) : string
     {
         $already_child = $parentKey !== null;
         $buffer = '';
-        foreach ($collection as $key => $val) {
+        foreach ($container as $key => $val) {
             $type = gettype($val);
             switch ($type) {
                 case 'boolean':

@@ -12,7 +12,7 @@ namespace SimpleComplex\Utils;
 /**
  * Cli command specification.
  *
- * Behaves as a foreachable and 'overloaded' collection;
+ * Behaves as a foreachable and 'overloaded' container;
  * dynamic getters and setters for protected members.
  *
  * @see Explorable

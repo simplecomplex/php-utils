@@ -18,7 +18,7 @@ use SimpleComplex\Utils\Exception\ConfigurationException;
  * - mapping command line input to one or more predefined commands
  * - finding/navigating to a site's document root
  *
- * Behaves as a foreachable and 'overloaded' collection;
+ * Behaves as a foreachable and 'overloaded' container;
  * dynamic getters and setters for protected members.
  *
  * Example, getting document root:
