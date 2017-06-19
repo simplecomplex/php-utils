@@ -383,7 +383,7 @@ class Utils
     const ARRAY_RECURSION_LIMIT = 10;
 
     /**
-     * Casts bucket values that are 'null', 'NULL', 'true', 'false', 'numeric',
+     * Casts bucket values that are 'null', 'NULL', 'true', 'false', '...numeric',
      * recursively.
      *
      * @param array &$arr
@@ -420,7 +420,12 @@ class Utils
                             break;
                         default:
                             if (is_numeric($val)) {
-                                $val = ctype_digit($val) ? (int) $val : (float) $val;
+                                $sign = 1;
+                                if ($val < 0) {
+                                    $sign = -1;
+                                    $val = substr('' . $val, 1);
+                                }
+                                $val = $sign * (ctype_digit('' . $val) ? (int) $val : (float) $val);
                             }
                     }
                 }
