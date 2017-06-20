@@ -67,6 +67,10 @@ class CliCommand extends Explorable
         'shortOpts' => '/^[a-zA-Z]+$/',
     ];
 
+    // @todo: command name must always be lisp-cased, not snake_cased; otherwise mapping gets ambibiguous.
+
+    // @todo: classes exposing commands must implement (new) CliCommandInterface, requiring executeOnMatch() method.
+
     /**
      * Specify a cli command.
      *
