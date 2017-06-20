@@ -57,6 +57,74 @@ class Utils
     }
 
     /**
+     * Handles that one cannot know whether to access a property of iterable
+     * in an array- or object-like manner.
+     *
+     * At your own risk, does not check arg iterable's type unless required.
+     *
+     * @param iterable $iterable
+     * @param int|string $key
+     * @param string $iterableType
+     *      Empty: arg iterable's type will be checked or guessed.
+     *
+     * @return bool
+     */
+    public function iterableIsset(/*iterable*/ $iterable, $key, string $iterableType = '') : bool
+    {
+        $type = $iterableType;
+        if (!$type) {
+            if (is_array($iterable)) {
+                $type = 'array';
+            } elseif ($iterable instanceof \ArrayAccess) {
+                $type = 'arrayAccess';
+            } else {
+                $type = 'traversable';
+            }
+        }
+        switch ($type) {
+            case 'array':
+            case 'arrayAccess':
+            case \ArrayAccess::class:
+                return isset($iterable[$key]);
+        }
+        return isset($iterable->{$key});
+    }
+
+    /**
+     * Handles that one cannot know whether to access a property of iterable
+     * in an array- or object-like manner.
+     *
+     * At your own risk, does not check arg iterable's type unless required.
+     *
+     * @param iterable $iterable
+     * @param int|string $key
+     * @param string $iterableType
+     *      Empty: arg iterable's type will be checked or inferred by exclusion.
+     *
+     * @return mixed|null
+     */
+    public function iterableGetIfSet(/*iterable*/ $iterable, $key, string $iterableType = '') /*: ?mixed*/
+    {
+        $type = $iterableType;
+        if (!$type) {
+            if (is_array($iterable)) {
+                $type = 'array';
+            } elseif ($iterable instanceof \ArrayAccess) {
+                $type = 'arrayAccess';
+            } else {
+                $type = 'traversable';
+            }
+        }
+        switch ($type) {
+            case 'array':
+            case 'arrayAccess':
+            case \ArrayAccess::class:
+                return $iterable[$key] ?? null;
+        }
+        return $iterable->{$key} ?? null;
+    }
+
+    /**
      * PSR-3 LogLevel doesn't define numeric values of levels,
      * but RFC 5424 'emergency' is 0 and 'debug' is 7.
      *
