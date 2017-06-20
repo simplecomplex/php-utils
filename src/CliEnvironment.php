@@ -27,7 +27,7 @@ use SimpleComplex\Utils\Exception\ConfigurationException;
  * @endcode
  *
  * Example, CLI command using this command mapping interface:
- * @see \SimpleComplex\JsonLog\Cli\JsonLogCli
+ * @see \SimpleComplex\JsonLog\CliJsonLog
  *
  * @see Explorable
  *
@@ -66,7 +66,10 @@ class CliEnvironment extends Explorable
     {
         if (!static::$instance) {
             static::$instance = new static(...$constructorParams);
+        } elseif (!empty($constructorParams)) {
+            static::$instance->addCommandsAvailable(...$constructorParams);
         }
+
         return static::$instance;
     }
 
@@ -109,13 +112,13 @@ class CliEnvironment extends Explorable
      *
      * @param mixed $message
      *      Gets stringified, and sanitized.
-     *
      * @param string $status
+     * @param bool $hangingIndent
      *
      * @return void
      *      Will echo arg message.
      */
-    public function echoMessage($message, string $status = '') /*: void*/
+    public function echoMessage($message, string $status = '', $hangingIndent = false) /*: void*/
     {
         if ($status) {
             if (!isset(static::MESSAGE_STATUS[$status])) {
@@ -123,7 +126,9 @@ class CliEnvironment extends Explorable
             }
             echo static::MESSAGE_STATUS[$status] . ' ';
         }
-        echo Sanitize::getInstance()->cli('' . $message) . "\n";
+        $msg = Sanitize::getInstance()->cli('' . $message);
+
+        echo (!$hangingIndent ? $msg : str_replace("\n","\n  ", $msg)). "\n";
     }
 
 
@@ -275,7 +280,7 @@ class CliEnvironment extends Explorable
 
     /**
      * @see CliEnvironment::getInstance()
-     * @see CliEnvironment::setCommandsAvailable()
+     * @see CliEnvironment::addCommandsAvailable()
      *
      * @param CliCommand[] ...$commandsAvailable
      *      Any number of, also none.
@@ -297,7 +302,7 @@ class CliEnvironment extends Explorable
 
         // Business.------------------------------------------------------------
         if ($commandsAvailable) {
-            $this->setCommandsAvailable(...$commandsAvailable);
+            $this->addCommandsAvailable(...$commandsAvailable);
         }
     }
 
@@ -306,7 +311,7 @@ class CliEnvironment extends Explorable
      *
      * @return void
      */
-    public function setCommandsAvailable(CliCommand ...$commandsAvailable) /*: void*/
+    public function addCommandsAvailable(CliCommand ...$commandsAvailable) /*: void*/
     {
         foreach ($commandsAvailable as $command) {
             $this->commandsAvailable[$command->name] = $command;
