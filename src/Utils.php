@@ -45,83 +45,71 @@ class Utils
     }
 
     /**
-     * is_iterable() for PHP <7.1.
-     *
-     * @param $var
-     *
-     * @return bool
-     */
-    public function isIterable($var)
-    {
-        return is_array($var) || $var instanceof \Traversable;
-    }
-
-    /**
-     * Handles that one cannot know whether to access a property of iterable
+     * Handles that one cannot know whether to access a property of container
      * in an array- or object-like manner.
      *
-     * At your own risk, does not check arg iterable's type unless required.
+     * At your own risk, does not check arg container's type unless required.
      *
-     * @param iterable $iterable
+     * @param array|object $container
      * @param int|string $key
-     * @param string $iterableType
-     *      Empty: arg iterable's type will be checked or guessed.
+     * @param string $containerType
+     *      Empty: arg container's type will be checked or guessed.
      *
      * @return bool
      */
-    public function iterableIsset(/*iterable*/ $iterable, $key, string $iterableType = '') : bool
+    public function containerIsset($container, $key, string $containerType = '') : bool
     {
-        $type = $iterableType;
+        $type = $containerType;
         if (!$type) {
-            if (is_array($iterable)) {
+            if (is_array($container)) {
                 $type = 'array';
-            } elseif ($iterable instanceof \ArrayAccess) {
+            } elseif ($container instanceof \ArrayAccess) {
                 $type = 'arrayAccess';
             } else {
-                $type = 'traversable';
+                $type = 'object';
             }
         }
         switch ($type) {
             case 'array':
             case 'arrayAccess':
             case \ArrayAccess::class:
-                return isset($iterable[$key]);
+                return isset($container[$key]);
         }
-        return isset($iterable->{$key});
+        return isset($container->{$key});
     }
 
     /**
-     * Handles that one cannot know whether to access a property of iterable
+     * Handles that one cannot know whether to access a property of container
      * in an array- or object-like manner.
      *
-     * At your own risk, does not check arg iterable's type unless required.
+     * At your own risk, does not check arg container's type unless required.
      *
-     * @param iterable $iterable
+     * @param array|object $container
      * @param int|string $key
-     * @param string $iterableType
-     *      Empty: arg iterable's type will be checked or inferred by exclusion.
+     * @param string $containerType
+     *      Empty: arg container's type will be checked or inferred by exclusion.
      *
      * @return mixed|null
      */
-    public function iterableGetIfSet(/*iterable*/ $iterable, $key, string $iterableType = '') /*: ?mixed*/
+    public function containerGetIfSet(/*container*/ $container, $key, string $containerType = '') /*: ?mixed*/
     {
-        $type = $iterableType;
+        $type = $containerType;
         if (!$type) {
-            if (is_array($iterable)) {
+            if (is_array($container)) {
                 $type = 'array';
-            } elseif ($iterable instanceof \ArrayAccess) {
+            } elseif ($container instanceof \ArrayAccess) {
                 $type = 'arrayAccess';
             } else {
-                $type = 'traversable';
+                $type = 'object';
             }
         }
         switch ($type) {
             case 'array':
             case 'arrayAccess':
             case \ArrayAccess::class:
-                return $iterable[$key] ?? null;
+                return $container[$key] ?? null;
         }
-        return $iterable->{$key} ?? null;
+        return $container->{$key} ?? null;
     }
 
     /**
@@ -503,34 +491,34 @@ class Utils
     }
 
     /**
-     * Convert array or iterable object to ini-file formatted string.
+     * Convert array or object to ini-file formatted string.
      *
-     * @param iterable $container
+     * @param array|object $container
      * @param bool $useSections
      *
      * @return string
      *
      * @throws \TypeError
-     *      Arg container isn't iterable.
+     *      Arg container isn't array|object.
      */
-    public function iterableToIniString(/*iterable*/ $container, bool $useSections = false) : string
+    public function containerToIniString($container, bool $useSections = false) : string
     {
         // PHP <7.1.
-        if (!$this->isIterable($container)) {
+        if (!is_array($container) && !is_object($container)) {
             throw new \TypeError(
                 'Arg container type[' . (!is_object($container) ? gettype($container) : get_class($container))
-                . '] is not iterable.'
+                . '] is not array|object.'
             );
         }
 
         if (!$useSections) {
-            return $this->iterableToIniRecursive($container);
+            return $this->containerToIniRecursive($container);
         }
         $buffer = '';
         foreach ($container as $section => $children) {
             $buffer .= '[' . $section . ']' . "\n";
             foreach ($children as $values) {
-                $buffer .= $this->iterableToIniRecursive($values);
+                $buffer .= $this->containerToIniRecursive($values);
             }
             $buffer .= "\n";
         }
@@ -538,7 +526,7 @@ class Utils
     }
 
     /**
-     * @param iterable $container
+     * @param array|object $container
      * @param string|int|null $parentKey
      *
      * @return string
@@ -546,9 +534,9 @@ class Utils
      * @throws \OutOfBoundsException
      *      The ini format only supports two layers below sections.
      * @throws \InvalidArgumentException
-     *      A bucket value isn't scalar, iterable or null.
+     *      A bucket value isn't scalar, array|object or null.
      */
-    protected function iterableToIniRecursive(/*iterable*/ $container, $parentKey = null) : string
+    protected function containerToIniRecursive($container, $parentKey = null) : string
     {
         $already_child = $parentKey !== null;
         $buffer = '';
@@ -573,29 +561,29 @@ class Utils
                 case 'array':
                     if ($already_child) {
                         throw new \OutOfBoundsException(
-                            'Ini format only supports two layers below section, iterable bucket['
+                            'Ini format only supports two layers below section, container bucket['
                             . $key . '] type[' . $type . '] should be scalar or null.'
                         );
                     }
-                    $buffer .= $this->iterableToIniRecursive($val, $key);
+                    $buffer .= $this->containerToIniRecursive($val, $key);
                     continue 2;
                 case 'object':
                     if (!is_a($val, \Traversable::class)) {
                         throw new \InvalidArgumentException(
-                            'Iterable bucket[' . $key . '] type[' . get_class($val) . '] is not supported.'
+                            'Container bucket[' . $key . '] type[' . get_class($val) . '] is not supported.'
                         );
                     }
                     if ($already_child) {
                         throw new \OutOfBoundsException(
-                            'Ini format only supports two layers below section, iterable bucket['
+                            'Ini format only supports two layers below section, container bucket['
                             . $key . '] type[' . get_class($val) . '] should be scalar or null.'
                         );
                     }
-                    $buffer .= $this->iterableToIniRecursive($val, $key);
+                    $buffer .= $this->containerToIniRecursive($val, $key);
                     continue 2;
                 default:
                     throw new \InvalidArgumentException(
-                        'Iterable bucket[' . $key . '] type[' . $type . '] is not supported.'
+                        'Container bucket[' . $key . '] type[' . $type . '] is not supported.'
                     );
             }
             if (!$already_child) {
