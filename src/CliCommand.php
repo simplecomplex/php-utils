@@ -25,12 +25,18 @@ class CliCommand extends Explorable
      * @var array
      */
     protected $explorableIndex = [
+        'provider',
         'name',
         'description',
         'arguments',
         'options',
         'shortToLongOption',
     ];
+
+    /**
+     * @var string
+     */
+    public $provider;
 
     /**
      * @var string
@@ -61,7 +67,8 @@ class CliCommand extends Explorable
      * @var array
      */
     const REGEX = [
-        'name' => '/^[a-z][a-z\d_\-]*$/',
+        'provider' => '/^[a-z][a-z\d\-]*$/',
+        'name' => '/^[a-z][a-z\d\-]*$/',
         'argument' => '/^[^\-].*$/',
         'option' => '/^[a-z][a-z\d_\-]*$/',
         'shortOpts' => '/^[a-zA-Z]+$/',
@@ -74,6 +81,7 @@ class CliCommand extends Explorable
     /**
      * Specify a cli command.
      *
+     * @param string $provider
      * @param string $name
      * @param string $description
      * @param string[] $arguments
@@ -89,10 +97,19 @@ class CliCommand extends Explorable
      * @throws \InvalidArgumentException
      */
     public function __construct(
-        string $name, string $description, array $arguments = [], array $options = [], array $shortToLongOption = []
+        string $provider, string $name, string $description,
+        array $arguments = [], array $options = [], array $shortToLongOption = []
     ) {
+        if (!$provider || !preg_match(static::REGEX['provider'], $provider)) {
+            throw new \InvalidArgumentException(
+                'Arg provider is not a valid lisp-cased name, regex ' . static::REGEX['provider'] . '.'
+            );
+        }
+        $this->provider = $provider;
         if (!$name || !preg_match(static::REGEX['name'], $name)) {
-            throw new \InvalidArgumentException('Arg name is not a valid command name, regex ' . static::REGEX['name'] . '.');
+            throw new \InvalidArgumentException(
+                'Arg name is not a valid lisp-cased name, regex ' . static::REGEX['name'] . '.'
+            );
         }
         $this->name = $name;
         if (!$description) {
@@ -183,7 +200,7 @@ class CliCommand extends Explorable
     public function __toString() : string {
         $nl = static::FORMAT['newline'];
 
-        $line = static::FORMAT['indent'] . $this->name;
+        $line = static::FORMAT['indent'] . $this->provider . '-' . $this->name;
         $output = $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
             . wordwrap(
                 str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $this->description),

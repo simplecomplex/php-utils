@@ -314,7 +314,7 @@ class CliEnvironment extends Explorable
     public function addCommandsAvailable(CliCommand ...$commandsAvailable) /*: void*/
     {
         foreach ($commandsAvailable as $command) {
-            $this->commandsAvailable[$command->name] = $command;
+            $this->commandsAvailable[$command->provider . '-' . $command->name] = $command;
         }
     }
 
@@ -373,6 +373,7 @@ class CliEnvironment extends Explorable
             else {
                 $class_command = static::CLASS_CLI_COMMAND;
                 $help = "\n\n" . new $class_command(
+                        'environment',
                         'help',
                         'Lists commands available.' . "\n"
                         . 'Example: php script.phpsh command_name --some-option=\'whatever\' \'first arg value\' -x',
@@ -509,6 +510,7 @@ class CliEnvironment extends Explorable
         } else {
             $class_command = static::CLASS_CLI_COMMAND;
             $help = new $class_command(
+                'environment',
                 'help',
                 'Lists commands available.' . "\n"
                 . 'Example: php script.phpsh command_name --some-option=\'whatever\' \'first arg value\' -x',
