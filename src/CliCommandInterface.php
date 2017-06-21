@@ -17,10 +17,14 @@ namespace SimpleComplex\Utils;
 interface CliCommandInterface
 {
     /**
-     * @param CliCommand|null $command
+     * @param CliCommand $command
      *
      * @return void
-     *      Must exit on match.
+     *      Must exit.
+     *
+     * @throws \LogicException
+     *      If the command mapped by CliEnvironment
+     *      isn't this provider's command.
      */
-    public function executeCommandOnMatch(/*?CliCommand*/ $command);
+    public function executeCommand(CliCommand $command);
 }

@@ -34,7 +34,7 @@ class CliCommand extends Explorable
     ];
 
     /**
-     * @var string
+     * @var CliCommandInterface
      */
     public $provider;
 
@@ -67,21 +67,16 @@ class CliCommand extends Explorable
      * @var array
      */
     const REGEX = [
-        'provider' => '/^[a-z][a-z\d\-]*$/',
         'name' => '/^[a-z][a-z\d\-]*$/',
         'argument' => '/^[^\-].*$/',
         'option' => '/^[a-z][a-z\d_\-]*$/',
         'shortOpts' => '/^[a-zA-Z]+$/',
     ];
 
-    // @todo: command name must always be lisp-cased, not snake_cased; otherwise mapping gets ambibiguous.
-
-    // @todo: classes exposing commands must implement (new) CliCommandInterface, requiring executeOnMatch() method.
-
     /**
      * Specify a cli command.
      *
-     * @param string $provider
+     * @param CliCommandInterface $provider
      * @param string $name
      * @param string $description
      * @param string[] $arguments
@@ -97,14 +92,9 @@ class CliCommand extends Explorable
      * @throws \InvalidArgumentException
      */
     public function __construct(
-        string $provider, string $name, string $description,
+        CliCommandInterface $provider, string $name, string $description,
         array $arguments = [], array $options = [], array $shortToLongOption = []
     ) {
-        if (!$provider || !preg_match(static::REGEX['provider'], $provider)) {
-            throw new \InvalidArgumentException(
-                'Arg provider is not a valid lisp-cased name, regex ' . static::REGEX['provider'] . '.'
-            );
-        }
         $this->provider = $provider;
         if (!$name || !preg_match(static::REGEX['name'], $name)) {
             throw new \InvalidArgumentException(

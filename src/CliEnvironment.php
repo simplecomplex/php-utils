@@ -310,11 +310,48 @@ class CliEnvironment extends Explorable
      * @param CliCommand[] ...$commandsAvailable
      *
      * @return void
+     *
+     * @throws \RuntimeException
+     *      If a command name already registered; not unique.
      */
     public function addCommandsAvailable(CliCommand ...$commandsAvailable) /*: void*/
     {
         foreach ($commandsAvailable as $command) {
-            $this->commandsAvailable[$command->provider . '-' . $command->name] = $command;
+            if (isset($this->commandsAvailable[$command->name])) {
+                throw new \RuntimeException(
+                    'Command named[' . $command->name . '] is not unique, already registered by class['
+                    . get_class($this->commandsAvailable[$command->name]->provider) . '].'
+                );
+            }
+            $this->commandsAvailable[$command->name] = $command;
+        }
+    }
+
+    public function forwardMappedCommand()
+    {
+        if (!$this->inputResolved) {
+            $this->resolveInput();
+        }
+        if (!isset($this->command)) {
+            if (!$this->commandsAvailable) {
+                $class_command = static::CLASS_CLI_COMMAND;
+                $this->commandsAvailable['help'] = new $class_command(
+                    $this,
+                    'help',
+                    'Lists commands available.' . "\n"
+                    . 'Example: php script.phpsh command-name \'first arg value\' --some-option=\'whatever\' -x',
+                    [],
+                    ['help' => ' '],
+                    ['h' => 'help']
+                );
+            }
+            $this->mapInputToCommand();
+        }
+        if ($this->command) {
+            $provider_class = $this->command->provider;
+            $provider_class->executeCommand($this->command);
+        } else {
+            // Echo all commands help strings.
         }
     }
 
@@ -373,10 +410,10 @@ class CliEnvironment extends Explorable
             else {
                 $class_command = static::CLASS_CLI_COMMAND;
                 $help = "\n\n" . new $class_command(
-                        'environment',
+                        $this,
                         'help',
                         'Lists commands available.' . "\n"
-                        . 'Example: php script.phpsh command_name --some-option=\'whatever\' \'first arg value\' -x',
+                        . 'Example: php script.phpsh command-name --some-option=\'whatever\' \'first arg value\' -x',
                         [],
                         ['help' => ' '],
                         ['h' => 'help']
@@ -513,7 +550,7 @@ class CliEnvironment extends Explorable
                 'environment',
                 'help',
                 'Lists commands available.' . "\n"
-                . 'Example: php script.phpsh command_name --some-option=\'whatever\' \'first arg value\' -x',
+                . 'Example: php script.phpsh command-name --some-option=\'whatever\' \'first arg value\' -x',
                 [],
                 ['help' => ' '],
                 ['h' => 'help']
