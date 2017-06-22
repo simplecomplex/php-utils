@@ -57,6 +57,11 @@ class CliCommand extends Explorable
     /**
      * @var array
      */
+    protected $argumentDescriptions;
+
+    /**
+     * @var array
+     */
     public $options = [];
 
     /**
@@ -185,6 +190,8 @@ class CliCommand extends Explorable
      */
     public function setMapped() /*: void*/
     {
+        // Copy; save argument descriptions for help.
+        $this->argumentDescriptions = $this->arguments;
         // Remove these now redundants from explorations.
         array_splice($this->explorableIndex, array_search('description', $this->explorableIndex), 1);
         array_splice($this->explorableIndex, array_search('shortToLongOption', $this->explorableIndex), 1);
@@ -196,8 +203,8 @@ class CliCommand extends Explorable
     const FORMAT = [
         'newline' => "\n",
         'indent' => ' ',
-        'midLine' => 40,
-        'wrap' => 120,
+        'midLine' => 30,
+        'wrap' => 110,
     ];
 
     /**
@@ -215,10 +222,16 @@ class CliCommand extends Explorable
             );
 
         $output .= $nl . static::FORMAT['indent'] . static::FORMAT['indent'] . 'Arguments:';
-        if (!count($this->arguments)) {
+
+        if (!empty($this->argumentDescriptions)) {
+            $args =& $this->argumentDescriptions;
+        } else {
+            $args =& $this->arguments;
+        }
+        if (!count($args)) {
             $output .= ' none';
         } else {
-            foreach ($this->arguments as $name => $dscrptn) {
+            foreach ($args as $name => $dscrptn) {
                 $line = str_repeat(static::FORMAT['indent'], 3) . $name;
                 $output .= $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
                     . wordwrap(

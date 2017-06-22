@@ -224,7 +224,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 if (!$this->inputResolved) {
                     $this->resolveInput();
                 }
-                if (!isset($this->command)) {
+                if (!$this->command) {
                     $this->mapInputToCommand();
                 }
                 return $this->command;
@@ -297,15 +297,11 @@ class CliEnvironment extends Explorable implements CliCommandInterface
 
     /**
      * @see CliEnvironment::getInstance()
-     * @see CliEnvironment::registerCommands()
-     *
-     * @param CliCommand[] ...$commandRegistry
-     *      Any number of, also none.
      *
      * @throws \LogicException
      *      If not in cli mode.
      */
-    public function __construct(CliCommand ...$commandRegistry)
+    public function __construct()
     {
         if (!static::cli()) {
             throw new \LogicException('This class is for cli mode only.');
@@ -318,9 +314,24 @@ class CliEnvironment extends Explorable implements CliCommandInterface
          */
 
         // Business.------------------------------------------------------------
-        if ($commandRegistry) {
-            $this->registerCommands(...$commandRegistry);
-        }
+
+        // Register general 'help' command, as first registered command.
+        // Obsolete when this class is used for non-command purposes, but
+        // the cost is negligible compared to the benefits when using commands.
+        $this->registerCommands(
+            new CliCommand(
+                $this,
+                'help',
+                'Lists commands available. Example:' . "\n"
+                . 'php script.phpsh command-name \'first arg value\' --some-option=\'whatever\' -x',
+                [
+                    'provider-or-command' =>
+                        '(optional) Help for all that provider\'s commands. Or help for that command.',
+                ],
+                ['help' => ' '],
+                ['h' => 'help']
+            )
+        );
     }
 
     /**
@@ -370,7 +381,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         $this->inputResolved = true;
 
         // No need; shortOptToLongOpt has not been altered since last call.
-        if (isset($this->inputArguments)) {
+        if ($this->inputArguments !== null) {
             return;
         }
         // Init args and opts.
@@ -467,34 +478,48 @@ class CliEnvironment extends Explorable implements CliCommandInterface
             $this->resolveInput();
         }
 
-        if ($this->inputArguments) {
+        // General 'help' of this class owns the --help -h option.
+        if (isset($this->inputOptions['help']) || isset($this->inputOptionsShort['h'])) {
+            ($this->command = $command = $this->commandRegistry['help'])->setMapped();
+            if ($this->inputArguments) {
+                // Provider alias or command name, really.
+                $command->arguments['provider-or-command'] = reset($this->inputArguments);
+            } else {
+                unset($command->arguments['provider-or-command']);
+            }
+        }
+        elseif ($this->inputArguments) {
             $command_arg = reset($this->inputArguments);
             if (isset($this->commandRegistry[$command_arg])) {
+                // Remove (the first) command argument.
                 array_shift($this->inputArguments);
-                $command = $this->commandRegistry[$command_arg];
-                if ($command->arguments) {
-                    $args_input = $this->inputArguments;
-                    array_shift($args_input);
-                    $n_args_input = count($this->inputArguments);
-                    $n_args_available = count($command->arguments);
-                    $le = min($n_args_available, $n_args_input);
-                    for ($i = 0; $i < $le; ++$i) {
-                        // Overwrite the CliCommand argument's description with
-                        // input value.
-                        $command->arguments[$i] = $args_input[$i] ?? null;
-                    }
-                    if ($n_args_available > $n_args_input) {
-                        array_splice($command->arguments, $n_args_input);
-                    }
-                    if ($n_args_input > $n_args_available) {
-                        $this->inputErrors[] = 'Command \'' . $command_arg . '\' only accepts '
-                            . $n_args_available . ' arguments, saw ' . $n_args_input . '.';
-                    }
-                } else {
-                    $n_args_input = count($this->inputArguments);
-                    if ($n_args_input > 1) {
+                ($this->command = $command = $this->commandRegistry[$command_arg])->setMapped();
+                $n_args_supported = count($command->arguments);
+                $n_args_input = count($this->inputArguments);
+                if ($this->inputArguments) {
+                    if ($command->arguments) {
+                        reset($command->arguments);
+                        reset($this->inputArguments);
+                        do {
+                            // Overwrite the CliCommand argument's description with
+                            // input value.
+                            $command->arguments[key($command->arguments)] = current($this->inputArguments);
+                        } while (next($command->arguments) !== false && next($this->inputArguments) !== false);
+
+                        if ($n_args_input > $n_args_supported) {
+                            $this->inputErrors[] = $command->inputErrors[] = 'Command \'' . $command_arg . '\' only accepts '
+                                . $n_args_supported . ' arguments, saw ' . $n_args_input . ' args.';
+                        }
+                    } else {
                         $this->inputErrors[] = $command->inputErrors[] = 'Command \'' . $command_arg
-                            . '\' accepts no arguments, saw ' . ($n_args_input - 1) . '.';
+                            . '\' accepts no arguments, saw ' . ($n_args_input - 1) . ' args.';
+                    }
+                }
+                // Remove surplus supported arguments.
+                if ($n_args_supported > $n_args_input) {
+                    $arg_keys = array_keys($command->arguments);
+                    for ($i = $n_args_input; $i < $n_args_supported; ++$i) {
+                        unset($command->arguments[$arg_keys[$i]]);
                     }
                 }
 
@@ -545,31 +570,17 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     // Not useful any more.
                     $command->shortToLongOption = null;
                 }
-
-                $command->setMapped();
-                $this->command = $command;
-            }
-            else {
-                $this->inputErrors[] = 'Command \'' . $command_arg . '\' not defined.';
             }
         }
 
-        // No command matched: prepend 'help' command, and set that as the match.
+        // No command matched: use 'help' command.
         if (!$this->command) {
-            $class_command = static::CLASS_CLI_COMMAND;
-            $help = new $class_command(
-                $this,
-                'help',
-                'Lists commands available. Example:' . "\n"
-                . 'php script.phpsh command-name \'first arg value\' --some-option=\'whatever\' -x',
-                [],
-                ['help' => ' '],
-                ['h' => 'help']
-            );
-            $this->commandRegistry = [
-                'help' => $help,
-            ] + $this->commandRegistry;
-            $this->command = $help;
+            ($this->command = $command = $this->commandRegistry['help'])->setMapped();
+            unset($command->arguments['provider-or-command']);
+            if ($this->inputArguments) {
+                $this->inputErrors[] = $command->inputErrors[] = 'Unknown command \''
+                    . reset($this->inputArguments) . '\'.';
+            }
         }
     }
 
@@ -632,9 +643,31 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     }
                     // Vertical space; newline.
                     $this->echoMessage('');
+                } elseif (isset($command->arguments['provider-or-command'])) {
+                    $provider_or_name = $command->arguments['provider-or-command'];
+                    if (isset($this->commandRegistry[$provider_or_name])) {
+                        // Print that command's help.
+                        $this->echoMessage('' . $this->commandRegistry[$provider_or_name]);
+                        exit;
+                    }
+                    $commands = [];
+                    foreach ($this->commandRegistry as $cmd) {
+                        if ($cmd->provider->commandProviderAlias() == $provider_or_name) {
+                            // Get the command's help text.
+                            $commands[] = '' . $cmd;
+                        }
+                    }
+                    if ($commands) {
+                        $this->echoMessage($provider_or_name . ' commands:' . "\n\n" . join("\n\n", $commands));
+                        exit;
+                    } else {
+                        $this->echoMessage('Unkwown provider or command \''
+                            . $provider_or_name . '\'.' . "\n", 'notice');
+                    }
                 }
-                // Command help.
+                // Print 'help' command's help.
                 $this->echoMessage('' . $command);
+                // Print other commands' help.
                 // Do not print the --help command twice.
                 unset($this->commandRegistry['help']);
                 if ($this->commandRegistry) {

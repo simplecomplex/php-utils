@@ -1,6 +1,8 @@
 SimpleComplex/Utils 1.x, 2017-06-22
 -----------------------------------
 - Cli command and execution support multiple providers.
+- Fix screwed up argument mapping.
+- Print help for providers as well as particular commands.
 
 SimpleComplex/Utils 1.x, 2017-06-21
 -----------------------------------
