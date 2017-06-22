@@ -24,6 +24,15 @@ namespace SimpleComplex\Utils;
 interface CliCommandInterface
 {
     /**
+     * Alias of this provider.
+     *
+     * Must be lisp-cased.
+     *
+     * @return string
+     */
+    public function commandProviderAlias() : string;
+
+    /**
      * @param CliCommand $command
      *
      * @return void
@@ -33,5 +42,5 @@ interface CliCommandInterface
      *      If the command mapped by CliEnvironment
      *      isn't this provider's command.
      */
-    public function executeCommand(CliCommand $command);
+    public function executeCommand(CliCommand $command) /*: void*/;
 }

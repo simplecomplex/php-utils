@@ -67,7 +67,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         if (!static::$instance) {
             static::$instance = new static(...$constructorParams);
         } elseif (!empty($constructorParams)) {
-            static::$instance->addCommandsAvailable(...$constructorParams);
+            static::$instance->registerCommands(...$constructorParams);
         }
 
         return static::$instance;
@@ -293,19 +293,19 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     /**
      * @var CliCommand[]
      */
-    protected $commandsAvailable = [];
+    protected $commandRegistry = [];
 
     /**
      * @see CliEnvironment::getInstance()
-     * @see CliEnvironment::addCommandsAvailable()
+     * @see CliEnvironment::registerCommands()
      *
-     * @param CliCommand[] ...$commandsAvailable
+     * @param CliCommand[] ...$commandRegistry
      *      Any number of, also none.
      *
      * @throws \LogicException
      *      If not in cli mode.
      */
-    public function __construct(CliCommand ...$commandsAvailable)
+    public function __construct(CliCommand ...$commandRegistry)
     {
         if (!static::cli()) {
             throw new \LogicException('This class is for cli mode only.');
@@ -318,29 +318,29 @@ class CliEnvironment extends Explorable implements CliCommandInterface
          */
 
         // Business.------------------------------------------------------------
-        if ($commandsAvailable) {
-            $this->addCommandsAvailable(...$commandsAvailable);
+        if ($commandRegistry) {
+            $this->registerCommands(...$commandRegistry);
         }
     }
 
     /**
-     * @param CliCommand[] ...$commandsAvailable
+     * @param CliCommand[] ...$cliCommands
      *
      * @return void
      *
      * @throws \RuntimeException
      *      If a command name already registered; not unique.
      */
-    public function addCommandsAvailable(CliCommand ...$commandsAvailable) /*: void*/
+    public function registerCommands(CliCommand ...$cliCommands) /*: void*/
     {
-        foreach ($commandsAvailable as $command) {
-            if (isset($this->commandsAvailable[$command->name])) {
+        foreach ($cliCommands as $command) {
+            if (isset($this->commandRegistry[$command->name])) {
                 throw new \RuntimeException(
                     'Command named[' . $command->name . '] is not unique, already registered by class['
-                    . get_class($this->commandsAvailable[$command->name]->provider) . '].'
+                    . get_class($this->commandRegistry[$command->name]->provider) . '].'
                 );
             }
-            $this->commandsAvailable[$command->name] = $command;
+            $this->commandRegistry[$command->name] = $command;
         }
     }
 
@@ -349,7 +349,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      *
      * Casts values of options:
      * - 'true'|'false': bool
-     * - stringed int: int
+     * - stringed number: int|float
      *
      * @throww \RuntimeException
      *      If globals argv is empty or non-existent.
@@ -415,8 +415,11 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                                 $value = false;
                                 break;
                             default:
+                                // Yes, ctype_... returns false on ''.
                                 if (ctype_digit($value)) {
                                     $value = (int) $value;
+                                } elseif (is_numeric($value)) {
+                                    $value = (float) $value;
                                 }
                         }
                     }
@@ -448,7 +451,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     }
 
     /**
-     * Map input arguments and options to a configured command.
+     * Maps input arguments and options to a registered command.
      *
      * If fitting CliCommand found, the command's arguments and options will be
      * alterd (filtered) according to input arguments and options.
@@ -466,9 +469,9 @@ class CliEnvironment extends Explorable implements CliCommandInterface
 
         if ($this->inputArguments) {
             $command_arg = reset($this->inputArguments);
-            if (isset($this->commandsAvailable[$command_arg])) {
+            if (isset($this->commandRegistry[$command_arg])) {
                 array_shift($this->inputArguments);
-                $command = $this->commandsAvailable[$command_arg];
+                $command = $this->commandRegistry[$command_arg];
                 if ($command->arguments) {
                     $args_input = $this->inputArguments;
                     array_shift($args_input);
@@ -563,18 +566,36 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 ['help' => ' '],
                 ['h' => 'help']
             );
-            $this->commandsAvailable = [
+            $this->commandRegistry = [
                 'help' => $help,
-            ] + $this->commandsAvailable;
+            ] + $this->commandRegistry;
             $this->command = $help;
         }
     }
 
+
+    // CliCommandInterface.-----------------------------------------------------
+
     /**
-     * listen to input and forward matched command
-    // to it's provider (in this case CliJsonLog or CliEnvironment self).
+     * @var string
      */
-    public function forwardMatchedCommand()
+    const COMMAND_PROVIDER_ALIAS = 'cli-environment';
+
+    /**
+     * @return string
+     */
+    public function commandProviderAlias(): string
+    {
+        return static::COMMAND_PROVIDER_ALIAS;
+    }
+
+    /**
+     * Listens to input and forwards matched command
+     * to it's provider.
+     *
+     * @return void
+     */
+    public function forwardMatchedCommand() /*: void*/
     {
         if (!$this->command) {
             $this->mapInputToCommand();
@@ -598,7 +619,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      *      If the command mapped by CliEnvironment
      *      isn't this provider's command.
      */
-    public function executeCommand(CliCommand $command)
+    public function executeCommand(CliCommand $command) /*: void*/
     {
         switch ($command->name) {
             case 'help':
@@ -615,10 +636,10 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 // Command help.
                 $this->echoMessage('' . $command);
                 // Do not print the --help command twice.
-                unset($this->commandsAvailable['help']);
-                if ($this->commandsAvailable) {
+                unset($this->commandRegistry['help']);
+                if ($this->commandRegistry) {
                     $this->echoMessage("\n" . 'Commands:');
-                    foreach ($this->commandsAvailable as $cmd) {
+                    foreach ($this->commandRegistry as $cmd) {
                         $this->echoMessage("\n" . $cmd);
                     }
                 }

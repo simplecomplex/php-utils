@@ -97,12 +97,20 @@ class CliCommand extends Explorable
      *      Key: short option. 'h' and 'H' are not allowed.
      *      Value: option name.
      *
+     * @throws \LogicException
      * @throws \InvalidArgumentException
      */
     public function __construct(
         CliCommandInterface $provider, string $name, string $description,
         array $arguments = [], array $options = [], array $shortToLongOption = []
     ) {
+        $provider_alias = $provider->commandProviderAlias();
+        if (!$provider_alias || !preg_match(static::REGEX['name'], $provider_alias)) {
+            throw new \LogicException(
+                'Alias of command provider class[' . get_class($provider) . '] is not a valid lisp-cased name, regex '
+                . static::REGEX['name'] . '.'
+            );
+        }
         $this->provider = $provider;
         if (!$name || !preg_match(static::REGEX['name'], $name)) {
             throw new \InvalidArgumentException(
