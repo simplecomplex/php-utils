@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-06-22
+-----------------------------------
+- Cli command and execution support multiple providers.
+
 SimpleComplex/Utils 1.x, 2017-06-21
 -----------------------------------
 - Don't use 'iterable' type; effectively useless because stdClass is iterable

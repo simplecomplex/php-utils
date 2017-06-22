@@ -31,6 +31,7 @@ class CliCommand extends Explorable
         'arguments',
         'options',
         'shortToLongOption',
+        'inputErrors',
     ];
 
     /**
@@ -62,6 +63,13 @@ class CliCommand extends Explorable
      * @var array|null
      */
     public $shortToLongOption = [];
+
+    /**
+     * @see CliEnvironment::mapInputToCommand()
+     *
+     * @var string[]
+     */
+    public $inputErrors = [];
 
     /**
      * @var array
@@ -181,7 +189,7 @@ class CliCommand extends Explorable
         'newline' => "\n",
         'indent' => ' ',
         'midLine' => 40,
-        'wrap' => 100,
+        'wrap' => 120,
     ];
 
     /**
@@ -190,8 +198,8 @@ class CliCommand extends Explorable
     public function __toString() : string {
         $nl = static::FORMAT['newline'];
 
-        $line = static::FORMAT['indent'] . $this->provider . '-' . $this->name;
-        $output = $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
+        $output = static::FORMAT['indent'] . CliEnvironment::getInstance()->format($this->name, 'emphasize')
+            . str_repeat(' ', static::FORMAT['midLine'] - strlen(static::FORMAT['indent'] . ($this->name)))
             . wordwrap(
                 str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $this->description),
                 static::FORMAT['wrap'] - static::FORMAT['midLine'],

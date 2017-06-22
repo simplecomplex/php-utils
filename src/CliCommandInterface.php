@@ -10,6 +10,13 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
+ * Implementing class must provide CLI commands and a means to execute them.
+ *
+ * For examples:
+ * @see \SimpleComplex\Cache\CliCache
+ * @see \SimpleComplex\Config\CliIniSectionedConfig
+ * @see \SimpleComplex\JsonLog\CliJsonLog
+ *
  * @see CliCommand
  *
  * @package SimpleComplex\Utils

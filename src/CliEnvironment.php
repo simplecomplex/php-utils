@@ -35,7 +35,7 @@ use SimpleComplex\Utils\Exception\ConfigurationException;
  * @property-read array $inputArguments
  * @property-read array $inputOptions
  * @property-read array $inputOptionsShort
- * @property-read array $inputErrors
+ * @property-read string[] $inputErrors
  * @property-read string $currentWorkingDir
  * @property-read string $documentRoot
  * @property-read int $documentRootDistance
@@ -44,7 +44,7 @@ use SimpleComplex\Utils\Exception\ConfigurationException;
  *
  * @package SimpleComplex\Utils
  */
-class CliEnvironment extends Explorable
+class CliEnvironment extends Explorable implements CliCommandInterface
 {
     /**
      * Reference to first object instantiated via the getInstance() method,
@@ -113,12 +113,11 @@ class CliEnvironment extends Explorable
      * @param mixed $message
      *      Gets stringified, and sanitized.
      * @param string $status
-     * @param bool $hangingIndent
      *
      * @return void
      *      Will echo arg message.
      */
-    public function echoMessage($message, string $status = '', $hangingIndent = false) /*: void*/
+    public function echoMessage($message, string $status = '') /*: void*/
     {
         if ($status) {
             if (!isset(static::MESSAGE_STATUS[$status])) {
@@ -126,9 +125,32 @@ class CliEnvironment extends Explorable
             }
             echo static::MESSAGE_STATUS[$status] . ' ';
         }
-        $msg = Sanitize::getInstance()->cli('' . $message);
+        echo Sanitize::getInstance()->cli('' . $message) . "\n";
+    }
 
-        echo (!$hangingIndent ? $msg : str_replace("\n","\n  ", $msg)). "\n";
+    /**
+     * @param string $str
+     * @param mixed|string ...$formats
+     *      String only, IDE stupid.
+     *      Values: emphasize|hangingIndent
+     *
+     * @return string
+     */
+    public function format(string $str, string ...$formats) : string
+    {
+        foreach ($formats as $format) {
+            switch ($format) {
+                case 'emphasize':
+                    $str = "\033[01;37m" . $str . "\033[0m";
+                    break;
+                case 'hangingIndent':
+                    $str = str_replace("\n", "\n  ", $str);
+                    break;
+                default:
+                    throw new \InvalidArgumentException('Unsupported format[' . $format . '].');
+            }
+        }
+        return $str;
     }
 
 
@@ -160,7 +182,7 @@ class CliEnvironment extends Explorable
 
     /**
      * Read-only.
-     * @var array
+     * @var string[]
      */
     protected $inputErrors = [];
 
@@ -274,11 +296,6 @@ class CliEnvironment extends Explorable
     protected $commandsAvailable = [];
 
     /**
-     * @var string
-     */
-    protected $commandHelp;
-
-    /**
      * @see CliEnvironment::getInstance()
      * @see CliEnvironment::addCommandsAvailable()
      *
@@ -325,102 +342,6 @@ class CliEnvironment extends Explorable
             }
             $this->commandsAvailable[$command->name] = $command;
         }
-    }
-
-    public function forwardMappedCommand()
-    {
-        if (!$this->inputResolved) {
-            $this->resolveInput();
-        }
-        if (!isset($this->command)) {
-            if (!$this->commandsAvailable) {
-                $class_command = static::CLASS_CLI_COMMAND;
-                $this->commandsAvailable['help'] = new $class_command(
-                    $this,
-                    'help',
-                    'Lists commands available.' . "\n"
-                    . 'Example: php script.phpsh command-name \'first arg value\' --some-option=\'whatever\' -x',
-                    [],
-                    ['help' => ' '],
-                    ['h' => 'help']
-                );
-            }
-            $this->mapInputToCommand();
-        }
-        if ($this->command) {
-            $provider_class = $this->command->provider;
-            $provider_class->executeCommand($this->command);
-        } else {
-            // Echo all commands help strings.
-        }
-    }
-
-    /**
-     * Get commmand help. Will echo error message if input errors detected.
-     *
-     * @param string $preface
-     *      Use 'none' for no preface.
-     *
-     * @return string
-     */
-    public function commandHelp(string $preface = '') : string
-    {
-        // Important.
-        if (!$this->inputResolved) {
-            $this->resolveInput();
-        }
-
-        if ($this->inputErrors) {
-            foreach ($this->inputErrors as $msg) {
-                $this->echoMessage($msg, 'warning');
-            }
-            echo "\n";
-        }
-
-        if ($preface) {
-            if ($preface == 'none') {
-                $preface = '';
-            }
-            else {
-                $preface = rtrim($preface) . "\n";
-            }
-        } else {
-            $preface = get_class($this) . "\n";
-        }
-        $preface .= 'Commands:';
-
-        // There's a mapped command?
-        if ($this->commandHelp) {
-            $help = "\n\n" . $this->commandHelp;
-        }
-        // Concat all commands' help.
-        else {
-            $help = '';
-            $n_availables = count($this->commandsAvailable);
-            // Skip general 'help' if any other (specific) command is
-            // available.
-            if ($n_availables) {
-                foreach ($this->commandsAvailable as $command) {
-                    if ($n_availables == 1 || $command->name != 'help') {
-                        $help .= "\n\n" . $command;
-                    }
-                }
-            }
-            // Print general 'help' if none.
-            else {
-                $class_command = static::CLASS_CLI_COMMAND;
-                $help = "\n\n" . new $class_command(
-                        $this,
-                        'help',
-                        'Lists commands available.' . "\n"
-                        . 'Example: php script.phpsh command-name --some-option=\'whatever\' \'first arg value\' -x',
-                        [],
-                        ['help' => ' '],
-                        ['h' => 'help']
-                    );
-            }
-        }
-        return $preface . $help . "\n";
     }
 
     /**
@@ -536,53 +457,18 @@ class CliEnvironment extends Explorable
      */
     protected function mapInputToCommand() /*: void*/
     {
+        if ($this->command) {
+            return;
+        }
         if (!$this->inputResolved) {
             $this->resolveInput();
-        }
-
-        $any_commands = !!$this->commandsAvailable;
-        // Prepend general 'help' option.
-        if ($any_commands && isset($this->commandsAvailable['help'])) {
-            $help = $this->commandsAvailable['help'];
-        } else {
-            $class_command = static::CLASS_CLI_COMMAND;
-            $help = new $class_command(
-                'environment',
-                'help',
-                'Lists commands available.' . "\n"
-                . 'Example: php script.phpsh command-name --some-option=\'whatever\' \'first arg value\' -x',
-                [],
-                ['help' => ' '],
-                ['h' => 'help']
-            );
-            if (!$this->commandsAvailable) {
-                $this->commandsAvailable['help'] = $help;
-            } else {
-                $this->commandsAvailable = ['help' => $help] + $this->commandsAvailable;
-            }
-        }
-        // Do input options indicate (general or specific) 'help'?
-        $do_help = isset($this->inputOptions['help']) || isset($this->inputOptions['h']);
-
-        if (!$any_commands) {
-            if ($do_help) {
-                $this->command = $help;
-            }
-            return;
-        }
-
-        // Get out if previously recorded input error(s).
-        if ($this->inputErrors) {
-            return;
         }
 
         if ($this->inputArguments) {
             $command_arg = reset($this->inputArguments);
             if (isset($this->commandsAvailable[$command_arg])) {
+                array_shift($this->inputArguments);
                 $command = $this->commandsAvailable[$command_arg];
-                // Save 'help' output, in case user decides to print that
-                // instead of acting on the command.
-                $this->commandHelp = '' . $command;
                 if ($command->arguments) {
                     $args_input = $this->inputArguments;
                     array_shift($args_input);
@@ -592,7 +478,7 @@ class CliEnvironment extends Explorable
                     for ($i = 0; $i < $le; ++$i) {
                         // Overwrite the CliCommand argument's description with
                         // input value.
-                        $command->arguments[$i] = $args_input[$i];
+                        $command->arguments[$i] = $args_input[$i] ?? null;
                     }
                     if ($n_args_available > $n_args_input) {
                         array_splice($command->arguments, $n_args_input);
@@ -604,8 +490,8 @@ class CliEnvironment extends Explorable
                 } else {
                     $n_args_input = count($this->inputArguments);
                     if ($n_args_input > 1) {
-                        $this->inputErrors[] = 'Command \'' . $command_arg . '\' accepts no arguments, saw '
-                            . ($n_args_input - 1) . '.';
+                        $this->inputErrors[] = $command->inputErrors[] = 'Command \'' . $command_arg
+                            . '\' accepts no arguments, saw ' . ($n_args_input - 1) . '.';
                     }
                 }
 
@@ -618,13 +504,13 @@ class CliEnvironment extends Explorable
                             if (isset($this->inputOptions[$opt])) {
                                 // Overwrite the CliCommand option's description
                                 // with input value.
-                                $options_selected[$opt] = $this->inputOptions[$opt];
-                                unset($input_opts_rest[$opt]);
+                                $options_selected[$opt] = $this->inputOptions[$opt] ?? null;
                             }
                         }
                         if ($input_opts_rest) {
-                            $this->inputErrors[] = 'Command \'' . $command_arg . '\' doesn\'t support option(s): '
-                                . join(', ', array_keys($input_opts_rest)) . '.';
+                            $this->inputErrors[] = $command->inputErrors[] = 'Command '
+                                . $this->format($command_arg, 'emphasize')
+                                . ' doesn\'t support option(s): ' . join(', ', array_keys($input_opts_rest)) . '.';
                         }
                         unset($input_opts_rest);
                     }
@@ -644,33 +530,103 @@ class CliEnvironment extends Explorable
                             }
                         }
                         if ($input_opts_rest) {
-                            $this->inputErrors[] = 'Command \'' . $command_arg . '\' doesn\'t support short options(s): '
-                                . join(', ', $input_opts_rest) . '.';
+                            $this->inputErrors[] = $command->inputErrors[] = 'Command '
+                                . $this->format($command_arg, 'emphasize')
+                                . ' doesn\'t support short options(s): ' . join(', ', $input_opts_rest) . '.';
                         }
                         unset($input_opts_rest);
                     }
                 }
-
-                if ($this->inputErrors) {
-                    return;
+                if (!$this->inputErrors) {
+                    $command->options = $options_selected;
+                    // Not useful any more.
+                    $command->shortToLongOption = null;
                 }
-
-                $command->options = $options_selected;
-                // Not useful any more.
-                $command->shortToLongOption = null;
 
                 $command->setMapped();
                 $this->command = $command;
-                return;
             }
             else {
                 $this->inputErrors[] = 'Command \'' . $command_arg . '\' not defined.';
-                return;
             }
         }
 
-        if ($do_help) {
+        // No command matched: prepend 'help' command, and set that as the match.
+        if (!$this->command) {
+            $class_command = static::CLASS_CLI_COMMAND;
+            $help = new $class_command(
+                $this,
+                'help',
+                'Lists commands available. Example:' . "\n"
+                . 'php script.phpsh command-name \'first arg value\' --some-option=\'whatever\' -x',
+                [],
+                ['help' => ' '],
+                ['h' => 'help']
+            );
+            $this->commandsAvailable = [
+                'help' => $help,
+            ] + $this->commandsAvailable;
             $this->command = $help;
+        }
+    }
+
+    /**
+     * listen to input and forward matched command
+    // to it's provider (in this case CliJsonLog or CliEnvironment self).
+     */
+    public function forwardMatchedCommand()
+    {
+        if (!$this->command) {
+            $this->mapInputToCommand();
+        }
+        $provider_class = $this->command->provider;
+        $provider_class->executeCommand($this->command);
+        exit;
+    }
+
+    /**
+     * This command provider (probably) only has a single command; 'help'.
+     *
+     * @see CliCommandInterface
+     *
+     * @param CliCommand $command
+     *
+     * @return void
+     *      Must exit.
+     *
+     * @throws \LogicException
+     *      If the command mapped by CliEnvironment
+     *      isn't this provider's command.
+     */
+    public function executeCommand(CliCommand $command)
+    {
+        switch ($command->name) {
+            case 'help':
+                if ($this->inputErrors) {
+                    foreach ($this->inputErrors as $msg) {
+                        $this->echoMessage(
+                            $this->format($msg, 'hangingIndent'),
+                            'notice'
+                        );
+                    }
+                    // Vertical space; newline.
+                    $this->echoMessage('');
+                }
+                // Command help.
+                $this->echoMessage('' . $command);
+                // Do not print the --help command twice.
+                unset($this->commandsAvailable['help']);
+                if ($this->commandsAvailable) {
+                    $this->echoMessage("\n" . 'Commands:');
+                    foreach ($this->commandsAvailable as $cmd) {
+                        $this->echoMessage("\n" . $cmd);
+                    }
+                }
+                exit;
+            default:
+                throw new \LogicException(
+                    'Command named[' . $command->name . '] is not provided by class[' . get_class($this) . '].'
+                );
         }
     }
 
