@@ -98,6 +98,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      * @param string[] $confirmWords
      *      Default: [ 'yes', 'y' ].
      * @param string $continueMessage
+     *      Empty: don't echo any 'Continuing...' message.
      * @param string $cancelMessage
      *
      * @return bool
@@ -105,7 +106,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     public function confirm(
         string $question = 'Are you sure you want to do this? Type \'yes\' or \'y\' to continue:',
         array $confirmWords = ['yes', 'y'],
-        string $continueMessage = 'Continuing...',
+        string $continueMessage = '',
         string $cancelMessage = 'Aborted.'
     )
     {
@@ -115,10 +116,12 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         $response = trim($line);
         fclose($handle);
         if (!in_array($response, $confirmWords)) {
-            $this->echoMessage($cancelMessage);
+            $this->echoMessage($cancelMessage, 'info');
             return false;
         }
-        $this->echoMessage($continueMessage);
+        if ($continueMessage) {
+            $this->echoMessage($continueMessage);
+        }
         return true;
     }
 
@@ -711,7 +714,10 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                         }
                     }
                     if ($commands) {
-                        $this->echoMessage($provider_or_name . ' commands:' . "\n\n" . join("\n\n", $commands));
+                        $this->echoMessage(
+                            $this->format($provider_or_name, 'emphasize')
+                            . ' commands:' . "\n\n" . join("\n\n", $commands)
+                        );
                         exit;
                     } else {
                         $this->echoMessage('Unkwown provider or command \''
