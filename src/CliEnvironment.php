@@ -113,11 +113,12 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      * @param mixed $message
      *      Gets stringified, and sanitized.
      * @param string $status
+     * @param bool $noTrailingNewline
      *
      * @return void
      *      Will echo arg message.
      */
-    public function echoMessage($message, string $status = '') /*: void*/
+    public function echoMessage($message, string $status = '', $noTrailingNewline = false) /*: void*/
     {
         if ($status) {
             if (!isset(static::MESSAGE_STATUS[$status])) {
@@ -125,7 +126,35 @@ class CliEnvironment extends Explorable implements CliCommandInterface
             }
             echo static::MESSAGE_STATUS[$status] . ' ';
         }
-        echo Sanitize::getInstance()->cli('' . $message) . "\n";
+        echo Sanitize::getInstance()->cli('' . $message) . ($noTrailingNewline ? '' : "\n");
+    }
+
+    /**
+     * @param string $question
+     * @param array $confirm
+     * @param string $continuing
+     * @param string $cancelled
+     *
+     * @return bool
+     */
+    public function confirm(
+        string $question = 'Are you sure you want to do this? Type \'yes\' or \'y\' to continue:',
+        array $confirm = ['yes', 'y'],
+        string $continuing = 'Continuing...',
+        string $cancelled = 'Aborted.'
+    )
+    {
+        echo $question . ' ';
+        $handle = fopen ('php://stdin', 'r');
+        $line = fgets($handle);
+        $response = trim($line);
+        fclose($handle);
+        if (!in_array($response, $confirm)) {
+            echo $cancelled . "\n";
+            return false;
+        }
+        echo $continuing . "\n";
+        return true;
     }
 
     /**
