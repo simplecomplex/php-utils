@@ -29,6 +29,7 @@ class CliCommand extends Explorable
         'name',
         'description',
         'arguments',
+        'argumentDescriptions',
         'options',
         'shortToLongOption',
         'preConfirmed',
@@ -56,9 +57,9 @@ class CliCommand extends Explorable
     public $arguments = [];
 
     /**
-     * @var array
+     * @var array|null
      */
-    protected $argumentDescriptions;
+    public $argumentDescriptions;
 
     /**
      * @var array

@@ -161,6 +161,13 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     }
 
     /**
+     * @var array
+     */
+    const FORMAT = [
+        'indent' => '  ',
+    ];
+
+    /**
      * @param string $str
      * @param mixed|string ...$formats
      *      String only, IDE stupid.
@@ -175,8 +182,11 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 case 'emphasize':
                     $str = "\033[01;37m" . $str . "\033[0m";
                     break;
+                case 'indent':
+                    $str = static::FORMAT['indent'] . str_replace("\n", "\n" . static::FORMAT['indent'], $str);
+                    break;
                 case 'hangingIndent':
-                    $str = str_replace("\n", "\n  ", $str);
+                    $str = str_replace("\n", "\n" . static::FORMAT['indent'], $str);
                     break;
                 default:
                     throw new \InvalidArgumentException('Unsupported format[' . $format . '].');
