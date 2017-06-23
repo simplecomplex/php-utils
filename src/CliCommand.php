@@ -31,6 +31,7 @@ class CliCommand extends Explorable
         'arguments',
         'options',
         'shortToLongOption',
+        'preConfirmed',
         'inputErrors',
     ];
 
@@ -68,6 +69,13 @@ class CliCommand extends Explorable
      * @var array|null
      */
     public $shortToLongOption = [];
+
+    /**
+     * Whether user flagged 'do not ask for confirmation' via input.
+     *
+     * @var bool
+     */
+    public $preConfirmed = false;
 
     /**
      * @see CliEnvironment::mapInputToCommand()

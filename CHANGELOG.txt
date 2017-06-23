@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-06-23
+-----------------------------------
+- Cli confirm() and pre-confirming --yes/-y.
+
 SimpleComplex/Utils 1.x, 2017-06-22
 -----------------------------------
 - Cli command and execution support multiple providers.

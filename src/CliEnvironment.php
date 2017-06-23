@@ -92,6 +92,37 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     }
 
     /**
+     * CLI confirm.
+     *
+     * @param string $question
+     * @param string[] $confirmWords
+     *      Default: [ 'yes', 'y' ].
+     * @param string $continueMessage
+     * @param string $cancelMessage
+     *
+     * @return bool
+     */
+    public function confirm(
+        string $question = 'Are you sure you want to do this? Type \'yes\' or \'y\' to continue:',
+        array $confirmWords = ['yes', 'y'],
+        string $continueMessage = 'Continuing...',
+        string $cancelMessage = 'Aborted.'
+    )
+    {
+        $this->echoMessage($question . ' ', '', true);
+        $handle = fopen('php://stdin', 'r');
+        $line = fgets($handle);
+        $response = trim($line);
+        fclose($handle);
+        if (!in_array($response, $confirmWords)) {
+            $this->echoMessage($cancelMessage);
+            return false;
+        }
+        $this->echoMessage($continueMessage);
+        return true;
+    }
+
+    /**
      * @var array
      */
     const MESSAGE_STATUS = [
@@ -99,8 +130,8 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         'error' => "\033[01;31m[error]\033[0m",
         // Light yellow.
         'warning' => "\033[01;33m[warning]\033[0m",
-        // Light blue.
-        'notice' => "\033[01;34m[notice]\033[0m",
+        // Cyan.
+        'notice' => "\033[01;36m[notice]\033[0m",
         // White.
         'info' => "\033[01;37m[info]\033[0m",
         // Light green.
@@ -127,34 +158,6 @@ class CliEnvironment extends Explorable implements CliCommandInterface
             echo static::MESSAGE_STATUS[$status] . ' ';
         }
         echo Sanitize::getInstance()->cli('' . $message) . ($noTrailingNewline ? '' : "\n");
-    }
-
-    /**
-     * @param string $question
-     * @param array $confirm
-     * @param string $continuing
-     * @param string $cancelled
-     *
-     * @return bool
-     */
-    public function confirm(
-        string $question = 'Are you sure you want to do this? Type \'yes\' or \'y\' to continue:',
-        array $confirm = ['yes', 'y'],
-        string $continuing = 'Continuing...',
-        string $cancelled = 'Aborted.'
-    )
-    {
-        echo $question . ' ';
-        $handle = fopen ('php://stdin', 'r');
-        $line = fgets($handle);
-        $response = trim($line);
-        fclose($handle);
-        if (!in_array($response, $confirm)) {
-            echo $cancelled . "\n";
-            return false;
-        }
-        echo $continuing . "\n";
-        return true;
     }
 
     /**
@@ -550,6 +553,17 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     for ($i = $n_args_input; $i < $n_args_supported; ++$i) {
                         unset($command->arguments[$arg_keys[$i]]);
                     }
+                }
+
+                // preConfirmed?
+                if (isset($this->inputOptions['yes'])) {
+                    $command->preConfirmed = true;
+                    unset($this->inputOptions['yes']);
+                }
+                // preConfirmed?
+                if (isset($this->inputOptionsShort['y'])) {
+                    $command->preConfirmed = true;
+                    unset($this->inputOptionsShort['y']);
                 }
 
                 $options_selected = [];
