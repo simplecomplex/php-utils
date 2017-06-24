@@ -64,6 +64,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      */
     public static function getInstance(...$constructorParams)
     {
+        // Unsure about null ternary ?? for class and instance vars.
         if (!static::$instance) {
             static::$instance = new static(...$constructorParams);
         } elseif (!empty($constructorParams)) {

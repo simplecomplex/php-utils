@@ -38,10 +38,24 @@ class Utils
      */
     public static function getInstance(...$constructorParams)
     {
+        // Unsure about null ternary ?? for class and instance vars.
         if (!static::$instance) {
             static::$instance = new static(...$constructorParams);
         }
         return static::$instance;
+    }
+
+    /**
+     * Class name without namespace.
+     *
+     * @param string $className
+     *
+     * @return string
+     */
+    public function classUnqualified(string $className) : string
+    {
+        $pos = strrpos($className, '\\');
+        return $pos || $pos === 0 ? substr($className, $pos + 1) : $className;
     }
 
     /**
