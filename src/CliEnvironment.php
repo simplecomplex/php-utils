@@ -117,11 +117,14 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         $response = trim($line);
         fclose($handle);
         if (!in_array($response, $confirmWords)) {
+            $this->echoMessage('');
             $this->echoMessage($cancelMessage, 'info');
             return false;
         }
         if ($continueMessage) {
-            $this->echoMessage($continueMessage);
+            $this->echoMessage($continueMessage . "\n");
+        } else {
+            $this->echoMessage('');
         }
         return true;
     }
@@ -717,7 +720,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     $provider_or_name = $command->arguments['provider-or-command'];
                     if (isset($this->commandRegistry[$provider_or_name])) {
                         // Print that command's help.
-                        $this->echoMessage('' . $this->commandRegistry[$provider_or_name]);
+                        $this->echoMessage('' . $this->commandRegistry[$provider_or_name] . "\n");
                         exit;
                     }
                     $commands = [];
@@ -730,7 +733,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     if ($commands) {
                         $this->echoMessage(
                             $this->format($provider_or_name, 'emphasize')
-                            . ' commands:' . "\n\n" . join("\n\n", $commands)
+                            . ' commands:' . "\n\n" . join("\n\n", $commands) . "\n"
                         );
                         exit;
                     } else {
@@ -745,9 +748,12 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 unset($this->commandRegistry['help']);
                 if ($this->commandRegistry) {
                     $this->echoMessage("\n" . 'Commands:');
+                    $providers = [];
                     foreach ($this->commandRegistry as $cmd) {
+                        $providers[$cmd->provider->commandProviderAlias()] = true;
                         $this->echoMessage("\n" . $cmd);
                     }
+                    $this->echoMessage("\n" . 'Providers: ' . join(' ', array_keys($providers)) . "\n");
                 }
                 exit;
             default:

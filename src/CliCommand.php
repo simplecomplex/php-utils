@@ -176,11 +176,11 @@ class CliCommand extends Explorable
             $arg_name = '' . $k;
             $arg_dscrptn = '' . $v;
             if (!$arg_name || !preg_match(static::REGEX['argument'], $arg_name)) {
-                throw new \InvalidArgumentException('Arg arguments element . ' . $i
+                throw new \InvalidArgumentException('Arg arguments element ' . $i
                     . ' key (argument name) is not valid; regex ' . static::REGEX['argument'] . '.');
             }
             if (!$arg_dscrptn) {
-                throw new \InvalidArgumentException('Arg arguments element . ' . $i
+                throw new \InvalidArgumentException('Arg arguments element ' . $i
                     . ' value (argument description) is not non-empty.');
             }
             $this->arguments[$arg_name] = $arg_dscrptn;
@@ -192,19 +192,19 @@ class CliCommand extends Explorable
             $opt_name = '' . $k;
             $opt_dscrptn = '' . $v;
             if (!$opt_name || !preg_match(static::REGEX['option'], $opt_name)) {
-                throw new \InvalidArgumentException('Arg options element . ' . $i
-                    . ' key (option name) is not valid; regex ' . static::REGEX['option'] . '.');
+                throw new \InvalidArgumentException('Arg options element ' . $i
+                    . ' key[' . $opt_name . '] is not valid; regex ' . static::REGEX['option'] . '.');
             }
             if (in_array($opt_name, static::RESERVED_OPTIONS)) {
-                throw new \InvalidArgumentException('Arg options element . ' . $i
-                    . ' key (option name) is reserved for generic purposes, option[' . $opt_name . '].');
+                throw new \InvalidArgumentException('Arg options element ' . $i
+                    . ' key[' . $opt_name . '] is reserved for generic purposes, option[' . $opt_name . '].');
             }
             if ($name != 'help' && $opt_name == 'help') {
-                throw new \InvalidArgumentException('Arg options element . ' . $i
-                    . ' key (option name) is reserved by general help command, option[' . $opt_name . '].');
+                throw new \InvalidArgumentException('Arg options element ' . $i
+                    . ' key[' . $opt_name . '] is reserved by general help command, option[' . $opt_name . '].');
             }
             if (!$opt_dscrptn) {
-                throw new \InvalidArgumentException('Arg options element . ' . $i
+                throw new \InvalidArgumentException('Arg options element ' . $i
                     . ' value (option description) is not non-empty.');
             }
             $this->options[$opt_name] = $opt_dscrptn;
@@ -216,24 +216,24 @@ class CliCommand extends Explorable
             $short = '' . $k;
             $opt_name = '' . $v;
             if (strlen($short) != 1 || !preg_match(static::REGEX['shortOpts'], $short)) {
-                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
-                    . ' key (short) is not a single ASCII letter.');
+                throw new \InvalidArgumentException('Arg shortToLongOption element ' . $i
+                    . ' key[' . $short . '] is not a single ASCII letter.');
             }
             if (!$opt_name || !preg_match(static::REGEX['option'], $opt_name)) {
-                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
-                    . ' value (option name) is not valid; regex ' . static::REGEX['option'] . '.');
+                throw new \InvalidArgumentException('Arg shortToLongOption element ' . $i
+                    . ' value[' . $opt_name . '] is not valid; regex ' . static::REGEX['option'] . '.');
             }
             if (in_array($short, static::RESERVED_OPTIONS)) {
-                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
-                    . ' key (short) is reserved for generic purposes, short[' . $short . '].');
+                throw new \InvalidArgumentException('Arg shortToLongOption element ' . $i
+                    . ' key[' . $short . '] is reserved for generic purposes, short[' . $short . '].');
             }
             if ($name != 'help' && $short == 'h') {
-                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
-                    . ' key (short) is reserved by general help command, short[' . $short . '].');
+                throw new \InvalidArgumentException('Arg shortToLongOption element ' . $i
+                    . ' key[' . $short . '] is reserved by general help command, short[' . $short . '].');
             }
             if (!isset($this->options[$opt_name])) {
-                throw new \InvalidArgumentException('Arg shortToLongOption element . ' . $i
-                    . ' value (option name) is not declared as option in the (previous) options arg.');
+                throw new \InvalidArgumentException('Arg shortToLongOption element ' . $i
+                    . ' value[' . $opt_name . '] is not declared as option in the (previous) options arg.');
             }
             $this->shortToLongOption[$short] = $opt_name;
         }

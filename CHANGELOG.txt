@@ -3,6 +3,7 @@ SimpleComplex/Utils 1.x, 2017-06-24
 - Fixed some options deficiencies.
 - Support return value from CLI commands.
 - Expose CLI commands of several packages, if exist.
+- More decriptive error message when invalid cli option.
 
 SimpleComplex/Utils 1.x, 2017-06-23
 -----------------------------------
