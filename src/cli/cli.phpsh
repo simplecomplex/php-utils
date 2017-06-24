@@ -1,0 +1,97 @@
+<?php
+/**
+ * SimpleComplex PHP Utils
+ * @link      https://github.com/simplecomplex/php-utils
+ * @copyright Copyright (c) 2014-2017 Jacob Friis Mathiasen
+ * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
+ */
+declare(strict_types=1);
+
+// Include Composer autoloader - re-usable snippet.-----------------------------
+(function()
+{
+    // Executed in [package] dir.
+    if (basename(dirname(dirname($path = getcwd()))) == 'vendor') {
+        require '../../autoload.php';
+        return;
+    }
+    // Executed in [package]/src/cli.
+    elseif (basename($path) == 'cli' && basename(dirname($path)) == 'src') {
+        require '../../../../autoload.php';
+        return;
+    }
+    // Executed in document root; one or two stops above 'vendor' dir.
+    $vendor_dir = 'vendor';
+    $vendor_path = '';
+    if (file_exists($vendor_dir) && is_dir($vendor_dir)) {
+        $vendor_path = $vendor_dir;
+    } else {
+        $iter = new \FilesystemIterator('', \FilesystemIterator::FOLLOW_SYMLINKS);
+        foreach ($iter as $item) {
+            if ($item->isDir()) {
+                $path = $item->getPathName();
+                $sub_iter = new \FilesystemIterator($path, \FilesystemIterator::FOLLOW_SYMLINKS);
+                foreach ($sub_iter as $sub_item) {
+                    if ($sub_item->isDir() && $sub_item->getFilename() == $vendor_dir) {
+                        $vendor_path = $path . '/' . $vendor_dir;
+                        break 2;
+                    }
+                }
+            }
+        }
+    }
+    if ($vendor_path) {
+        require $vendor_path . '/autoload.php';
+        return;
+    }
+    echo "\033[01;31m[error]\033[0m Can't locate composer autoload.\nChange dir to this script's dir, and try again.\n";
+    exit;
+})();
+// /Include Composer autoloader - re-usable snippet.----------------------------
+
+
+// Work.------------------------------------------------------------------------
+use SimpleComplex\Utils\CliEnvironment;
+
+/**
+ * Exposes CLI commands of several packages, if they exist.
+ *
+ * Only function for IDE to find this script.
+ * This file is unknown to Composer autoloader.
+ *
+ * @code
+ * # CLI
+ * cd vendor/simplecomplex/utils/src/cli
+ * php cli.phpsh -h
+ * @endcode
+ *
+ * @return mixed
+ *      Return value of the executed command, if any.
+ *      May well exit.
+ */
+function cli_utils()
+{
+    /**
+     * @see CliCommandInterface
+     *
+     * @see \SimpleComplex\JsonLog\CliJsonLog
+     * @see \SimpleComplex\Cache\CliCache
+     * @see \SimpleComplex\Config\CliConfig
+     */
+    $implementations = [
+        '\\SimpleComplex\\JsonLog\\CliJsonLog',
+        '\\SimpleComplex\\Cache\\CliCache',
+        '\\SimpleComplex\\Config\\CliConfig',
+    ];
+
+    foreach ($implementations as $class) {
+        if (class_exists($class)) {
+            new $class();
+        }
+    }
+
+    // Let CliEnvironment listen to input and forward matched command
+    // to it's provider (in this case CliJsonLog or CliEnvironment self).
+    return CliEnvironment::getInstance()->forwardMatchedCommand();
+}
+cli_utils();

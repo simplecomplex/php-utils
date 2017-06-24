@@ -15,6 +15,9 @@ namespace SimpleComplex\Utils\Traits;
  * Facilitates loosely coupled singleton pattern.
  * First instantiation sets the base for all later requests for an instance.
  *
+ * NB: IDE may very well not be able to resolve return type class;
+ * then copy to class instead of using this trait.
+ *
  * @package SimpleComplex\Utils
  */
 trait GetInstanceOfFamilyTrait

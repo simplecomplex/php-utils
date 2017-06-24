@@ -15,6 +15,9 @@ namespace SimpleComplex\Utils\Traits;
  * Not recommended for general/production purposes, because high probability
  * of unintended instantiation and use of multiple parent/child objects.
  *
+ * NB: IDE may very well not be able to resolve return type class;
+ * then copy to class instead of using this trait.
+ *
  * @see GetInstanceOfFamilyTrait
  *
  * @deprecated
