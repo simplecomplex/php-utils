@@ -69,7 +69,17 @@ class CliCommand extends Explorable
     /**
      * @var array|null
      */
+    public $optionDescriptions;
+
+    /**
+     * @var array|null
+     */
     public $shortToLongOption = [];
+
+    /**
+     * @var array|null
+     */
+    public $shortToLongDescriptions;
 
     /**
      * Whether user flagged 'do not ask for confirmation' via input.
@@ -238,8 +248,10 @@ class CliCommand extends Explorable
      */
     public function setMapped() /*: void*/
     {
-        // Copy; save argument descriptions for help.
+        // Copy; save argument and option descriptions for help.
         $this->argumentDescriptions = $this->arguments;
+        $this->optionDescriptions = $this->options;
+        $this->shortToLongDescriptions = $this->shortToLongOption;
         // Remove these now redundants from explorations.
         array_splice($this->explorableIndex, array_search('description', $this->explorableIndex), 1);
         array_splice($this->explorableIndex, array_search('shortToLongOption', $this->explorableIndex), 1);
@@ -291,12 +303,22 @@ class CliCommand extends Explorable
         }
 
         $output .= $nl . static::FORMAT['indent'] . static::FORMAT['indent'] . 'Options:';
-        if (!count($this->options)) {
+        if (!empty($this->optionDescriptions)) {
+            $opts =& $this->optionDescriptions;
+        } else {
+            $opts =& $this->options;
+        }
+        if (!empty($this->shortToLongDescriptions)) {
+            $short_opts =& $this->shortToLongDescriptions;
+        } else {
+            $short_opts =& $this->shortToLongOption;
+        }
+        if (!count($opts)) {
             $output .= ' none';
         } else {
-            foreach ($this->options as $name => $dscrptn) {
+            foreach ($opts as $name => $dscrptn) {
                 $line = str_repeat(static::FORMAT['indent'], 3) . '--' . $name;
-                foreach ($this->shortToLongOption as $short => $long) {
+                foreach ($short_opts as $short => $long) {
                     if ($long == $name) {
                         $line .= ' -' . $short;
                     }

@@ -590,6 +590,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                                 // with input value.
                                 $options_selected[$opt] = $this->inputOptions[$opt] ?? null;
                             }
+                            unset($input_opts_rest[$opt]);
                         }
                         if ($input_opts_rest) {
                             $this->inputErrors[] = $command->inputErrors[] = 'Command '
@@ -620,7 +621,19 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                         }
                         unset($input_opts_rest);
                     }
+                } else {
+                    if ($this->inputOptions) {
+                        $this->inputErrors[] = $command->inputErrors[] = 'Command '
+                            . $this->format($command_arg, 'emphasize') . ' doesn\'t support options(s): '
+                            . join(', ', array_keys($this->inputOptions)) . '.';
+                    }
+                    if ($this->inputOptionsShort) {
+                        $this->inputErrors[] = $command->inputErrors[] = 'Command '
+                            . $this->format($command_arg, 'emphasize') . ' doesn\'t support short options(s): '
+                            . join(', ', array_keys($this->inputOptionsShort)) . '.';
+                    }
                 }
+
                 if (!$this->inputErrors) {
                     $command->options = $options_selected;
                     // Not useful any more.
