@@ -35,12 +35,13 @@ interface CliCommandInterface
     /**
      * @param CliCommand $command
      *
-     * @return void
-     *      Must exit.
+     * @return mixed
+     *      Return value of the executed command, if any.
+     *      May well exit.
      *
      * @throws \LogicException
      *      If the command mapped by CliEnvironment
      *      isn't this provider's command.
      */
-    public function executeCommand(CliCommand $command) /*: void*/;
+    public function executeCommand(CliCommand $command);
 }

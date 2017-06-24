@@ -1,6 +1,7 @@
 SimpleComplex/Utils 1.x, 2017-06-24
 -----------------------------------
 - Fixed some options deficiencies.
+- Support return value from CLI commands.
 
 SimpleComplex/Utils 1.x, 2017-06-23
 -----------------------------------

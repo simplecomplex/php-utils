@@ -673,16 +673,16 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      * Listens to input and forwards matched command
      * to it's provider.
      *
-     * @return void
+     * @return mixed
+     *      Return value of the executed command, if any.
      */
-    public function forwardMatchedCommand() /*: void*/
+    public function forwardMatchedCommand()
     {
         if (!$this->command) {
             $this->mapInputToCommand();
         }
         $provider_class = $this->command->provider;
-        $provider_class->executeCommand($this->command);
-        exit;
+        return $provider_class->executeCommand($this->command);
     }
 
     /**
