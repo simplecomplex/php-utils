@@ -69,7 +69,7 @@ use SimpleComplex\Utils\CliEnvironment;
  *      Return value of the executed command, if any.
  *      May well exit.
  */
-function cli_utils()
+function simple_complex_utils_cli()
 {
     /**
      * @see CliCommandInterface
@@ -94,4 +94,4 @@ function cli_utils()
     // to it's provider (in this case CliJsonLog or CliEnvironment self).
     return CliEnvironment::getInstance()->forwardMatchedCommand();
 }
-cli_utils();
+simple_complex_utils_cli();
