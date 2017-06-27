@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use Psr\Container\ContainerInterface;
 use Psr\Log\LogLevel;
 use Psr\Log\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
@@ -44,39 +43,6 @@ class Utils
             static::$instance = new static(...$constructorParams);
         }
         return static::$instance;
-    }
-
-    /**
-     * Attempts to fetch an object from a dependency container referred
-     * in the global scope (as $container or $c).
-     *
-     * If you want to use Pimple you'll have to extend it so it implements
-     * PSR-11 ContainerInterface.
-     *
-     * @see \Psr\Container\ContainerInterface
-     *
-     * @param string $id
-     * @param string $class
-     *
-     * @return object|null
-     *
-     * @throws \InvalidArgumentException
-     *      If arg id or class is empty/falsy.
-     */
-    public static function fetchFromDependencyContainer(string $id, string $class)
-    {
-        if (!$id || !$class) {
-            throw new \InvalidArgumentException('Falsy arg id or class.');
-        }
-        global $container, $c;
-        $cntnr = $container ?? $c;
-        if ($cntnr && $cntnr instanceof ContainerInterface && $cntnr->has($id)) {
-            $o = $cntnr->get($id);
-            if ($o instanceof $class) {
-                return $o;
-            }
-        }
-        return null;
     }
 
     /**

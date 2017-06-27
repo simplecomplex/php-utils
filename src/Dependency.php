@@ -21,19 +21,20 @@ use SimpleComplex\Utils\Exception\ContainerRuntimeException;
  *
  * External container must have a set() method or be \ArrayAccess.
  *
- * The internal container is very simple implementation.
+ * The internal container is very a simple implementation:
+ *
  *
  * @package SimpleComplex\Utils
  */
 class Dependency implements ContainerInterface
 {
     /**
-     * @var ContainerInterface|null
+     * @var ContainerInterface
      */
     protected static $externalContainer;
 
     /**
-     * @var Dependency|null
+     * @var Dependency
      */
     protected static $internalContainer;
 
@@ -42,8 +43,7 @@ class Dependency implements ContainerInterface
      *
      * Creates internal container if no container exists yet.
      *
-     * @return ContainerInterface|Dependency|\Pimple\Container
-     *      ContainerInterface; \Pimple\Container is for IDE.
+     * @return ContainerInterface
      */
     public static function container() : ContainerInterface
     {
@@ -52,11 +52,12 @@ class Dependency implements ContainerInterface
     }
 
     /**
-     * Inject external dependency injection container, an tell that that's
+     * Inject external dependency injection container, and tell that that's
      * the container that'll be used from now on.
      *
-     * @param ContainerInterface|\Pimple\Container $container
-     *      ContainerInterface; \Pimple\Container is for IDE.
+     * @param ContainerInterface $container
+     *
+     * @return void
      *
      * @throws ContainerLogicException
      *      \LogicException + \Psr\Container\ContainerExceptionInterface
@@ -65,10 +66,14 @@ class Dependency implements ContainerInterface
     public static function injectExternalContainer(ContainerInterface $container)
     {
         if (static::$externalContainer) {
-            throw new ContainerLogicException('Can\'t inject external container when external container already exists.');
+            throw new ContainerLogicException(
+                'Can\'t inject external container when external container already exists.'
+            );
         }
         if (static::$internalContainer) {
-            throw new ContainerLogicException('Can\'t inject external container when internal container already exists.');
+            throw new ContainerLogicException(
+                'Can\'t inject external container when internal container already exists.'
+            );
         }
         static::$externalContainer = $container;
     }
@@ -80,6 +85,8 @@ class Dependency implements ContainerInterface
      *
      * @param string $id
      * @param mixed $value
+     *
+     * @return void
      *
      * @throws ContainerLogicException
      *      \LogicException + \Psr\Container\ContainerExceptionInterface
@@ -194,6 +201,8 @@ class Dependency implements ContainerInterface
      * @param callable|mixed $value
      *      If callable, if will be called on first request.
      *
+     * @return void
+     *
      * @throws ContainerRuntimeException
      *      \RuntimeException + \Psr\Container\ContainerExceptionInterface
      *      If item by that id has been set previously and requested previously.
@@ -210,5 +219,6 @@ class Dependency implements ContainerInterface
         } else {
             $this->values[$id] = $value;
         }
+        $this->keys[$id] = true;
     }
 }
