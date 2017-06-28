@@ -53,6 +53,7 @@ declare(strict_types=1);
 // Work.------------------------------------------------------------------------
 use SimpleComplex\Utils\CliEnvironment;
 use SimpleComplex\Utils\Dependency;
+use SimpleComplex\Cache\CacheBroker;
 use SimpleComplex\Config\Config;
 use SimpleComplex\JsonLog\JsonLog;
 use SimpleComplex\Inspect\Inspect;
@@ -79,6 +80,12 @@ function simple_complex_utils_cli()
     /** @var Dependency $container */
     $container = Dependency::container();
     $container->set(
+        'cache-broker',
+        function() {
+            return new CacheBroker();
+        }
+    );
+    $container->set(
         'config',
         function() {
             return new Config('global');
@@ -92,7 +99,7 @@ function simple_complex_utils_cli()
         }
     );
     $container->set(
-        'inspect',
+        'inspector',
         function() use ($container)
         {
             return new Inspect($container->get('config'));
@@ -100,7 +107,7 @@ function simple_complex_utils_cli()
     );
 
     set_exception_handler(function(\Throwable $throwable) use ($container) {
-        $trace = $container->get('inspect')->trace($throwable);
+        $trace = $container->get('inspector')->trace($throwable);
         $container->get('logger')->error('' . $trace);
         echo $trace; exit;
     });
