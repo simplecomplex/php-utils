@@ -53,10 +53,6 @@ declare(strict_types=1);
 // Work.------------------------------------------------------------------------
 use SimpleComplex\Utils\CliEnvironment;
 use SimpleComplex\Utils\Dependency;
-use SimpleComplex\Cache\CacheBroker;
-use SimpleComplex\Config\Config;
-use SimpleComplex\JsonLog\JsonLog;
-use SimpleComplex\Inspect\Inspect;
 
 /**
  * Exposes CLI commands of several packages, if they exist.
@@ -76,40 +72,38 @@ use SimpleComplex\Inspect\Inspect;
  */
 function simple_complex_utils_cli()
 {
-    // We know the container is a Dependency in CLI mode.
-    /** @var Dependency $container */
     $container = Dependency::container();
-    $container->set(
-        'cache-broker',
-        function() {
-            return new CacheBroker();
-        }
-    );
-    $container->set(
-        'config',
-        function() {
-            return new Config('global');
-        }
-    );
-    $container->set(
-        'logger',
-        function() use ($container)
-        {
-            return new JsonLog($container->get('config'));
-        }
-    );
-    $container->set(
-        'inspector',
-        function() use ($container)
-        {
-            return new Inspect($container->get('config'));
-        }
-    );
+    if (class_exists('\\SimpleComplex\\Cache\\CacheBroker')) {
+        Dependency::genericSet('cache-broker', function() {
+            return new \SimpleComplex\Cache\CacheBroker();
+        });
+    }
+    if (class_exists('\\SimpleComplex\\Config\\Config')) {
+        Dependency::genericSet('config', function() {
+            return new \SimpleComplex\Config\Config('global');
+        });
+    }
+    if (class_exists('\\SimpleComplex\\JsonLog\\JsonLog')) {
+        Dependency::genericSet('logger', function() use ($container) {
+            return new \SimpleComplex\JsonLog\JsonLog($container->has('config') ? $container->get('config') : null);
+        });
+    }
+    if (class_exists('\\SimpleComplex\\Inspect\\Inspect')) {
+        Dependency::genericSet('inspector', function() use ($container) {
+            return new \SimpleComplex\Inspect\Inspect($container->has('config') ? $container->get('config') : null);
+        });
+    }
 
     set_exception_handler(function(\Throwable $throwable) use ($container) {
-        $trace = $container->get('inspector')->trace($throwable);
-        $container->get('logger')->error('' . $trace);
-        echo $trace; exit;
+        $container = Dependency::container();
+        $trace = null;
+        if ($container->has('inspector')) {
+            $trace = '' . $container->get('inspector')->trace($throwable);
+        }
+        if ($container->has('logger')) {
+            $container->get('logger')->error($trace ?? $throwable);
+        }
+        echo ($trace ?? $throwable) . "\n"; exit;
     });
 
     /**

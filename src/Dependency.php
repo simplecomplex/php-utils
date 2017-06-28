@@ -11,6 +11,7 @@ namespace SimpleComplex\Utils;
 
 use Psr\Container\ContainerInterface;
 use SimpleComplex\Utils\Exception\ContainerLogicException;
+use SimpleComplex\Utils\Exception\ContainerInvalidArgumentException;
 use SimpleComplex\Utils\Exception\ContainerNotFoundException;
 use SimpleComplex\Utils\Exception\ContainerRuntimeException;
 
@@ -39,6 +40,11 @@ class Dependency implements ContainerInterface
     protected static $internalContainer;
 
     /**
+     * @var string
+     */
+    protected static $setMethod = 'set';
+
+    /**
      * Get the external or internal dependency injection container.
      *
      * Creates internal container if no container exists yet.
@@ -56,14 +62,20 @@ class Dependency implements ContainerInterface
      * the container that'll be used from now on.
      *
      * @param ContainerInterface $container
+     * @param string $setMethod
+     *      Default: empty; auto, uses set() or \ArrayAccess::offsetSet().
      *
      * @return void
      *
      * @throws ContainerLogicException
      *      \LogicException + \Psr\Container\ContainerExceptionInterface
      *      If there already is an external or internal container.
+     * @throws ContainerInvalidArgumentException
+     *      Empty arg setMethod and the container neither has a set() method
+     *      nor is \ArrayAccess.
+     *      Non-empty arg setMethod and container has no such method.
      */
-    public static function injectExternalContainer(ContainerInterface $container)
+    public static function injectExternalContainer(ContainerInterface $container, string $setMethod = '')
     {
         if (static::$externalContainer) {
             throw new ContainerLogicException(
@@ -75,39 +87,55 @@ class Dependency implements ContainerInterface
                 'Can\'t inject external container when internal container already exists.'
             );
         }
-        static::$externalContainer = $container;
+        if ($setMethod) {
+            if (!method_exists($container, $setMethod)) {
+                throw new ContainerInvalidArgumentException(
+                    'External container type[' . get_class($container) . '] has no method[' . $setMethod . '].');
+            }
+            static::$setMethod = $setMethod;
+        } elseif ($container instanceof \ArrayAccess) {
+            static::$setMethod = 'offsetSet';
+        } elseif (!method_exists($container, 'set')) {
+            throw new ContainerInvalidArgumentException(
+                'Empty arg setMethod and external container type['
+                . get_class($container) . '] has no set() method and is not ArrayAccess.'
+            );
+        }
     }
 
     /**
-     * Set item on the container, disregarding whether the container's setter
-     * is an \ArrayAccess setter (Pimple/Slim container) or an explicit set()
-     * method (like PHP-DI and this internal container).
+     * Set item in the container, disregarding the name of the setter method.
      *
      * @param string $id
      * @param mixed $value
      *
      * @return void
      *
-     * @throws ContainerLogicException
-     *      \LogicException + \Psr\Container\ContainerExceptionInterface
-     *      If the container neither has a set() method nor is \ArrayAccess.
+     * @throws ContainerRuntimeException
+     *      Propagated.
      */
-    public static function setItem($id, $value)
+    public static function genericSet($id, $value)
     {
-        static $has_set;
+        static::container()->{static::$setMethod}($id, $value);
+    }
+
+    /**
+     * Set multiple items in the container, disregarding the name of the setter
+     * method.
+     *
+     * @param array $values
+     *
+     * @return void
+     *
+     * @throws ContainerRuntimeException
+     *      Propagated.
+     */
+    public static function genericSetMultiple(array $values)
+    {
         $container = static::container();
-        if (static::$internalContainer || $has_set) {
-            $container->set($id, $value);
-        } elseif ($container instanceof \ArrayAccess) {
-            $container->offsetSet($id, $value);
-        } else {
-            $has_set = method_exists($container, 'set');
-            if ($has_set) {
-                $container->set($id, $value);
-            }
+        foreach ($values as $id => $value) {
+            $container->{static::$setMethod}($id, $value);
         }
-        throw new ContainerLogicException('External container type['
-            . get_class($container) . '] is not ArrayAccess and has no set() method.');
     }
 
     /**
