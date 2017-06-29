@@ -293,4 +293,71 @@ class Unicode
             preg_split('//u', substr($hstck, 0, $pos), null, PREG_SPLIT_NO_EMPTY)
         );
     }
+
+    /**
+     * Does nothing (except stringifying) if no mb_string support.
+     *
+     * @param mixed $var
+     *      Gets stringified.
+     *
+     * @return string
+     */
+    public function toUpperCase($var)
+    {
+        $v = '' . $var;
+        if ($v === '') {
+            return '';
+        }
+        if (static::$nativeSupport['mbstring']) {
+            return mb_strtoupper($v);
+        }
+        return $v;
+    }
+
+    /**
+     * Does nothing (except stringifying) if no mb_string support.
+     *
+     * @param mixed $var
+     *      Gets stringified.
+     *
+     * @return string
+     */
+    public function toUpperCaseFirst($var)
+    {
+        $v = '' . $var;
+        $len = $this->strlen($var);
+        if (!$len) {
+            return '';
+        }
+        if (static::$nativeSupport['mbstring']) {
+            if ($len > 1) {
+                return mb_strtoupper(mb_substr($v, 0, 1)) . mb_substr($v, 1);
+            }
+            return mb_strtoupper($v);
+        }
+        return $v;
+    }
+    /**
+     * Does nothing (except stringifying) if no mb_string support.
+     *
+     * @param mixed $var
+     *      Gets stringified.
+     *
+     * @return string
+     */
+    public function toUpperCaseLast($var)
+    {
+        $v = '' . $var;
+        $len = $this->strlen($var);
+        if (!$len) {
+            return '';
+        }
+        if (static::$nativeSupport['mbstring']) {
+            if ($len > 1) {
+                return mb_substr($v, 0, $len - 2) . mb_strtoupper(mb_substr($v, $len - 2));
+            }
+            return mb_strtoupper($v);
+        }
+        return $v;
+    }
 }
