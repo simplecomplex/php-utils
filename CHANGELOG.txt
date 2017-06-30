@@ -1,6 +1,13 @@
 SimpleComplex/Utils 1.x, 2017-06-30
 -----------------------------------
 - .ini parser support string value replacers.
+- ctype_digit() is no good when non-string input.
+- PathFileList support long file extensions; containing dotted components.
+- Fix that resolvePath didn't understand relative to self without ./ prefix.
+- parseIniString/parseIniFile() must return array.
+- parseIniString/parseIniFile() must err on failure.
+- Handle that native .ini parser fails on keys null, yes, no, true, false, on,
+  off, none.
 
 SimpleComplex/Utils 1.x, 2017-06-27
 -----------------------------------

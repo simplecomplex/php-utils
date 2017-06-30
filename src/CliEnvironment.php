@@ -476,7 +476,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                                 break;
                             default:
                                 // Yes, ctype_... returns false on ''.
-                                if (ctype_digit($value)) {
+                                if (ctype_digit('' . $value)) {
                                     $value = (int) $value;
                                 } elseif (is_numeric($value)) {
                                     $value = (float) $value;

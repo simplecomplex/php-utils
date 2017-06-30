@@ -53,9 +53,18 @@ class PathFileList extends \ArrayObject
     public $path;
 
     /**
+     * Example: ['ini'].
+     *
      * @var array
      */
     public $requireExtensions;
+
+    /**
+     * Example: ['whatever.ini'].
+     *
+     * @var bool
+     */
+    public $requireLongExtensions = false;
 
     /**
      * @var int
@@ -95,7 +104,17 @@ class PathFileList extends \ArrayObject
             );
         }
         $this->path = $path;
-        $this->requireExtensions = $requireExtensions;
+
+        if ($requireExtensions) {
+            foreach ($requireExtensions as $ext) {
+                if (strpos('.', $ext)) {
+                    $this->requireLongExtensions = true;
+                    break;
+                }
+            }
+            $this->requireExtensions = $requireExtensions;
+        }
+
         if ($maxDepth < 0) {
             throw new \InvalidArgumentException(
                 'Arg maxDepth cannot be negative, maxDepth[' . $maxDepth . '].'
@@ -133,9 +152,20 @@ class PathFileList extends \ArrayObject
                 continue;
             }
             if ($item->isDir()) {
-                $this->traverseRecursively($item->getPathName(), $depth + 1);
-            } elseif (!$this->requireExtensions || in_array($item->getExtension(), $this->requireExtensions, true)) {
-                $this->append($item->getPathName());
+                $this->traverseRecursively($item->getPathname(), $depth + 1);
+            } elseif (!$this->requireExtensions) {
+                $this->append($item->getPathname());
+            } elseif (!$this->requireLongExtensions && in_array($item->getExtension(), $this->requireExtensions, true)) {
+                $this->append($item->getPathname());
+            } else {
+                $filename = $item->getFilename();
+                foreach ($this->requireExtensions as $ext) {
+                    // Quick and dirty; if our long extension isn't at the end
+                    // it will be a false positive.
+                    if (strpos($filename, '.' . $ext) !== false) {
+                        $this->append($item->getPathname());
+                    }
+                }
             }
         }
     }

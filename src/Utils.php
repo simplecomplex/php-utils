@@ -259,10 +259,7 @@ class Utils
                 $path = $doc_root . substr($path, 1);
             }
             else {
-                throw new \LogicException(
-                    'Algo or configuration error, failed to determine whether path[' . $path
-                    . '] is absolute or relative.'
-                );
+                $path = $doc_root . '/' . $path;
             }
         }
         if (strpos($path, '/./') || strpos($path, '/../')) {
@@ -387,6 +384,78 @@ class Utils
     }
 
     /**
+     * Ini parsing: regex of keys that must be escaped before parsing.
+     *
+     * @see Utils::escapeIniKeys()
+     *
+     * @var array
+     */
+    const PARSE_INI_ESCAPE_KEYS = [
+        '/\n(null|yes|no|true|false|on|off|none) =/m',
+        "\n-" . '$1- =',
+    ];
+
+    /**
+     * Ini parsing: list of keys that must be unescaped after parsing.
+     *
+     * @see Utils::unescapeIniKeys()
+     *
+     * @var array
+     */
+    const PARSE_INI_UNESCAPE_KEYS = [
+        '-null-',
+        '-yes-',
+        '-no-',
+        '-true-',
+        '-false-',
+        '-on-',
+        '-off-',
+        '-none-',
+    ];
+
+    /**
+     * @param string $ini
+     *
+     * @return string
+     */
+    public function escapeIniKeys(string $ini)
+    {
+        if ($ini) {
+            return '' . preg_replace(static::PARSE_INI_ESCAPE_KEYS[0], static::PARSE_INI_ESCAPE_KEYS[1], "\n" . $ini);
+        }
+        return '';
+    }
+
+    /**
+     * @param array $ini
+     * @param bool $sectioned
+     */
+    public function unescapeIniKeys(array &$ini, $sectioned = false)
+    {
+        if ($ini) {
+            $unescapes = static::PARSE_INI_UNESCAPE_KEYS;
+            if (!$sectioned) {
+                foreach ($ini as $key => $value) {
+                    if (in_array($key, $unescapes)) {
+                        unset($ini[$key]);
+                        $ini[str_replace('-', '', $key)] = $value;
+                    }
+                }
+            } else {
+                foreach ($ini as &$section) {
+                    foreach ($section as $key => $value) {
+                        if (in_array($key, $unescapes)) {
+                            unset($section[$key]);
+                            $section[str_replace('-', '', $key)] = $value;
+                        }
+                    }
+                }
+                unset($section);
+            }
+        }
+    }
+
+    /**
      * List of needles and replacers for parseIniString/parseIniFile().
      *
      * @see Utils::parseIniString()
@@ -416,16 +485,21 @@ class Utils
      *      False: like INI_SCANNER_RAW; default.
      *      True: like INI_SCANNER_RAW | INI_SCANNER_TYPED; but without failure.
      *
-     * @return array|bool
-     *      False on error.
+     * @return array
+     *
+     * @throws \RuntimeException
+     *      On parser failure.
      */
-    public function parseIniString(string $ini, bool $processSections = false, bool $typed = false)
+    public function parseIniString(string $ini, bool $processSections = false, bool $typed = false) : array
     {
-        $arr = parse_ini_string($ini, $processSections, INI_SCANNER_RAW);
-        if (!$arr && !is_array($arr)) {
-            return false;
+        if (!$ini) {
+            return [];
         }
-        if ($typed) {
+        $arr = parse_ini_string($ini, $processSections, INI_SCANNER_RAW);
+        if (!is_array($arr)) {
+            throw new \RuntimeException('Failed parsing content.');
+        }
+        if ($arr && $typed) {
             $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
         }
         return $arr;
@@ -443,19 +517,28 @@ class Utils
      *      False: like INI_SCANNER_RAW; default.
      *      True: like INI_SCANNER_RAW | INI_SCANNER_TYPED; but without failure.
      *
-     * @return array|bool
-     *      False on error.
+     * @return array
+     *
+     * @throws \RuntimeException
+     *      If the file non-existent or not file, or reading the file fails.
+     *      Propagated, see parseIniString().
      */
-    public function parseIniFile(string $filename, bool $processSections = false, bool $typed = false)
+    public function parseIniFile(string $filename, bool $processSections = false, bool $typed = false) : array
     {
-        $arr = parse_ini_file($filename, $processSections, INI_SCANNER_RAW);
-        if (!$arr && !is_array($arr)) {
-            return false;
+        $ini = file_get_contents($filename);
+        if (!$ini) {
+            if ($ini === false) {
+                if (!file_exists($filename)) {
+                    throw new \RuntimeException('File not found, file[' . $filename . '].');
+                }
+                if (!is_file($filename)) {
+                    throw new \RuntimeException('Not a file, file[' . $filename . '].');
+                }
+                throw new \RuntimeException('Failed reading file[' . $filename . '].');
+            }
+            return [];
         }
-        if ($typed) {
-            $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
-        }
-        return $arr;
+        return $this->parseIniString($ini, $processSections, $typed);
     }
 
     /**
