@@ -387,6 +387,17 @@ class Utils
     }
 
     /**
+     * List of needles and replacers for parseIniString/parseIniFile().
+     *
+     * @see Utils::parseIniString()
+     *
+     * @var array
+     */
+    const PARSE_INI_REPLACE = [
+        '\\n' => "\n",
+    ];
+
+    /**
      * Fixes that native parse_ini_string() doesn't support raw + typed scanning.
      *
      * Inserting values of arbitrary constants into arbitrary variables seem
@@ -415,7 +426,7 @@ class Utils
             return false;
         }
         if ($typed) {
-            $this->typeArrayValues($arr);
+            $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
         }
         return $arr;
     }
@@ -442,7 +453,7 @@ class Utils
             return false;
         }
         if ($typed) {
-            $this->typeArrayValues($arr);
+            $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
         }
         return $arr;
     }
@@ -453,11 +464,13 @@ class Utils
     const ARRAY_RECURSION_LIMIT = 10;
 
     /**
-     * Casts bucket values that are 'null', 'NULL', 'true', 'false', '...numeric',
-     * recursively.
+     * Casts bucket values that are 'null', 'true', 'false', '...numeric',
+     * and replaces by arg stringReplace in strings; recursively.
      *
      * @param array &$arr
      *      By reference.
+     * @param array $stringReplace
+     *      List of needles and replacers; for str_replace().
      * @param int $depth
      *
      * @return void
@@ -465,7 +478,7 @@ class Utils
      * @throws \OutOfBoundsException
      *      Exceeded recursion limit.
      */
-    protected function typeArrayValues(array &$arr, int $depth = 0) /*: void*/
+    protected function typeArrayValues(array &$arr, array $stringReplace = [], int $depth = 0) /*: void*/
     {
         if ($depth > static::ARRAY_RECURSION_LIMIT) {
             throw new \OutOfBoundsException(
@@ -475,11 +488,10 @@ class Utils
         foreach ($arr as &$val) {
             if ($val !== '') {
                 if (is_array($val)) {
-                    $this->typeArrayValues($val, $depth + 1);
+                    $this->typeArrayValues($val, $stringReplace, $depth + 1);
                 } else {
                     switch ('' . $val) {
                         case 'null':
-                        case 'NULL':
                             $val = null;
                             break;
                         case 'true':
@@ -496,6 +508,10 @@ class Utils
                                     $val = substr('' . $val, 1);
                                 }
                                 $val = $sign * (ctype_digit('' . $val) ? (int) $val : (float) $val);
+                            } elseif ($stringReplace) {
+                                foreach ($stringReplace as $needle => $replacer) {
+                                    $val = str_replace($needle, $replacer, $val);
+                                }
                             }
                     }
                 }

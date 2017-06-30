@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-06-30
+-----------------------------------
+- .ini parser support string value replacers.
+
 SimpleComplex/Utils 1.x, 2017-06-27
 -----------------------------------
 - Dependency injection container which also can refer external container.
