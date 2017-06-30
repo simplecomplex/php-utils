@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * Sanitize strings, numbers et al.
+ * Sanitize and convert strings, numbers et al.
  *
  * @package SimpleComplex\Utils
  */
@@ -208,5 +208,30 @@ class Sanitize
      */
     public function cli($var) : string {
         return str_replace('`', '´', '' . $var);
+    }
+
+    /**
+     * Unicode not supported.
+     *
+     * @param mixed $var
+     *      Gets stringified.
+     * @param bool $upperFirst
+     *
+     * @return string
+     */
+    public function toCamelCase($var, $upperFirst = false)
+    {
+        $v = '' . $var;
+        $le = strlen($v);
+        if (!$le) {
+            return '';
+        }
+        $arr = preg_split('/[_\- ]/', $v);
+        for ($i = 0; $i < $le; ++$i) {
+            if ($i || $upperFirst) {
+                $arr[$i] = ucfirst($arr[$i]{0}) . substr($arr[$i], 1);
+            }
+        }
+        return join($arr);
     }
 }
