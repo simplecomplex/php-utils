@@ -186,14 +186,17 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     {
         foreach ($formats as $format) {
             switch ($format) {
-                case 'emphasize':
-                    $str = "\033[01;37m" . $str . "\033[0m";
-                    break;
                 case 'indent':
                     $str = static::FORMAT['indent'] . str_replace("\n", "\n" . static::FORMAT['indent'], $str);
                     break;
                 case 'hangingIndent':
                     $str = str_replace("\n", "\n" . static::FORMAT['indent'], $str);
+                    break;
+                case 'emphasize':
+                    $str = "\033[01;37m" . $str . "\033[0m";
+                    break;
+                case 'italics':
+                    $str = "\033[03m" . $str . "\033[0m";
                     break;
                 default:
                     throw new \InvalidArgumentException('Unsupported format[' . $format . '].');
