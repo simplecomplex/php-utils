@@ -112,11 +112,13 @@ function simple_complex_utils_cli()
      * @see \SimpleComplex\JsonLog\CliJsonLog
      * @see \SimpleComplex\Cache\CliCache
      * @see \SimpleComplex\Config\CliConfig
+     * @see \SimpleComplex\Locale\CliLocaleText
      */
     $implementations = [
         '\\SimpleComplex\\JsonLog\\CliJsonLog',
         '\\SimpleComplex\\Cache\\CliCache',
         '\\SimpleComplex\\Config\\CliConfig',
+        '\\SimpleComplex\\Locale\\CliLocaleText',
     ];
 
     foreach ($implementations as $class) {
