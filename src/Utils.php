@@ -270,6 +270,36 @@ class Utils
     }
 
     /**
+     * Check if a (file or directory) file mode is group-write.
+     *
+     * Group-write apparantly requires chmod'ing upon dir/file creation.
+     *
+     * Does not check if user- or other-write.
+     *
+     * @param int $fileMode
+     *      Use leading zero.
+     *
+     * @return bool
+     */
+    public function isFileGroupWrite(int $fileMode)
+    {
+        $mode_str = decoct($fileMode);
+        $group = $mode_str{strlen($mode_str) - 2};
+        switch ($group) {
+            case '2':
+                // write.
+            case '3':
+                // write + execute.
+            case '6':
+                // write + read.
+            case '7':
+                // all.
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Recursion limiter for ensurePath().
      *
      * @var int
@@ -316,9 +346,7 @@ class Utils
         }
         // Setting mode - chmod'ing - upon directory creation only seems to be
         // necessary when mode is group-write.
-        // Group-write is second-to-last octal digit is 7.
-        $mode_str = decoct($mode);
-        $group_write = $mode_str{strlen($mode_str) - 2} == '7';
+        $group_write = $this->isFileGroupWrite($mode);
 
         if (!file_exists($absolutePath)) {
             if (DIRECTORY_SEPARATOR == '\\') {
