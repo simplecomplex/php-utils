@@ -384,7 +384,7 @@ class Utils
     }
 
     /**
-     * Ini parsing: regex of keys that must be escaped before parsing.
+     * Ini parsing: regex of 'special' keys that must be escaped before parsing.
      *
      * @see Utils::escapeIniKeys()
      *
@@ -396,7 +396,7 @@ class Utils
     ];
 
     /**
-     * Ini parsing: list of keys that must be unescaped after parsing.
+     * Ini parsing: list of 'special' keys that must be unescaped after parsing.
      *
      * @see Utils::unescapeIniKeys()
      *
@@ -414,6 +414,8 @@ class Utils
     ];
 
     /**
+     * Escape .ini 'special' keys.
+     *
      * @param string $ini
      *
      * @return string
@@ -427,6 +429,8 @@ class Utils
     }
 
     /**
+     * Unescapce .ini 'special' keys.
+     *
      * @param array $ini
      * @param bool $sectioned
      */
@@ -495,9 +499,21 @@ class Utils
         if (!$ini) {
             return [];
         }
-        $arr = parse_ini_string($ini, $processSections, INI_SCANNER_RAW);
+        // Suppress PHP error; wrongly reported as syntax warning.
+        $arr = @parse_ini_string($ini, $processSections, INI_SCANNER_RAW);
         if (!is_array($arr)) {
-            throw new \RuntimeException('Failed parsing content.');
+            // Check if there's an unescaped 'special' key. We cannot know here
+            // if the content was escaped; via Utils::escapeIniKeys().
+            /**
+             * @see Utils::escapeIniKeys()
+             */
+            if (preg_match(static::PARSE_INI_ESCAPE_KEYS[0], "\n" . $ini)) {
+                throw new ConfigurationException(
+                    'Ini content contains unescaped \'special\' key name, one of: '
+                    . str_replace('-', '', join('|', static::PARSE_INI_UNESCAPE_KEYS)) . '.'
+                );
+            }
+            throw new \RuntimeException('Failed parsing ini content.');
         }
         if ($arr && $typed) {
             $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
