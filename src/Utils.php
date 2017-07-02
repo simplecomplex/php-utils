@@ -12,6 +12,7 @@ namespace SimpleComplex\Utils;
 use Psr\Log\LogLevel;
 use Psr\Log\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
+use SimpleComplex\Utils\Exception\ParseIniException;
 
 /**
  * Various helpers that do not deserve a class of their own.
@@ -519,7 +520,7 @@ class Utils
      *
      * @return array
      *
-     * @throws \RuntimeException
+     * @throws ParseIniException
      *      On parser failure.
      */
     public function parseIniString(string $ini, bool $processSections = false, bool $typed = false) : array
@@ -536,12 +537,12 @@ class Utils
              * @see Utils::escapeIniKeys()
              */
             if (preg_match(static::PARSE_INI_ESCAPE_KEYS[0], "\n" . $ini)) {
-                throw new ConfigurationException(
+                throw new ParseIniException(
                     'Ini content contains unescaped \'special\' key name, one of: '
                     . str_replace('-', '', join('|', static::PARSE_INI_UNESCAPE_KEYS)) . '.'
                 );
             }
-            throw new \RuntimeException('Failed parsing ini content.');
+            throw new ParseIniException('Failed parsing ini content.');
         }
         if ($arr && $typed) {
             $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
@@ -565,6 +566,7 @@ class Utils
      *
      * @throws \RuntimeException
      *      If the file non-existent or not file, or reading the file fails.
+     * @throws ParseIniException
      *      Propagated, see parseIniString().
      */
     public function parseIniFile(string $filename, bool $processSections = false, bool $typed = false) : array

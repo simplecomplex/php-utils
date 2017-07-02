@@ -94,16 +94,22 @@ function simple_complex_utils_cli()
         });
     }
 
+    // Exception handler, which catches errors that it itself instigates;
+    // errors occurring while instantiating container objects.
     set_exception_handler(function(\Throwable $throwable) use ($container) {
-        $container = Dependency::container();
-        $trace = null;
-        if ($container->has('inspector')) {
-            $trace = '' . $container->get('inspector')->trace($throwable);
+        try {
+            $container = Dependency::container();
+            $trace = null;
+            if ($container->has('inspector')) {
+                $trace = '' . $container->get('inspector')->trace($throwable);
+            }
+            if ($container->has('logger')) {
+                $container->get('logger')->error($trace ?? $throwable);
+            }
+            echo ($trace ?? $throwable) . "\n"; exit;
+        } catch (\Throwable $xc) {
+            echo $throwable . "\n"; exit;
         }
-        if ($container->has('logger')) {
-            $container->get('logger')->error($trace ?? $throwable);
-        }
-        echo ($trace ?? $throwable) . "\n"; exit;
     });
 
     /**

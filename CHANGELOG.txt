@@ -2,6 +2,9 @@ SimpleComplex/Utils 1.x, 2017-07-02
 -----------------------------------
 - Ini parsing: suppress PHP error wrongly reported as syntax warning.
 - Ini parsing: on error, check if ini content contains 'special' key.
+- ParseIniException type.
+- Safer CLI exception handler, which catches errors that it itself
+  instigates; errors occurring while instantiating container objects.
 
 SimpleComplex/Utils 1.x, 2017-07-01
 -----------------------------------
