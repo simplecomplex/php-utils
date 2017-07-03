@@ -210,6 +210,36 @@ class Utils
     }
 
     /**
+     * Check if a - file or directory - file mode is group-write.
+     *
+     * Group-write apparantly requires chmod'ing upon dir/file creation.
+     *
+     * Does not check if user- or other-write.
+     *
+     * @param int $fileMode
+     *      Use leading zero.
+     *
+     * @return bool
+     */
+    public function isFileGroupWrite(int $fileMode)
+    {
+        $mode_str = decoct($fileMode);
+        $group = $mode_str{strlen($mode_str) - 2};
+        switch ($group) {
+            case '2':
+                // write.
+            case '3':
+                // write + execute.
+            case '6':
+                // write + read.
+            case '7':
+                // all.
+                return true;
+        }
+        return false;
+    }
+
+    /**
      * Resolve path, convert relative (to document root) to absolute path.
      *
      * NB: doesn't check if the resolved absolute path exists and is directory.
@@ -271,36 +301,6 @@ class Utils
     }
 
     /**
-     * Check if a (file or directory) file mode is group-write.
-     *
-     * Group-write apparantly requires chmod'ing upon dir/file creation.
-     *
-     * Does not check if user- or other-write.
-     *
-     * @param int $fileMode
-     *      Use leading zero.
-     *
-     * @return bool
-     */
-    public function isFileGroupWrite(int $fileMode)
-    {
-        $mode_str = decoct($fileMode);
-        $group = $mode_str{strlen($mode_str) - 2};
-        switch ($group) {
-            case '2':
-                // write.
-            case '3':
-                // write + execute.
-            case '6':
-                // write + read.
-            case '7':
-                // all.
-                return true;
-        }
-        return false;
-    }
-
-    /**
      * Recursion limiter for ensurePath().
      *
      * @var int
@@ -316,7 +316,8 @@ class Utils
      * @param int $mode
      *      Default: user-only read/write/execute.
      *
-     * @return void
+     * @return bool
+     *      False: The directory didn't exist; throw exception on failure.
      *
      * @throws \InvalidArgumentException
      *      If arg absolutePath isn't absolute.
@@ -332,7 +333,7 @@ class Utils
      * @throws \LogicException
      *      Exceeded maximum recursion limit, positively due to algo error.
      */
-    public function ensurePath(string $absolutePath, int $mode = 0700) /*: void*/
+    public function ensurePath(string $absolutePath, int $mode = 0700) : bool
     {
         if (strlen($absolutePath) < 2) {
             throw new \InvalidArgumentException(
@@ -345,11 +346,12 @@ class Utils
                 'Arg mode must be positive and consist of leading zero plus minimum 3 digits, mode[' . $mode . '].'
             );
         }
-        // Setting mode - chmod'ing - upon directory creation only seems to be
-        // necessary when mode is group-write.
-        $group_write = $this->isFileGroupWrite($mode);
 
         if (!file_exists($absolutePath)) {
+            // Setting mode - chmod'ing - upon directory creation only seems to be
+            // necessary when mode is group-write.
+            $group_write = $this->isFileGroupWrite($mode);
+
             if (DIRECTORY_SEPARATOR == '\\') {
                 $path = str_replace('\\', '/', $absolutePath);
                 if ($path{1} !== ':') {
@@ -406,10 +408,14 @@ class Utils
                     throw new \RuntimeException('Failed to chmod dir[' . $existing . '] to mode[' . $mode . '].');
                 }
             } while ($trailing);
+            // Didn't exist.
+            return false;
         }
         elseif (!is_dir($absolutePath)) {
             throw new \RuntimeException('Path exists but is not directory[' . $absolutePath . '].');
         }
+        // Did exist.
+        return true;
     }
 
     /**

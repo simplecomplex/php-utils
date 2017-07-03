@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-07-03
+-----------------------------------
+- ensurePath() return boolean; false if didn't exist.
+
 SimpleComplex/Utils 1.x, 2017-07-02
 -----------------------------------
 - Ini parsing: suppress PHP error wrongly reported as syntax warning.
