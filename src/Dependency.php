@@ -16,14 +16,19 @@ use SimpleComplex\Utils\Exception\ContainerNotFoundException;
 use SimpleComplex\Utils\Exception\ContainerRuntimeException;
 
 /**
- * Interface to an external or internal dependency injection container.
+ * PSR Container wrapper - interface to an external or internal dependency
+ * injection container.
  *
  * Can only refer a single container.
  *
- * External container must have a set() method or be \ArrayAccess.
+ * External container must have a set() method, or be \ArrayAccess (having
+ * offsetSet method). Otherwise pass setMethod arg to injectExternalContainer().
  *
- * The internal container is very a simple implementation:
+ * @see Dependency::injectExternalContainer()
  *
+ * The internal container is very a simple implementation.
+ * The only extra feature is that it (like Pimple) rejects setting/overwriting
+ * a dependency which already have been requested for (used).
  *
  * @package SimpleComplex\Utils
  */
@@ -101,6 +106,7 @@ class Dependency implements ContainerInterface
                 . get_class($container) . '] has no set() method and is not ArrayAccess.'
             );
         }
+        static::$externalContainer = $container;
     }
 
     /**
