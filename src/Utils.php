@@ -312,12 +312,16 @@ class Utils
      *
      * Does not resolve /./ nor /../.
      *
+     * NB: May fail if a directory isn't executable (seekable) by current user.
+     * And may attempt to create a directory which does exist, because current
+     * user can't 'see' the directory.
+     *
      * @param string $absolutePath
      * @param int $mode
      *      Default: user-only read/write/execute.
      *
      * @return bool
-     *      False: The directory didn't exist; throw exception on failure.
+     *      False: The directory didn't exist; throws exception on failure.
      *
      * @throws \InvalidArgumentException
      *      If arg absolutePath isn't absolute.
