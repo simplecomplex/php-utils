@@ -16,7 +16,7 @@ use SimpleComplex\Utils\Exception\ContainerNotFoundException;
 use SimpleComplex\Utils\Exception\ContainerRuntimeException;
 
 /**
- * PSR Container wrapper - interface to an external or internal dependency
+ * PSR-11 Container wrapper - interface to an external or internal dependency
  * injection container.
  *
  * Can only refer a single container.
