@@ -19,17 +19,28 @@
 As [Wikipedia](https://en.wikipedia.org/wiki/Dependency_injection#Disadvantages) sums it up:
 > Ironically, dependency injection can encourage dependence on a dependency injection framework.
 
-**``` Dependency ```** is a simple tool for mitigating dependency of a particular injection container.
-
+**``` Dependency ```** is a simple tool for mitigating dependency of a particular injection container.  
 Wraps a [PSR-11](https://github.com/container-interop/fig-standards/blob/container-configuration/proposed/container.md)
 or [Pimple](http://pimple.sensiolabs.org) container or creates it's own lightweight PSR-11 container.
 
-#### PHP CLI/console made easy ####
+#### PHP CLI (command line/console) made easy ####
 
-**``` CliCommand ```**
-specifies a simple way of declaring a CLI command
+**``` CliCommand ```** and **``` CliCommandInterface ```**
+specifies a simple way of defining a CLI command, and auto-generates --help output.
 
-``` CliEnvironment ``` 
+**``` CliEnvironment ```** 
 
+- lists --help of all defined commands
+- resolves CLI input arguments and options
+- maps to a ``` CliCommand ``` and executes it
+- finds document root
 
-The gem of this package is the command line utilities.
+#### Odds and ends ####
+
+**``` Unicode ```** abstracts mbstring.
+
+**``` Sanitize ```** delivers basic string sanitizers and converters.
+
+**``` PathFileList ```** hides the complexity of using FilesystemIterators.
+
+**``` Utils ```** parses ini strings/files, and delivers a range of other handy methods. 
