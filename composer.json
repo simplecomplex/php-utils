@@ -1,7 +1,7 @@
 {
     "name": "simplecomplex/utils",
     "type": "library",
-    "description": "Basic utilities: unicode, sanitize, cli.",
+    "description": "Dependency injection container abstraction; PHP CLI made easy; various basic utilities.",
     "keywords": ["utils","strict types", "PHP"],
     "homepage": "https://github.com/simplecomplex/php-utils",
     "license": "MIT",
