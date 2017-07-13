@@ -26,7 +26,7 @@ or [Pimple](http://pimple.sensiolabs.org) container or creates it's own lightwei
 #### PHP CLI (command line/console) made easy ####
 
 **``` CliCommand ```** and **``` CliCommandInterface ```**
-specifies a simple way of defining a CLI command, and auto-generates --help output.
+specify a simple way of defining a CLI command, and auto-generate --help output.
 
 **``` CliEnvironment ```** 
 
