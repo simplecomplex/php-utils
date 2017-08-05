@@ -30,6 +30,33 @@ use SimpleComplex\Utils\Exception\ContainerRuntimeException;
  * The only extra feature is that it (like Pimple) rejects setting/overwriting
  * a dependency which already have been requested for (used).
  *
+ *
+ * Known environment-specific entry IDs
+ * ------------------------------------
+ * @dependency-injection-container
+ *
+ * Slim:
+ * - settings
+ * - environment
+ * - request
+ * - response
+ * - router
+ * - foundHandler
+ * - phpErrorHandler
+ * - errorHandler
+ * - notFoundHandler
+ * - notAllowedHandler
+ * - callableResolver
+ *
+ * SimpleComplex packages:
+ * - cache-broker
+ * - config
+ * - logger
+ * - inspector
+ * - locale
+ * - validator
+ *
+ *
  * @package SimpleComplex\Utils
  */
 class Dependency implements ContainerInterface
@@ -112,6 +139,8 @@ class Dependency implements ContainerInterface
     /**
      * Set item in the container, disregarding the name of the setter method.
      *
+     * Creates internal container, if no container injected/exists.
+     *
      * @param string $id
      * @param mixed $value
      *
@@ -129,6 +158,8 @@ class Dependency implements ContainerInterface
      * Set multiple items in the container, disregarding the name of the setter
      * method.
      *
+     * Creates internal container, if no container injected/exists.
+     *
      * @param array $values
      *
      * @return void
@@ -142,6 +173,45 @@ class Dependency implements ContainerInterface
         foreach ($values as $id => $value) {
             $container->{static::$setMethod}($id, $value);
         }
+    }
+
+    /**
+     * Get list of registered IDs.
+     *
+     * External container must have one of these instance methods:
+     * - keys(); Pimple
+     * - getKnownEntryNames(); PHP-DI
+     * - getArrayCopy(); ArrayObject
+     *
+     * @return array
+     *
+     * @throws ContainerLogicException
+     *      If external container provides no known means of listing the IDs.
+     */
+    public static function genericKeys() : array
+    {
+        if (static::$externalContainer) {
+            $container = static::$externalContainer;
+            // Pimple.
+            if (method_exists($container, 'keys')) {
+                return $container->keys();
+            }
+            // PHP-DI.
+            if (method_exists($container, 'getKnownEntryNames')) {
+                return $container->getKnownEntryNames();
+            }
+            // ArrayObject
+            if (method_exists($container, 'getArrayCopy')) {
+                return array_keys($container->getArrayCopy());
+            }
+            throw new ContainerLogicException(
+                'Externale container type[' . get_class($container) . '] provides no known means of accessing'
+            );
+        }
+        if (static::$internalContainer) {
+            return array_keys(static::$internalContainer->keys);
+        }
+        return [];
     }
 
     /**

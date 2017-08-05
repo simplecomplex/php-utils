@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2017-08-05
+-----------------------------------
+- Generic dependency method for listing registered IDs.
+- Documentation of known environment-specific IDs; Slim and SimpleComplex.
+
 SimpleComplex/Utils 1.x, 2017-07-20
 -----------------------------------
 - Cli script find vendor dir fix.
