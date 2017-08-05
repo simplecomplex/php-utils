@@ -1,0 +1,13 @@
+
+# class opening brace newline
+class([^\n\{]+) \{
+class$1\n{
+
+# function opening brace newline
+function([^\n\{]+) \{
+function$1\n    {
+
+# else(if)
+\}\n[ ]+else
+} else
+
