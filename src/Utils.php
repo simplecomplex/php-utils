@@ -93,71 +93,91 @@ class Utils
     }
 
     /**
-     * Handles that one cannot know whether to access a property of container
-     * in an array- or object-like manner.
-     *
-     * At your own risk, does not check arg container's type unless required.
+     * Check if array or object has a key.
      *
      * @param array|object $container
      * @param int|string $key
-     * @param string $containerType
-     *      Empty: arg container's type will be checked or guessed.
      *
      * @return bool
+     *
+     * @throws \InvalidArgumentException
+     *      Arg container isn't array|object.
      */
-    public function containerIsset($container, $key, string $containerType = '') : bool
+    public function containerIsset($container, $key) : bool
     {
-        $type = $containerType;
-        if (!$type) {
-            if (is_array($container)) {
-                $type = 'array';
-            } elseif ($container instanceof \ArrayAccess) {
-                $type = 'arrayAccess';
-            } else {
-                $type = 'object';
-            }
+        if (is_array($container)) {
+            return isset($container[$key]);
         }
-        switch ($type) {
-            case 'array':
-            case 'arrayAccess':
-            case \ArrayAccess::class:
-                return isset($container[$key]);
+        if (is_object($container)) {
+            return $container instanceof \ArrayAccess ? $container->offsetExists($key) : isset($container->key);
         }
-        return isset($container->{$key});
+        throw new \InvalidArgumentException(
+            'Arg container type[' . static::getType($container) . '] is not array or object.'
+        );
     }
 
     /**
-     * Handles that one cannot know whether to access a property of container
-     * in an array- or object-like manner.
-     *
-     * At your own risk, does not check arg container's type unless required.
+     * Get value by key of an array or object.
      *
      * @param array|object $container
      * @param int|string $key
-     * @param string $containerType
-     *      Empty: arg container's type will be checked or inferred by exclusion.
      *
      * @return mixed|null
+     *
+     * @throws \InvalidArgumentException
+     *      Arg container isn't array|object.
      */
-    public function containerGetIfSet(/*container*/ $container, $key, string $containerType = '') /*: ?mixed*/
+    public function containerGetIfSet($container, $key) /*: ?mixed*/
     {
-        $type = $containerType;
-        if (!$type) {
-            if (is_array($container)) {
-                $type = 'array';
-            } elseif ($container instanceof \ArrayAccess) {
-                $type = 'arrayAccess';
-            } else {
-                $type = 'object';
+        if (is_array($container)) {
+            return $container[$key] ?? null;
+        }
+        if (is_object($container)) {
+            return $container instanceof \ArrayAccess ? ($container->offsetExists($key) ? $container[$key] : null) :
+                ($container->key ?? null);
+        }
+        throw new \InvalidArgumentException(
+            'Arg container type[' . static::getType($container) . '] is not array or object.'
+        );
+    }
+
+    /**
+     * Get list of keys of an array or object.
+     *
+     * Non-Traversable ArrayAccess is not a valid container in this context.
+     *
+     * @param array|object $container
+     *
+     * @return array
+     *
+     * @throws \InvalidArgumentException
+     *      Arg container isn't array|object or is non-Traversable ArrayAccess.
+     */
+    public function containerKeys($container)
+    {
+        if (is_array($container)) {
+            return array_keys($container);
+        }
+        if (is_object($container)) {
+            if ($container instanceof \Traversable) {
+                if ($container instanceof \ArrayObject || $container instanceof \ArrayIterator) {
+                    return array_keys($container->getArrayCopy());
+                } else {
+                    // Have to iterate; horrible.
+                    $keys = [];
+                    foreach ($container as $k => $ignore) {
+                        $keys[] = $k;
+                    }
+                    return $keys;
+                }
+            }
+            if (!($container instanceof \ArrayAccess)) {
+                return array_keys(get_object_vars($container));
             }
         }
-        switch ($type) {
-            case 'array':
-            case 'arrayAccess':
-            case \ArrayAccess::class:
-                return $container[$key] ?? null;
-        }
-        return $container->{$key} ?? null;
+        throw new \InvalidArgumentException(
+            'Arg container type[' . static::getType($container) . '] is not a valid container.'
+        );
     }
 
     /**
