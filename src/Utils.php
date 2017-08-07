@@ -47,6 +47,39 @@ class Utils
     }
 
     /**
+     * Get subject class name or (non-object) type.
+     *
+     * Counter to native gettype() this method returns:
+     * - class name instead of 'object'
+     * - 'float' instead of 'double'
+     * - 'null' instead of 'NULL'
+     *
+     * Like native gettype() this method returns:
+     * - 'boolean' not 'bool'
+     * - 'integer' not 'int'
+     * - 'unknown type' for unknown type
+     *
+     * @param mixed $subject
+     *
+     * @return string
+     */
+    public static function getType($subject)
+    {
+        if (!is_object($subject)) {
+            $type = gettype($subject);
+            switch ($type) {
+                case 'double':
+                    return 'float';
+                case 'NULL':
+                    return 'null';
+                default:
+                    return $type;
+            }
+        }
+        return get_class($subject);
+    }
+
+    /**
      * Class name without namespace.
      *
      * @param string $className
@@ -674,10 +707,7 @@ class Utils
     {
         // PHP <7.1.
         if (!is_array($container) && !is_object($container)) {
-            throw new \TypeError(
-                'Arg container type[' . (!is_object($container) ? gettype($container) : get_class($container))
-                . '] is not array|object.'
-            );
+            throw new \TypeError('Arg container type[' . static::getType($container) . '] is not array|object.');
         }
 
         if (!$useSections) {
