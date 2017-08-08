@@ -176,7 +176,8 @@ class Utils
             }
         }
         throw new \InvalidArgumentException(
-            'Arg container type[' . static::getType($container) . '] is not a valid container.'
+            'Arg container type[' . static::getType($container)
+            . (!is_object($container) ? '] is not array or object.' : '] is non-Traversable ArrayAccess.')
         );
     }
 
