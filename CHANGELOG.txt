@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-08-10
+-----------------------------------
+- parseJsonString()/parseJsonFile().
+
 SimpleComplex/Utils 1.x, 2017-08-08
 -----------------------------------
 - ConfigurationException is now a generic exception, usable within other

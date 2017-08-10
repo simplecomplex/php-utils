@@ -13,6 +13,7 @@ use Psr\Log\LogLevel;
 use Psr\Log\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
 use SimpleComplex\Utils\Exception\ParseIniException;
+use SimpleComplex\Utils\Exception\ParseJsonException;
 
 /**
  * Various helpers that do not deserve a class of their own.
@@ -585,7 +586,7 @@ class Utils
      * @return array
      *
      * @throws ParseIniException
-     *      On parser failure.
+     *      On parse failure.
      */
     public function parseIniString(string $ini, bool $processSections = false, bool $typed = false) : array
     {
@@ -649,6 +650,63 @@ class Utils
             return [];
         }
         return $this->parseIniString($ini, $processSections, $typed);
+    }
+
+    /**
+     * @param string $json
+     * @param bool $assoc
+     *
+     * @return mixed
+     *
+     * @throws ParseJsonException
+     *      On parse failure.
+     */
+    public function parseJsonString(string $json, bool $assoc = false) {
+        $parsed = json_decode($json, $assoc);
+        $error = json_last_error();
+        if ($error) {
+            switch ($error) {
+                case JSON_ERROR_NONE: $name = 'NONE'; break;
+                case JSON_ERROR_DEPTH: $name = 'DEPTH'; break;
+                case JSON_ERROR_STATE_MISMATCH: $name = 'STATE_MISMATCH'; break;
+                case JSON_ERROR_CTRL_CHAR: $name = 'CTRL_CHAR'; break;
+                case JSON_ERROR_SYNTAX: $name = 'SYNTAX'; break;
+                case JSON_ERROR_UTF8: $name = 'UTF8'; break;
+                case JSON_ERROR_RECURSION: $name = 'RECURSION'; break;
+                case JSON_ERROR_INF_OR_NAN: $name = 'INF_OR_NAN'; break;
+                case JSON_ERROR_UNSUPPORTED_TYPE: $name = 'UNSUPPORTED_TYPE'; break;
+                case JSON_ERROR_INVALID_PROPERTY_NAME: $name = 'INVALID_PROPERTY_NAME'; break;
+                case JSON_ERROR_UTF16: $name = 'UTF16'; break;
+                default: $name = 'unknown';
+            }
+            throw new ParseJsonException('Failed parsing JSON, error: (' . $name . ') ' . json_last_error_msg() . '.');
+        }
+        return $parsed;
+    }
+
+    /**
+     * @param string $filename
+     *
+     * @return mixed
+     *
+     * @throws \RuntimeException
+     *      If the file non-existent or not file, or reading the file fails.
+     * @throws ParseJsonException
+     *      Propagated.
+     */
+    public function parseJsonFile(string $filename, bool $assoc = false)
+    {
+        $json = file_get_contents($filename);
+        if (!$json) {
+            if (!file_exists($filename)) {
+                throw new \RuntimeException('File not found, file[' . $filename . '].');
+            }
+            if (!is_file($filename)) {
+                throw new \RuntimeException('Not a file, file[' . $filename . '].');
+            }
+            throw new \RuntimeException('Failed reading file[' . $filename . '].');
+        }
+        return $this->parseJsonString($json, $assoc);
     }
 
     /**
