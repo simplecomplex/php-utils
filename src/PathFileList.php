@@ -145,7 +145,7 @@ class PathFileList extends \ArrayObject
         $iterator = new \FilesystemIterator(
             $path,
             \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
-            | ($this->flags & self::SKIP_SYMLINKS ? 0 : \FilesystemIterator::FOLLOW_SYMLINKS)
+            | (($this->flags & self::SKIP_SYMLINKS) ? 0 : \FilesystemIterator::FOLLOW_SYMLINKS)
         );
         foreach ($iterator as $item) {
             if (!($this->flags & self::INCLUDE_HIDDEN) && $item->getFilename(){0} == '.') {
