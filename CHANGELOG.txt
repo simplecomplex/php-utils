@@ -1,6 +1,8 @@
 SimpleComplex/Utils 1.x, 2017-08-16
 -----------------------------------
 - parseJsonString() now removes line comments that begin at line start.
+- PathFileListUnique uses filenames as keys and require that filenames
+  are unique across directories.
 
 SimpleComplex/Utils 1.x, 2017-08-10
 -----------------------------------

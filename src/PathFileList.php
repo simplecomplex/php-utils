@@ -13,7 +13,7 @@ namespace SimpleComplex\Utils;
  * List all files in path, recursively, optionally requiring specific
  * file extension(s).
  *
- * Array-like object.
+ * Array-like object, numerically indexed.
  * Skips . and ..
  * Converts backslash directory separator to forward slash.
  * Defaults to follow symbolic links.
@@ -48,6 +48,14 @@ class PathFileList extends \ArrayObject
     const INCLUDE_HIDDEN = 2;
 
     /**
+     * Does not use filenames as keys and do not require that filenames
+     * are unique across directories.
+     *
+     * @var bool
+     */
+    const FILENAMES_UNIQUE = false;
+
+    /**
      * @var string
      */
     public $path;
@@ -79,6 +87,8 @@ class PathFileList extends \ArrayObject
     /**
      * PathFileList constructor.
      *
+     * @see PathFileListUnique::FILENAMES_UNIQUE
+     *
      * @param string $path
      * @param array $requireExtensions
      *      Empty: list all files, disregarding extensions.
@@ -90,6 +100,9 @@ class PathFileList extends \ArrayObject
      * @throws \InvalidArgumentException
      *      Arg path doesn't exist or isn't a directory.
      *      Arg maxDepth negative.
+     * @throws \RuntimeException
+     *      Propagated, if class constant FILENAMES_UNIQUE
+     *      and non-unique filename found.
      */
     public function __construct(string $path, array $requireExtensions = [], int $maxDepth = 9, int $flags = 0)
     {
@@ -134,8 +147,13 @@ class PathFileList extends \ArrayObject
     }
 
     /**
+     * @see PathFileListUnique::FILENAMES_UNIQUE
+     *
      * @param string $path
      * @param int $depth
+     *
+     * @throws \RuntimeException
+     *      If class constant FILENAMES_UNIQUE and non-unique filename found.
      */
     protected function traverseRecursively(string $path, int $depth = 0)
     {
@@ -148,22 +166,38 @@ class PathFileList extends \ArrayObject
             | (($this->flags & self::SKIP_SYMLINKS) ? 0 : \FilesystemIterator::FOLLOW_SYMLINKS)
         );
         foreach ($iterator as $item) {
-            if (!($this->flags & self::INCLUDE_HIDDEN) && $item->getFilename(){0} == '.') {
+            $filename = $item->getFilename();
+            if (!($this->flags & self::INCLUDE_HIDDEN) && $filename{0} == '.') {
                 continue;
             }
             if ($item->isDir()) {
                 $this->traverseRecursively($item->getPathname(), $depth + 1);
-            } elseif (!$this->requireExtensions) {
-                $this->append($item->getPathname());
-            } elseif (!$this->requireLongExtensions && in_array($item->getExtension(), $this->requireExtensions, true)) {
-                $this->append($item->getPathname());
             } else {
-                $filename = $item->getFilename();
-                foreach ($this->requireExtensions as $ext) {
-                    // Quick and dirty; if our long extension isn't at the end
-                    // it will be a false positive.
-                    if (strpos($filename, '.' . $ext) !== false) {
+                $matches = false;
+                if (!$this->requireExtensions) {
+                    $matches = true;
+                } elseif (!$this->requireLongExtensions && in_array($item->getExtension(), $this->requireExtensions, true)) {
+                    $matches = true;
+                } else {
+                    foreach ($this->requireExtensions as $ext) {
+                        // Quick and dirty; if our long extension isn't at the end
+                        // it will be a false positive.
+                        if (strpos($filename, '.' . $ext) !== false) {
+                            $matches = true;
+                            break;
+                        }
+                    }
+                }
+                if ($matches) {
+                    if (!static::FILENAMES_UNIQUE) {
                         $this->append($item->getPathname());
+                    } elseif ($this->offsetExists($filename)) {
+                        throw new \RuntimeException(
+                            'Non-unique filename[' . $filename . '] found in paths[' . $this->offsetGet($filename) . ']'
+                            . ' and[' . $item->getPathname() . '].'
+                        );
+                    } else {
+                        $this->offsetSet($filename, $item->getPathname());
                     }
                 }
             }
