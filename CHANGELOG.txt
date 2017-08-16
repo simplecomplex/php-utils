@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-08-16
+-----------------------------------
+- parseJsonString() now removes line comments that begin at line start.
+
 SimpleComplex/Utils 1.x, 2017-08-10
 -----------------------------------
 - parseJsonString()/parseJsonFile().

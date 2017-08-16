@@ -653,6 +653,10 @@ class Utils
     }
 
     /**
+     * Removes line comments that begin at line start.
+     *
+     * Also remove carriage return.
+     *
      * @param string $json
      * @param bool $assoc
      *
@@ -662,6 +666,16 @@ class Utils
      *      On parse failure.
      */
     public function parseJsonString(string $json, bool $assoc = false) {
+        if ($json) {
+            // Remove line comments that begin at line start.
+            $json = trim(
+                preg_replace(
+                    '/\n\/\/[^\n]*\n/m',
+                    "\n",
+                    "\n" . str_replace("\r", '', $json)
+                )
+            );
+        }
         $parsed = json_decode($json, $assoc);
         $error = json_last_error();
         if ($error) {
@@ -697,7 +711,7 @@ class Utils
     public function parseJsonFile(string $filename, bool $assoc = false)
     {
         $json = file_get_contents($filename);
-        if (!$json) {
+        if ($json === false) {
             if (!file_exists($filename)) {
                 throw new \RuntimeException('File not found, file[' . $filename . '].');
             }
