@@ -164,6 +164,7 @@ class PathFileList extends \ArrayObject
                     // it will be a false positive.
                     if (strpos($filename, '.' . $ext) !== false) {
                         $this->append($item->getPathname());
+                        break;
                     }
                 }
             }
