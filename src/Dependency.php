@@ -52,7 +52,7 @@ use SimpleComplex\Utils\Exception\ContainerRuntimeException;
  * - cache-broker
  * - config
  * - logger
- * - inspector
+ * - inspect
  * - locale
  * - validator
  *
