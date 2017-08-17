@@ -54,7 +54,7 @@ use SimpleComplex\Utils\Exception\ContainerRuntimeException;
  * - logger
  * - inspect
  * - locale
- * - validator
+ * - validate
  *
  *
  * @package SimpleComplex\Utils
