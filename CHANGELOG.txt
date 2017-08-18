@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2017-08-18
+-----------------------------------
+- Do not require explicit 'yes' confirmation for risky CLI commands,
+  if file .risky_command_skip_confirm placed in document root.
+
 SimpleComplex/Utils 1.x, 2017-08-16
 -----------------------------------
 - parseJsonString() now removes line comments that begin at line start.

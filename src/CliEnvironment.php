@@ -39,6 +39,7 @@ use SimpleComplex\Utils\Exception\ConfigurationException;
  * @property-read string $currentWorkingDir
  * @property-read string $documentRoot
  * @property-read int $documentRootDistance
+ * @property-read bool $riskyCommandRequireConfirm
  *
  * Intended as singleton - ::getInstance() - but constructor not protected.
  *
@@ -244,6 +245,12 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      */
     protected $documentRoot;
 
+    /**
+     * Read-only.
+     * @var bool
+     */
+    protected $riskyCommandRequireConfirm;
+
 
     // Explorable.--------------------------------------------------------------
 
@@ -259,6 +266,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         'currentWorkingDir',
         'documentRoot',
         'documentRootDistance',
+        'riskyCommandRequireConfirm',
     ];
 
     /**
@@ -297,6 +305,15 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 return $this->getDocumentRoot();
             case 'documentRootDistance':
                 return $this->getDocumentRootDistance();
+            case 'riskyCommandRequireConfirm':
+                if ($this->riskyCommandRequireConfirm === null) {
+                    if (!$this->documentRoot) {
+                        $this->getDocumentRoot();
+                    }
+                    $this->riskyCommandRequireConfirm =
+                        !file_exists($this->documentRoot . '/.risky_command_skip_confirm');
+                }
+                return $this->riskyCommandRequireConfirm;
         }
         throw new \OutOfBoundsException(get_class($this) . ' instance exposes no property[' . $name . '].');
     }
