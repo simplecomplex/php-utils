@@ -817,7 +817,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         }
         // Symlinked path cannot be detected because $_SERVER['SCRIPT_FILENAME']
         // in cli mode only returns the filename; not path + filename.
-
+        $path = realpath($path);
         if (DIRECTORY_SEPARATOR == '\\') {
             $path = str_replace('\\', '/', $path);
         }
@@ -865,7 +865,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         }
 
         if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-            $this->documentRoot = $_SERVER['DOCUMENT_ROOT'];
+            $this->documentRoot = realpath($_SERVER['DOCUMENT_ROOT']);
             // We don't expect DIRECTORY_SEPARATOR=\ issues for that server var.
             return $this->documentRoot;
         }

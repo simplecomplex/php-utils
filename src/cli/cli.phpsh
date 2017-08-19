@@ -117,12 +117,14 @@ function simple_complex_utils_cli()
     /**
      * @see CliCommandInterface
      *
+     * @see \SimpleComplex\Utils\CliUtils
      * @see \SimpleComplex\JsonLog\CliJsonLog
      * @see \SimpleComplex\Cache\CliCache
      * @see \SimpleComplex\Config\CliConfig
      * @see \SimpleComplex\Locale\CliLocaleText
      */
     $implementations = [
+        '\\SimpleComplex\\Utils\\CliUtils',
         '\\SimpleComplex\\JsonLog\\CliJsonLog',
         '\\SimpleComplex\\Cache\\CliCache',
         '\\SimpleComplex\\Config\\CliConfig',

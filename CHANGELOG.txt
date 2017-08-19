@@ -1,3 +1,13 @@
+SimpleComplex/Utils 1.x, 2017-08-19
+-----------------------------------
+- CLI command features do NOT work without Inspect, however CliEnvironment do.
+  Suggest Inspect package in composer.json.
+- New CLI command 'utils-execute' for executing an include script.
+- Utils::cast() object|array to class name.
+- Utils->documentRoot() and Utils->pathReplaceDocumentRoot().
+- CliEnvironment::getCurrentWorkingDir() and getDocumentRoot()
+  must resolve to real path.
+
 SimpleComplex/Utils 1.x, 2017-08-18
 -----------------------------------
 - Do not require explicit 'yes' confirmation for risky CLI commands,

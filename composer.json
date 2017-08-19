@@ -18,7 +18,7 @@
     },
     "suggest": {
         "ext-mbstring": "PHP native multibyte features.",
-        "ext-intl": "PHP native Unicode (UTF-8) features."
+        "simplecomplex/inspect": "Utils' CLI command features do NOT work without Inspect, however CliEnvironment do."
     },
     "autoload": {
         "psr-4": {

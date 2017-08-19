@@ -81,6 +81,50 @@ class Utils
     }
 
     /**
+     * Cast object or array to a class.
+     *
+     * Does not handle protected properties of neither arg (object) subject
+     * nor final class instance.
+     *
+     * Does not support toClassName class whose constructor
+     * has required parameter(s).
+     *
+     * @param object|array &$subject
+     *      By reference.
+     * @param string $toClassName
+     *
+     * @throws \TypeError
+     *      Arg subject is not object|array.
+     *      Arg subject is object whose class isn't a parent of arg toClassName.
+     *      Propagated; toClassName class constructor has required parameter(s).
+     */
+    public static function cast(&$subject, string $toClassName) /*:void*/
+    {
+        if (is_object($subject)) {
+            $from_class_name = get_class($subject);
+            if ($from_class_name != \stdClass::class && !in_array($from_class_name, class_parents($toClassName))) {
+                throw new \TypeError(
+                    'Can\'t cast arg subject, class[' . $from_class_name
+                    . '] is not parent class of arg toClassName[' . $toClassName . '].'
+                );
+            }
+            $source_props = get_object_vars($subject);
+        } elseif (!is_array($subject)) {
+            throw new \TypeError('Arg subject type[' . static::getType($subject) . '] is not object or array.');
+        } else {
+            // Copy.
+            $source_props = $subject;
+        }
+        // would break if subject is array and argument wasn't by reference.
+        $subject = new $toClassName();
+        foreach ($source_props as $key => &$value) {
+            $subject->{$key} = $value;
+        }
+        // Iteration ref.
+        unset($value);
+    }
+
+    /**
      * Class name without namespace.
      *
      * @param string $className
@@ -295,6 +339,128 @@ class Utils
     }
 
     /**
+     * @var string|null
+     */
+    protected $documentRoot;
+
+    /**
+     * @var int|null
+     */
+    protected $documentRootsMinLength;
+
+    /**
+     * @var array|null
+     */
+    protected $documentRootsAll;
+
+    /**
+     * Real path document root.
+     *
+     * @return string
+     */
+    public function documentRoot() : string
+    {
+        if (!$this->documentRoot) {
+            if (!empty($_SERVER['DOCUMENT_ROOT'])) {
+                $this->documentRoot = realpath($_SERVER['DOCUMENT_ROOT']);
+                if (DIRECTORY_SEPARATOR == '\\') {
+                    $this->documentRoot = str_replace('\\', '/', $this->documentRoot);
+                }
+            } elseif (CliEnvironment::cli()) {
+                if (!($this->documentRoot = CliEnvironment::getInstance()->documentRoot)) {
+                    throw new ConfigurationException(
+                        'Cannot resolve document root, probably no .document_root file in document root.'
+                    );
+                }
+            } else {
+                throw new ConfigurationException(
+                    'Cannot resolve document root, _SERVER[DOCUMENT_ROOT] non-existent or empty.');
+            }
+        }
+        return $this->documentRoot;
+    }
+
+    /**
+     * Shortest document root, in effect symlinked or real path.
+     *
+     * @return int
+     */
+    public function documentRootsMinLength() : int
+    {
+        if (!$this->documentRootsMinLength) {
+            $this->documentRootsAll();
+        }
+        return $this->documentRootsMinLength;
+    }
+
+    /**
+     * List of real path and symlinked path (if any).
+     *
+     * On Windows furthermore ditto two with forward slash directory separator.
+     *
+     * @return array
+     */
+    public function documentRootsAll() : array
+    {
+        if (!$this->documentRootsAll) {
+            $roots[] = $real_root = $this->documentRoot();
+            $min_length = strlen($real_root);
+            $symlink_root = dirname($_SERVER['SCRIPT_FILENAME']);
+            // In cli mode a symlinked path is empty, because SCRIPT_FILENAME
+            // is the filename only; no path.
+            if (
+                $symlink_root && $symlink_root != '.'
+                && $symlink_root != $real_root
+            ) {
+                // The symlink must be a subset of the real path, so for
+                // replacers it works swell with symlink after real path.
+                $roots[] = $symlink_root;
+                if (($length = strlen($symlink_root)) < $min_length) {
+                    // Likely.
+                    $min_length = $length;
+                }
+            }
+            if (DIRECTORY_SEPARATOR == '\\') {
+                $forward_slash_root = str_replace('\\', '/', $real_root);
+                if ($forward_slash_root != $real_root) {
+                    $roots[] = $forward_slash_root;
+                }
+                if ($symlink_root != $real_root) {
+                    $forward_slash_root = str_replace('\\', '/', $symlink_root);
+                    if ($forward_slash_root != $symlink_root) {
+                        $roots[] = $forward_slash_root;
+                    }
+                }
+            }
+            $this->documentRootsAll =& $roots;
+            $this->documentRootsMinLength = $min_length;
+        }
+        return $this->documentRootsAll;
+    }
+
+    /**
+     * Replaces all instances of document root in a path with a substitute.
+     *
+     * Replaces real path document root as well as symlinked document root.
+     *
+     * @param string $path
+     * @param string $substitute
+     *
+     * @return string
+     */
+    public function pathReplaceDocumentRoot(string $path, string $substitute = '[document_root]') : string {
+        if (!$this->documentRootsMinLength) {
+            $this->documentRootsAll();
+        }
+        if (strlen($path) >= $this->documentRootsMinLength) {
+            foreach ($this->documentRootsAll as $root) {
+                $path = str_replace($root, $substitute, $path);
+            }
+        }
+        return $path;
+    }
+
+    /**
      * Resolve path, convert relative (to document root) to absolute path.
      *
      * NB: doesn't check if the resolved absolute path exists and is directory.
@@ -304,13 +470,10 @@ class Utils
      * @return string
      *      Absolute path.
      *
-     * @throws ConfigurationException
-     *      If document root cannot be determined.
-     * @throws \LogicException
-     *      Algo or configuration error, can't determine whether path is
-     *      absolute or relative.
      * @throws \RuntimeException
      *      Path not resolvable to absolute path.
+     * @throws ConfigurationException
+     *      Propagated; document root cannot be determined.
      */
     public function resolvePath(string $relativePath) : string
     {
@@ -320,22 +483,7 @@ class Utils
             strpos($path, '/') !== 0
             && (DIRECTORY_SEPARATOR === '/' || strpos($path, ':') !== 1)
         ) {
-            // Document root.
-            if (!empty($_SERVER['DOCUMENT_ROOT'])) {
-                $doc_root = $_SERVER['DOCUMENT_ROOT'];
-                if (DIRECTORY_SEPARATOR == '/') {
-                    $doc_root = str_replace('\\', '/', $doc_root);
-                }
-            } elseif (CliEnvironment::cli()) {
-                $doc_root = (new CliEnvironment())->documentRoot;
-                if (!$doc_root) {
-                    throw new ConfigurationException(
-                        'Cannot resolve document root, probably no .document_root file in document root.');
-                }
-            } else {
-                throw new ConfigurationException(
-                    'Cannot resolve document root, _SERVER[DOCUMENT_ROOT] non-existent or empty.');
-            }
+            $doc_root = $this->documentRoot();
             // Relative above document root.
             if (strpos($path, '../') === 0) {
                 $path = dirname($doc_root) . substr($path, 2);
@@ -700,6 +848,7 @@ class Utils
 
     /**
      * @param string $filename
+     * @param bool $assoc
      *
      * @return mixed
      *
