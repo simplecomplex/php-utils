@@ -801,7 +801,8 @@ class Utils
     }
 
     /**
-     * Removes line comments that begin at line start.
+     * Removes line comments that begin at line start
+     * or before any code in line.
      *
      * Also remove carriage return.
      *
@@ -815,10 +816,11 @@ class Utils
      */
     public function parseJsonString(string $json, bool $assoc = false) {
         if ($json) {
-            // Remove line comments that begin at line start.
+            // Remove line comments that begin at line start
+            // or before any code in line.
             $json = trim(
                 preg_replace(
-                    '/\n\/\/[^\n]*\n/m',
+                    '/\n[ ]*\/\/[^\n]*\n/m',
                     "\n",
                     "\n" . str_replace("\r", '', $json)
                 )
