@@ -820,8 +820,8 @@ class Utils
             // or before any code in line.
             $json = trim(
                 preg_replace(
-                    '/\n[ ]*\/\/[^\n]*\n/m',
-                    "\n",
+                    '/\n[ ]*\/\/[^\n]*/m',
+                    '',
                     "\n" . str_replace("\r", '', $json)
                 )
             );
