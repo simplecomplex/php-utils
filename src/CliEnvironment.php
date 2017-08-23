@@ -307,11 +307,15 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 return $this->getDocumentRootDistance();
             case 'riskyCommandRequireConfirm':
                 if ($this->riskyCommandRequireConfirm === null) {
-                    if (!$this->documentRoot) {
-                        $this->getDocumentRoot();
+                    if (getenv('PHP_LIB_SIMPLECOMPLEX_UTILS_RISKY_COMMAND_SKIP_CONFIRM')) {
+                        $this->riskyCommandRequireConfirm = false;
+                    } else {
+                        if (!$this->documentRoot) {
+                            $this->getDocumentRoot();
+                        }
+                        $this->riskyCommandRequireConfirm =
+                            !file_exists($this->documentRoot . '/.risky_command_skip_confirm');
                     }
-                    $this->riskyCommandRequireConfirm =
-                        !file_exists($this->documentRoot . '/.risky_command_skip_confirm');
                 }
                 return $this->riskyCommandRequireConfirm;
         }

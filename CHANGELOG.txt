@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2017-08-23
+-----------------------------------
+- CLI commands support suppressing strict confirms by setting enviroment var
+  PHP_LIB_SIMPLECOMPLEX_UTILS_RISKY_COMMAND_SKIP_CONFIRM.
+
 SimpleComplex/Utils 1.x, 2017-08-19
 -----------------------------------
 - CLI command features do NOT work without Inspect, however CliEnvironment do.

@@ -11,13 +11,15 @@ use \SimpleComplex\Utils\Dependency;
 use \SimpleComplex\Utils\CliEnvironment;
 use \SimpleComplex\Utils\Utils;
 
+use \SimpleComplex\Validate\Validate;
+
 /**
  * Include script example, for 'utils-execute' CLI command.
  *
  * @code
  * # CLI
  * cd vendor/simplecomplex/utils/src/cli
- * php cli.phpsh utils-execute include_script_example.php
+ * php cli.phpsh utils-execute vendor/simplecomplex/utils/src/cli/include_script_example.php
  * @endcode
  *
  * @return void
