@@ -33,6 +33,7 @@ class CliCommand extends Explorable
         'options',
         'shortToLongOption',
         'preConfirmed',
+        'silent',
         'inputErrors',
     ];
 
@@ -84,9 +85,20 @@ class CliCommand extends Explorable
     /**
      * Whether user flagged 'do not ask for confirmation' via input.
      *
+     * Or truthy environment var PHP_LIB_SIMPLECOMPLEX_UTILS_CLI_SKIP_CONFIRM.
+     *
      * @var bool
      */
     public $preConfirmed = false;
+
+    /**
+     * Do not echo unless error?
+     *
+     * Truthy environment var PHP_LIB_SIMPLECOMPLEX_UTILS_CLI_SILENT.
+     *
+     * @var bool
+     */
+    public $silent = false;
 
     /**
      * @see CliEnvironment::mapInputToCommand()

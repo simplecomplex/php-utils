@@ -77,8 +77,8 @@ class CliUtils implements CliCommandInterface
      *
      * @see simplecomplex_utils_include_script_example()
      *
-     * Ignores pre-confirmation --yes/-y option,
-     * ignores .risky_command_skip_confirm file placed in document root.
+     * Ignores pre-confirmation --yes/-y option.
+     * And 'silent' is neither respected by this command.
      *
      * @return void
      *      Exits.
@@ -114,6 +114,7 @@ class CliUtils implements CliCommandInterface
             }
         }
         // Pre-confirmation --yes/-y ignored for this command.
+        // And 'silent' is neither allowed.
         if ($this->command->preConfirmed) {
             $this->command->inputErrors[] = 'Pre-confirmation \'yes\'/-y option not supported for this command,'
                 . "\n" . 'Period.';

@@ -307,7 +307,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 return $this->getDocumentRootDistance();
             case 'riskyCommandRequireConfirm':
                 if ($this->riskyCommandRequireConfirm === null) {
-                    if (getenv('PHP_LIB_SIMPLECOMPLEX_UTILS_RISKY_COMMAND_SKIP_CONFIRM')) {
+                    if (getenv('PHP_LIB_SIMPLECOMPLEX_UTILS_CLI_SKIP_CONFIRM')) {
                         $this->riskyCommandRequireConfirm = false;
                     } else {
                         if (!$this->documentRoot) {
@@ -606,6 +606,14 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     $command->preConfirmed = true;
                     unset($this->inputOptionsShort['y']);
                 }
+                // Pre-confirmed by environment variable?
+                if (!$command->preConfirmed && getenv('PHP_LIB_SIMPLECOMPLEX_UTILS_CLI_SKIP_CONFIRM')) {
+                    $command->preConfirmed = true;
+                }
+                // Silent; no echo unless error?
+                if (getenv('PHP_LIB_SIMPLECOMPLEX_UTILS_CLI_SILENT')) {
+                    $command->silent = true;
+                }
 
                 $options_selected = [];
                 if ($command->options) {
@@ -775,7 +783,16 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                     $providers = [];
                     foreach ($this->commandRegistry as $cmd) {
                         $providers[$cmd->provider->commandProviderAlias()] = true;
-                        $this->echoMessage("\n" . $cmd);
+                        // Only echo first line of the each command's help output.
+                        if (($pos = strpos('' . $cmd, "\n"))) {
+                            $truncated = substr('' . $cmd, 0, $pos);
+                            if ($truncated{strlen($truncated) - 1} !== '.') {
+                                $truncated .= '...';
+                            }
+                            $this->echoMessage("\n" . $truncated);
+                        } else {
+                            $this->echoMessage("\n" . $cmd);
+                        }
                     }
                     $this->echoMessage("\n" . 'Providers: ' . join(' ', array_keys($providers)) . "\n");
                 }
