@@ -1,17 +1,5 @@
 ## (PHP) Utils ##
 
-#### Requirements ####
-
-- PHP >=7.0
-- [PSR-11 Container](https://github.com/php-fig/container)
-- [PSR-3 Log](https://github.com/php-fig/log)
-
-##### Suggestions #####
-
-- PHP mbstring extension
-- PHP intl extension
-- [SimpleComplex Inspect](https://github.com/simplecomplex/inspect) (for CLI)
-
 ### Main features ###
 
 #### Dependency injection container abstraction ####
@@ -44,3 +32,15 @@ specify a simple way of defining a CLI command, and auto-generate --help output.
 **``` PathFileList ```** hides the complexity of using FilesystemIterators.
 
 **``` Utils ```** parses ini strings/files, and delivers a range of other handy methods. 
+
+### Requirements ###
+
+- PHP >=7.0
+- [PSR-11 Container](https://github.com/php-fig/container)
+- [PSR-3 Log](https://github.com/php-fig/log)
+
+#### Suggestions ####
+
+- PHP mbstring extension
+- PHP intl extension
+- [SimpleComplex Inspect](https://github.com/simplecomplex/inspect) (for CLI)
