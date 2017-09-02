@@ -22,9 +22,7 @@
     },
     "autoload": {
         "psr-4": {
-            "SimpleComplex\\Utils\\": "src/",
-            "SimpleComplex\\Utils\\Traits\\": "src/traits/",
-            "SimpleComplex\\Utils\\Exception\\": "src/Exception/"
+            "SimpleComplex\\Utils\\": "src/"
         }
     }
 }

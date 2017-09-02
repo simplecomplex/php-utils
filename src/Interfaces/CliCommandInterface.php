@@ -7,7 +7,9 @@
  */
 declare(strict_types=1);
 
-namespace SimpleComplex\Utils;
+namespace SimpleComplex\Utils\Interfaces;
+
+use SimpleComplex\Utils\CliCommand;
 
 /**
  * Implementing class must provide CLI commands and a means to execute them.

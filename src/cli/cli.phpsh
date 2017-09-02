@@ -115,7 +115,7 @@ function simple_complex_utils_cli()
     });
 
     /**
-     * @see CliCommandInterface
+     * @see \SimpleComplex\Utils\Interfaces\CliCommandInterface
      *
      * @see \SimpleComplex\Utils\CliUtils
      * @see \SimpleComplex\JsonLog\CliJsonLog

@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 use SimpleComplex\Inspect\Inspect;
+use SimpleComplex\Utils\Interfaces\CliCommandInterface;
 
 /**
  * CLI only.
@@ -93,7 +94,7 @@ class CliUtils implements CliCommandInterface
         $utils = Utils::getInstance();
 
         // Validate input. ---------------------------------------------
-        $include_file = $path = $file = $path_file = '';
+        $path = $file = $path_file = '';
         if (empty($this->command->arguments['include-file'])) {
             $this->command->inputErrors[] = !isset($this->command->arguments['include-file']) ?
                 'Missing \'include-file\' argument.' : 'Empty \'include-file\' argument.';
@@ -163,11 +164,11 @@ class CliUtils implements CliCommandInterface
                 'success'
             );
         } catch (\Throwable $xcptn) {
+            /** @var Inspect $inspect */
+            $inspect = $container->get('inspect');
             $this->environment->echoMessage(
                 'Executing include script ' . $path . '/' . $this->environment->format($file, 'emphasize')
-                . ' produced exception.'
-                . "\n" . 'Do check log.'
-                . "\n" . $container->get('inspect')->variable($xcptn)->toString(false),
+                . ' produced exception.' . "\n" . 'Do check log.' . "\n" . $inspect->variable($xcptn)->toString(false),
                 'error'
             );
         }

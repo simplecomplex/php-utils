@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Interfaces\CliCommandInterface;
 use SimpleComplex\Utils\Exception\ConfigurationException;
 
 /**

@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Interfaces\CliCommandInterface;
+
 /**
  * Cli command specification.
  *

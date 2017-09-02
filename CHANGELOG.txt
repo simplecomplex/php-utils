@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-09-02
+-----------------------------------
+- Interfaces moved to sub dir/namespace.
+
 SimpleComplex/Utils 1.x, 2017-08-24
 -----------------------------------
 - CliCommand 'silent' property, controlled by environment var
