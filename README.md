@@ -55,4 +55,4 @@ php cli.phpsh utils-execute include-file
 #### Suggestions ####
 
 - PHP mbstring extension<!-- - PHP intl extension -->
-- [SimpleComplex Inspect](https://github.com/simplecomplex/inspect) (CLI features require it)
+- [SimpleComplex Inspect](https://github.com/simplecomplex/inspect)
