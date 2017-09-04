@@ -23,6 +23,19 @@ specify a simple way of defining a CLI command, and auto-generate --help output.
 - maps to a ``` CliCommand ``` and executes it
 - finds document root
 
+##### Utils' own CLI commands #####
+
+```bash
+# List all commands in the system, and their providers.
+php cli.phpsh -h
+
+# One command's help.
+php cli.phpsh utils-xxx -h
+
+# (RISKY) Execute included PHP script.
+php cli.phpsh utils-execute include-file
+```
+
 #### Odds and ends ####
 
 **``` Unicode ```** abstracts mbstring.
@@ -31,7 +44,7 @@ specify a simple way of defining a CLI command, and auto-generate --help output.
 
 **``` PathFileList ```** hides the complexity of using FilesystemIterators.
 
-**``` Utils ```** parses ini strings/files, and delivers a range of other handy methods. 
+**``` Utils ```** parses ini strings/files, and delivers a range of other handy methods.
 
 ### Requirements ###
 

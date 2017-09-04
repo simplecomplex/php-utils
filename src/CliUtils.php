@@ -51,7 +51,7 @@ class CliUtils implements CliCommandInterface
             new CliCommand(
                 $this,
                 static::COMMAND_PROVIDER_ALIAS . '-execute',
-                '(RISKY) Execute included script.',
+                '(RISKY) Execute included PHP script.',
                 [
                     'include-file' => 'Relative or absolute path and filename.'
                 ],
