@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2017-09-10
+-----------------------------------
+- Utils::getRequestHeader() to support nginx.
+
 SimpleComplex/Utils 1.x, 2017-09-02
 -----------------------------------
 - Interfaces moved to sub dir/namespace.

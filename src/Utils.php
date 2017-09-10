@@ -309,6 +309,78 @@ class Utils
     }
 
     /**
+     * Get all or a single received request header(s) in any server environment.
+     *
+     * nginx workaround.
+     *
+     * @param string $name
+     *      Empty: get all headers.
+     *
+     * @return array|string|null
+     *      String: non-empty arg name, and that header exists.
+     *      Null: non-empty arg name, and that header doesn't exist.
+     */
+    public function getRequestHeader(string $name = '')
+    {
+        // Save headers, because costly to build if no getallheaders() function.
+        static $headers = [];
+
+        if ($name) {
+            if ($headers) {
+                return $headers[$name] ?? null;
+            }
+            if (function_exists('getallheaders')) {
+                if (!($headers = getallheaders())) {
+                    $headers = [];
+                }
+                return $headers[$name] ?? null;
+            }
+            // nginx + arg name.
+            if (empty($_SERVER)) {
+                return null;
+            }
+            $snake_upper = strtoupper(str_replace('-', '_', $name));
+            if (isset($_SERVER[$snake_upper])) {
+                return $_SERVER[$snake_upper];
+            }
+            return $_SERVER['HTTP_' . $snake_upper] ?? null;
+        }
+        elseif ($headers) {
+            return $headers;
+        }
+        elseif (function_exists('getallheaders')) {
+            if (!($headers = getallheaders())) {
+                $headers = [];
+            }
+            return $headers;
+        }
+
+        // nginx + all headers.
+        if (empty($_SERVER)) {
+            return [];
+        }
+        $possible_dupes = [];
+        foreach ($_SERVER as $key => $val) {
+            if (strpos($key, 'HTTP_') === 0) {
+                $headers[ucwords(strtolower(str_replace('_', '-', substr($key, 5))), '-')] = $val;
+            }
+            // Content-Type, Content-Length, Content-Md5 (and possibly more)
+            // don't get HTTP_ prefixed.
+            elseif (strpos($key, 'CONTENT_') === 0) {
+                $possible_dupes[ucwords(strtolower(str_replace('_', '-', $key)), '-')] = $val;
+            }
+        }
+        if ($possible_dupes) {
+            foreach ($possible_dupes as $key => $val) {
+                if (!isset($headers[$key])) {
+                    $headers[$key] = $val;
+                }
+            }
+        }
+        return $headers;
+    }
+
+    /**
      * Check if a - file or directory - file mode is group-write.
      *
      * Group-write apparantly requires chmod'ing upon dir/file creation.
