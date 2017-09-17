@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2017-09-17
+-----------------------------------
+- Source sub dir reflecting sub namespace must be uppercase (like namespace)
+  otherwise PHP composer may fail to autoload.
+
 SimpleComplex/Utils 1.x, 2017-09-10
 -----------------------------------
 - Utils::getRequestHeader() to support nginx.
