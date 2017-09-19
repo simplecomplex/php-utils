@@ -680,9 +680,10 @@ class Utils
                         'Arg absolutePath contains . or .. directory part[' . $existing . '].'
                     );
                 }
-                if (!mkdir($existing, $mode)) {
+                if (!file_exists($existing) && !mkdir($existing, $mode)) {
+                    // @todo: We shouldn't need to ask file_exists() here.
                     throw new \RuntimeException(
-                        'Failed to create dir[' . $existing . '] with mode[' . decoct($mode) . '.'
+                        'Failed to create dir[' . $existing . '] with mode[' . decoct($mode) . '].'
                     );
                 }
                 if ($group_write && !chmod($existing, $mode)) {
