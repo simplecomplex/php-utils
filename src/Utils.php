@@ -681,10 +681,14 @@ class Utils
                     );
                 }
                 if (!mkdir($existing, $mode)) {
-                    throw new \RuntimeException('Failed to create dir[' . $existing . '].');
+                    throw new \RuntimeException(
+                        'Failed to create dir[' . $existing . '] with mode[' . decoct($mode) . '.'
+                    );
                 }
                 if ($group_write && !chmod($existing, $mode)) {
-                    throw new \RuntimeException('Failed to chmod dir[' . $existing . '] to mode[' . $mode . '].');
+                    throw new \RuntimeException(
+                        'Failed to chmod dir[' . $existing . '] to mode[' . decoct($mode) . '].'
+                    );
                 }
             } while ($trailing);
             // Didn't exist.
