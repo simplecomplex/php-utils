@@ -36,6 +36,16 @@ function simplecomplex_utils_include_script_example() /*: void*/
 
     // Work...
 
+    $logger->debug(
+        "2770\n"
+        . $inspect->variable(mkdir('/www/0_angular/sites/seb-my-cases.source/private/lib/simplecomplex/file-cache/stores/2770', 2770))
+    );
+    $logger->debug(
+        "770\n"
+        . $inspect->variable(mkdir('/www/0_angular/sites/seb-my-cases.source/private/lib/simplecomplex/file-cache/stores/770', 0770))
+    );
+
+
     $environment->echoMessage('It worked :-)', 'success');
 }
 simplecomplex_utils_include_script_example();

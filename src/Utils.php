@@ -381,36 +381,6 @@ class Utils
     }
 
     /**
-     * Check if a - file or directory - file mode is group-write.
-     *
-     * Group-write apparantly requires chmod'ing upon dir/file creation.
-     *
-     * Does not check if user- or other-write.
-     *
-     * @param int $fileMode
-     *      Use leading zero.
-     *
-     * @return bool
-     */
-    public function isFileGroupWrite(int $fileMode)
-    {
-        $mode_str = decoct($fileMode);
-        $group = $mode_str{strlen($mode_str) - 2};
-        switch ($group) {
-            case '2':
-                // write.
-            case '3':
-                // write + execute.
-            case '6':
-                // write + read.
-            case '7':
-                // all.
-                return true;
-        }
-        return false;
-    }
-
-    /**
      * @var string|null
      */
     protected $documentRoot;
@@ -576,6 +546,73 @@ class Utils
     }
 
     /**
+     * Check if a - file or directory - file mode is group-write.
+     *
+     * Group-write apparantly requires chmod'ing upon dir/file creation.
+     *
+     * Does not check if user- or other-write.
+     *
+     * @param int $fileMode
+     *      Use leading zero.
+     *
+     * @return bool
+     */
+    public function isFileGroupWrite(int $fileMode)
+    {
+        $mode_str = decoct($fileMode);
+        $group = $mode_str{strlen($mode_str) - 2};
+        switch ($group) {
+            case '2':
+                // write.
+            case '3':
+                // write + execute.
+            case '6':
+                // write + read.
+            case '7':
+                // all.
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     * Handles that PHP native mkdir() might not be able to use a group-write
+     * mode (0770 becames 0750) and might fail entirely to set uid or gid.
+     *
+     * Does not support recursive making - use ensurePath() for that.
+     *
+     * @see Utils::ensurePath()
+     *
+     * @param string $path
+     * @param int $mode
+     *      Default: 0700; user read-write-execute.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException
+     *      Failing to create directory.
+     *      Failing to chmod directory.
+     */
+    public function mkdir(string $path, int $mode = 0700) /*: void*/
+    {
+        // No recursive making, because complex to implement recursive chmod'ing
+        // and ensurePath() does it; effectively implements recursive chmod'ing.
+        if (!file_exists($path)) {
+            $safe_mode = 0700;
+            if (!mkdir($path, $mode)) {
+                throw new \RuntimeException(
+                    'Failed to create dir[' . $path . '] with safe mode[' . decoct($safe_mode) . '].'
+                );
+            };
+            if ($mode !== $safe_mode && !chmod($path, $mode)) {
+                throw new \RuntimeException(
+                    'Failed to chmod dir[' . $path . '] to mode[' . decoct($mode) . '].'
+                );
+            }
+        }
+    }
+
+    /**
      * Recursion limiter for ensurePath().
      *
      * @var int
@@ -627,10 +664,6 @@ class Utils
         }
 
         if (!file_exists($absolutePath)) {
-            // Setting mode - chmod'ing - upon directory creation only seems to be
-            // necessary when mode is group-write.
-            $group_write = $this->isFileGroupWrite($mode);
-
             if (DIRECTORY_SEPARATOR == '\\') {
                 $path = str_replace('\\', '/', $absolutePath);
                 if ($path{1} !== ':') {
@@ -680,17 +713,7 @@ class Utils
                         'Arg absolutePath contains . or .. directory part[' . $existing . '].'
                     );
                 }
-                if (!file_exists($existing) && !mkdir($existing, $mode)) {
-                    // @todo: We shouldn't need to ask file_exists() here.
-                    throw new \RuntimeException(
-                        'Failed to create dir[' . $existing . '] with mode[' . decoct($mode) . '].'
-                    );
-                }
-                if ($group_write && !chmod($existing, $mode)) {
-                    throw new \RuntimeException(
-                        'Failed to chmod dir[' . $existing . '] to mode[' . decoct($mode) . '].'
-                    );
-                }
+                $this->mkdir($existing, $mode);
             } while ($trailing);
             // Didn't exist.
             return false;

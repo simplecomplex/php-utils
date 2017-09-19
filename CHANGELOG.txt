@@ -1,3 +1,10 @@
+SimpleComplex/Utils 1.x, 2017-09-19
+-----------------------------------
+- Utils::mkdir() handles that PHP native mkdir() might not be able
+  to use a group-write mode (0770 becames 0750)
+  and might fail entirely to set uid or gid.
+  That also fixes problems in ensurePath().
+
 SimpleComplex/Utils 1.x, 2017-09-17
 -----------------------------------
 - Source sub dir reflecting sub namespace must be uppercase (like namespace)
