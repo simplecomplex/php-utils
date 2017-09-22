@@ -1,3 +1,9 @@
+SimpleComplex/Utils 1.x, 2017-09-22
+-----------------------------------
+- Utils::arrayMergeRecursive() to combine the best of native
+  array_replace_recursive() and array_merge_recursive(), and avoid the latter's
+  crazy behaviour of dupe associative key scalar values become array.
+
 SimpleComplex/Utils 1.x, 2017-09-19
 -----------------------------------
 - Utils::mkdir() handles that PHP native mkdir() might not be able

@@ -138,6 +138,60 @@ class Utils
     }
 
     /**
+     * Merge arrays recursively, letting numerically indexed key values append
+     * and dupe associative key values overwrite.
+     *
+     * Native array_replace[_recursive]():
+     * - values of dupe keys always overwrite;
+     *   no matter if numeric or accociative keys
+     *
+     * Native array_merge[_recursive]():
+     * - values of dupe numeric keys get appended
+     * - values of dupe accociative keys get dumped into sub array;
+     *   in effect converting duplicate key values to array (sic!)
+     *
+     * @see array_replace_recursive()
+     * @see array_merge_recursive()
+     *
+     * @param array $array0
+     * @param array[] $arrayN
+     *      Any number of arguments.
+     *
+     * @return array
+     */
+    function arrayMergeRecursive(array $array0, array ...$arrayN)
+    {
+        foreach ($arrayN as $arr) {
+            if (!$array0) {
+                $array0 = $arr;
+            } elseif ($arr) {
+                foreach ($arr as $key => $value) {
+                    // Dupe key.
+                    if (array_key_exists($key, $array0)) {
+                        // Both values array: recurse.
+                        if (is_array($value) && is_array($array0[$key])) {
+                            $array0[$key] = static::arrayMergeRecursive($array0[$key], $value);
+                        }
+                        // Numeric key: append.
+                        elseif (!$key || ctype_digit('' . $key)) {
+                            $array0[] = $value;
+                        }
+                        // Associative key: overwrite.
+                        else {
+                            $array0[$key] = $value;
+                        }
+                    }
+                    // Non-dupe key: append.
+                    else {
+                        $array0[$key] = $value;
+                    }
+                }
+            }
+        }
+        return $array0;
+    }
+
+    /**
      * Check if array or object has a key.
      *
      * @param array|object $container

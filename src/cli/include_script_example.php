@@ -9,9 +9,6 @@ declare(strict_types=1);
 
 use \SimpleComplex\Utils\Dependency;
 use \SimpleComplex\Utils\CliEnvironment;
-use \SimpleComplex\Utils\Utils;
-
-use \SimpleComplex\Validate\Validate;
 
 /**
  * Include script example, for 'utils-execute' CLI command.
@@ -34,17 +31,35 @@ function simplecomplex_utils_include_script_example() /*: void*/
 
     $environment = CliEnvironment::getInstance();
 
+    $utils = \SimpleComplex\Utils\Utils::getInstance();
+
     // Work...
+    $a = [
+        'a' => 'alpha',
+        'b' => 'beta',
+        'gamma'
+    ];
+    $b = [
+        'a' => 'skrid',
+        'b' => null,
+        'omega',
+        'c' => 'theta',
+    ];
+    $c = [
+    ];
 
     $logger->debug(
-        "2770\n"
-        . $inspect->variable(mkdir('/www/0_angular/sites/seb-my-cases.source/private/lib/simplecomplex/file-cache/stores/2770', 2770))
+        "array_replace_recursive\n"
+        . $inspect->variable(array_replace_recursive($a, $b, $c))
     );
     $logger->debug(
-        "770\n"
-        . $inspect->variable(mkdir('/www/0_angular/sites/seb-my-cases.source/private/lib/simplecomplex/file-cache/stores/770', 0770))
+        "array_replace_recursive\n"
+        . $inspect->variable($utils->arrayMergeRecursive($a, $b, $c))
     );
-
+    $logger->debug(
+        "array_replace_recursive\n"
+        . $inspect->variable(array_merge_recursive($a, $b, $c))
+    );
 
     $environment->echoMessage('It worked :-)', 'success');
 }
