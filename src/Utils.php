@@ -170,7 +170,7 @@ class Utils
                     if (array_key_exists($key, $array0)) {
                         // Both values array: recurse.
                         if (is_array($value) && is_array($array0[$key])) {
-                            $array0[$key] = static::arrayMergeRecursive($array0[$key], $value);
+                            $array0[$key] = $this->arrayMergeRecursive($array0[$key], $value);
                         }
                         // Numeric key: append.
                         elseif (!$key || ctype_digit('' . $key)) {
