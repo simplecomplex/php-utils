@@ -13,14 +13,14 @@ or [Pimple](http://pimple.sensiolabs.org) container or creates it's own lightwei
 
 #### PHP CLI (command line/console) made easy ####
 
-**``` CliCommand ```** and **``` CliCommandInterface ```**
-specify a simple way of defining a CLI command, and auto-generate --help output.
+**``` CliCommand ```** + **``` CliCommandInterface ```**  
+specify a simple way of defining PHP CLI commands, and auto-generate --help output.
 
 **``` CliEnvironment ```** 
 
-- lists --help of all defined commands
 - resolves CLI input arguments and options
 - maps to a ``` CliCommand ``` and executes it
+- lists --help of all defined commands
 - finds document root
 
 ##### Utils' own CLI commands #####

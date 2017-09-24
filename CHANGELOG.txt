@@ -1,6 +1,7 @@
 SimpleComplex/Utils 1.x, 2017-09-24
 -----------------------------------
 - Bootstrap class.
+- Release 1.1.
 
 SimpleComplex/Utils 1.x, 2017-09-22
 -----------------------------------
