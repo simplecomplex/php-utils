@@ -1192,4 +1192,101 @@ class Utils
         return $buffer;
     }
 
+    /**
+     * Convert number or hex string to any base through 2 and 62.
+     *
+     * Base 62 produces up to 35% shorter string than base 16.
+     *
+     * Like native base_convert() precision fails for numbers (somewhere) larger
+     * than (tested on windows box with ini precision 14):
+     * - base 10: 9007199254740991 (> 15 digits)
+     * - base 16: 1fffffffffffff (> 14 digits)
+     *
+     * @param integer|float|string $num
+     *      Negative becomes positive.
+     * @param integer $fromBase
+     *      Must be between 2 and 36, both included.
+     *      Default: 10.
+     * @param integer $toBase
+     *      Must be between 2 and 62, both included.
+     *      Default: 62.
+     *
+     * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      Arg fromBase not 2 thru 36, or arg toBase no 2 thru 62.
+     */
+    public function baseConvert($num, int $fromBase = 10, int $toBase = 62) : string
+    {
+        static $table = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $zero = $table{0};
+        $remainder = $num;
+        if ($num < 1) {
+            if (!$num) {
+                return '' . $zero;
+            }
+            $remainder *= -1;
+        }
+        if ($toBase == $fromBase) {
+            return '' . $remainder;
+        }
+        if ($fromBase < 2 || $fromBase > 36) {
+            throw new \InvalidArgumentException('Arg fromBase must 2 thru 36.');
+        }
+        if ($toBase < 2 || $toBase > 62) {
+            throw new \InvalidArgumentException('Arg toBase must 2 thru 62.');
+        }
+        if ($toBase <= 36) {
+            return base_convert($num, $fromBase, $toBase);
+        }
+        if ($fromBase != 10) {
+            $remainder = base_convert($remainder, $fromBase, 10);
+        }
+        // Arg $num may be string, and base_convert() returns string.
+        $remainder = (float) $remainder;
+        $res = '';
+        // Find power ~ required number of digits.
+        $pow = 0;
+        $divisor = 1;
+        // Limit:100 probably way too high, havent seen more than 10 iterations
+        // (1fffffffffffff, with precision 14)
+        $limit = 100;
+        while ($remainder >= ($test = pow($toBase, ++$pow)) && (--$limit)) {
+            $divisor = $test;
+            --$limit;
+        }
+        --$pow;
+        // Do modulo procedure.
+        // Limit:100 probably way too high, havent seen more than 14 iterations
+        // (1fffffffffffff, with precision 14).
+        $limit = 100;
+        while ($remainder > 0 && (--$limit)) {
+            if ($pow) {
+                if ($divisor == $remainder) {
+                    return $res . $table{1} . str_repeat($zero, $pow);
+                }
+                elseif ($divisor > $remainder) {
+                    $res .= $zero;
+                }
+                else {
+                    if ($remainder > $divisor) {
+                        $res .= $table{ (int)floor($remainder / $divisor) };
+                        $remainder = fmod($remainder, $divisor);
+                    }
+                    else {
+                        $res .= $table{ $pow };
+                        $remainder = fmod($remainder, $divisor);
+                    }
+                    if ($remainder < 1 && !floor($remainder)) {
+                        return $res . str_repeat($zero, $pow);
+                    }
+                }
+            }
+            else {
+                return $res . $table{ (int) $remainder };
+            }
+            $divisor = pow($toBase, --$pow);
+        }
+        return $res;
+    }
 }
