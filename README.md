@@ -47,14 +47,14 @@ php cli.phpsh utils-execute include-file
 **``` Utils ```** parses ini strings/files, and delivers a range of other handy methods.
 
 **``` Bootstrap::prepareDependencies() ```** for easy dependency setup.  
-<small>NB: Bootstrap::prepareDependencies() requires packages not listed among composer requirements:  
+<sub>NB: Bootstrap::prepareDependencies() requires packages not listed among composer requirements:  
 [Cache](https://github.com/simplecomplex/php-cache),
 [Config](https://github.com/simplecomplex/php-config),
 (optional) [JsonLog](https://github.com/simplecomplex/php-jsonlog),
 [Inspect](https://github.com/simplecomplex/inspect),
 [Locale](https://github.com/simplecomplex/php-locale),
 [Validate](https://github.com/simplecomplex/php-validate).
-</small>
+</sub>
 
 ### Requirements ###
 
