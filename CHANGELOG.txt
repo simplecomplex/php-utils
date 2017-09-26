@@ -1,3 +1,11 @@
+SimpleComplex/Utils 1.x, 2017-09-26
+-----------------------------------
+- Bootstrap shan't use JsonLog class by class::class directly, because that
+  makes JsonLog a requirement even when prepareDependencies() is passed
+  a logger.
+- Documented that Bootstrap::prepareDependencies() requires packages not listed
+  among PHP composer requirements.
+
 SimpleComplex/Utils 1.x, 2017-09-24
 -----------------------------------
 - Bootstrap class.

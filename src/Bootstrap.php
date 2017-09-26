@@ -14,6 +14,14 @@ use Psr\Container\ContainerInterface;
 /**
  * Bootstrapping methods.
  *
+ * NB: Requires packages, which aren't listed among PHP composer requirements:
+ * - simplecomplex/cache
+ * - simplecomplex/config
+ * - simplecomplex/json-log; unless prepareDependencies() arg logger
+ * - simplecomplex/inspect
+ * - simplecomplex/locale
+ * - simplecomplex/validate
+ *
  * @package SimpleComplex\Utils
  */
 class Bootstrap
@@ -31,7 +39,7 @@ class Bootstrap
     /**
      * @var string
      */
-    const CLASS_JSONLOG = \SimpleComplex\JsonLog\JsonLog::class;
+    const CLASS_JSONLOG = '\\SimpleComplex\\JsonLog\\JsonLog';
 
     /**
      * @var string
