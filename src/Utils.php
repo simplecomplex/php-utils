@@ -367,6 +367,8 @@ class Utils
      *
      * nginx workaround.
      *
+     * Content-Type and Content-Length are always empty unless POST/PUT request.
+     *
      * @param string $name
      *      Empty: get all headers.
      *
@@ -413,22 +415,15 @@ class Utils
         if (empty($_SERVER)) {
             return [];
         }
-        $possible_dupes = [];
         foreach ($_SERVER as $key => $val) {
             if (strpos($key, 'HTTP_') === 0) {
                 $headers[ucwords(strtolower(str_replace('_', '-', substr($key, 5))), '-')] = $val;
             }
             // Content-Type, Content-Length, Content-Md5 (and possibly more)
             // don't get HTTP_ prefixed.
+            // Those headers are btw empty unless request method POST/PUT.
             elseif (strpos($key, 'CONTENT_') === 0) {
-                $possible_dupes[ucwords(strtolower(str_replace('_', '-', $key)), '-')] = $val;
-            }
-        }
-        if ($possible_dupes) {
-            foreach ($possible_dupes as $key => $val) {
-                if (!isset($headers[$key])) {
-                    $headers[$key] = $val;
-                }
+                $headers[ucwords(strtolower(str_replace('_', '-', $key)), '-')] = $val;
             }
         }
         return $headers;
