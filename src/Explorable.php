@@ -21,6 +21,9 @@ abstract class Explorable implements \Countable, \Iterator
      * List of names of members (private, protected or public) which should be
      * exposed as accessibles in count()'ing and foreach'ing.
      *
+     * Private/protected members may also be readable via 'magic' __get(),
+     * if the __get() uses explorableIndex.
+     *
      * @var array
      */
     protected $explorableIndex = [];
