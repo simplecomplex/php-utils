@@ -2,6 +2,8 @@ SimpleComplex/Utils 1.x, 2018-03-26
 -----------------------------------
 - Don't chmod and don't detect group-write on non posix compliant file system
   (Windows).
+- SectionMapInterface (and SectionMap) as means of eliminating other packages
+  depending unnecessarily on the Config package.
 
 SimpleComplex/Utils 1.x, 2017-09-26
 -----------------------------------
