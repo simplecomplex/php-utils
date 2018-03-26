@@ -23,6 +23,13 @@ use SimpleComplex\Utils\Exception\ParseJsonException;
 class Utils
 {
     /**
+     * Posix compliant (non-Windows) file system.
+     *
+     * @var bool
+     */
+    const FILE_SYSTEM_POSIX = DIRECTORY_SEPARATOR == '/';
+
+    /**
      * Reference to first object instantiated via the getInstance() method,
      * no matter which parent/child class the method was/is called on.
      *
@@ -572,7 +579,7 @@ class Utils
         // Absolute.
         if (
             strpos($path, '/') !== 0
-            && (DIRECTORY_SEPARATOR === '/' || strpos($path, ':') !== 1)
+            && (DIRECTORY_SEPARATOR == '/' || strpos($path, ':') !== 1)
         ) {
             $doc_root = $this->documentRoot();
             // Relative above document root.
@@ -597,9 +604,9 @@ class Utils
     /**
      * Check if a - file or directory - file mode is group-write.
      *
-     * Group-write apparantly requires chmod'ing upon dir/file creation.
+     * Always returns false on non posix compliant file system; Windows.
      *
-     * Does not check if user- or other-write.
+     * Group-write apparantly requires chmod'ing upon dir/file creation.
      *
      * @param int $fileMode
      *      Use leading zero.
@@ -608,18 +615,20 @@ class Utils
      */
     public function isFileGroupWrite(int $fileMode)
     {
-        $mode_str = decoct($fileMode);
-        $group = $mode_str{strlen($mode_str) - 2};
-        switch ($group) {
-            case '2':
-                // write.
-            case '3':
-                // write + execute.
-            case '6':
-                // write + read.
-            case '7':
-                // all.
-                return true;
+        if (static::FILE_SYSTEM_POSIX) {
+            $mode_str = decoct($fileMode);
+            $group = $mode_str{strlen($mode_str) - 2};
+            switch ($group) {
+                case '2':
+                    // write.
+                case '3':
+                    // write + execute.
+                case '6':
+                    // write + read.
+                case '7':
+                    // all.
+                    return true;
+            }
         }
         return false;
     }
@@ -635,6 +644,7 @@ class Utils
      * @param string $path
      * @param int $mode
      *      Default: 0700; user read-write-execute.
+     *      Ignored on non posix compliant file system (Windows).
      *
      * @return void
      *
@@ -653,7 +663,7 @@ class Utils
                     'Failed to create dir[' . $path . '] with safe mode[' . decoct($safe_mode) . '].'
                 );
             };
-            if ($mode !== $safe_mode && !chmod($path, $mode)) {
+            if ($mode !== $safe_mode && static::FILE_SYSTEM_POSIX && !chmod($path, $mode)) {
                 throw new \RuntimeException(
                     'Failed to chmod dir[' . $path . '] to mode[' . decoct($mode) . '].'
                 );

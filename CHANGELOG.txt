@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-03-26
+-----------------------------------
+- Don't chmod and don't detect group-write on non posix compliant file system
+  (Windows).
+
 SimpleComplex/Utils 1.x, 2017-09-26
 -----------------------------------
 - Bootstrap shan't use JsonLog class by class::class directly, because that
