@@ -14,7 +14,7 @@ use Psr\Container\ContainerInterface;
 /**
  * Bootstrapping methods.
  *
- * NB: Requires packages, which aren't listed among PHP composer requirements:
+ * NB: Requires packages not listed among PHP composer requirements:
  * - simplecomplex/cache
  * - simplecomplex/config
  * - simplecomplex/json-log; unless prepareDependencies() arg logger

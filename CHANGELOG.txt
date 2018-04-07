@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2018-04-07
+-----------------------------------
+- Release 1.2.
+
 SimpleComplex/Utils 1.x, 2018-03-26
 -----------------------------------
 - Don't chmod and don't detect group-write on non posix compliant file system
