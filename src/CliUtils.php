@@ -56,8 +56,10 @@ class CliUtils implements CliCommandInterface
                     'include-file' => 'Relative or absolute path and filename.'
                 ],
                 [
+                    'force' => 'With -y/--yes execute without interactive confirmation despite risk.',
                 ],
                 [
+                    'f' => 'force',
                 ]
             )
         );
@@ -114,11 +116,13 @@ class CliUtils implements CliCommandInterface
                     . "\n" . $container->get('inspect')->variable($xcptn)->toString(false);
             }
         }
-        // Pre-confirmation --yes/-y ignored for this command.
+        $force = !empty($this->command->options['force']);
+        // Pre-confirmation --yes/-y ignored for this command,
+        // unless combined with --force/-f.
         // And 'silent' is neither allowed.
-        if ($this->command->preConfirmed) {
+        if ($this->command->preConfirmed && !$force) {
             $this->command->inputErrors[] = 'Pre-confirmation \'yes\'/-y option not supported for this command,'
-                . "\n" . 'Period.';
+                . ' unless combined with \'force\'/-f option.';
         }
         if ($this->command->inputErrors) {
             foreach ($this->command->inputErrors as $msg) {
@@ -132,22 +136,28 @@ class CliUtils implements CliCommandInterface
             exit;
         }
         // Display command and the arg values used.---------------------
-        $this->environment->echoMessage(
-            $this->environment->format(
-                $this->environment->format($this->command->name, 'emphasize')
-                . "\n" . 'include-file (resolved): '
-                . $utils->pathReplaceDocumentRoot($path) . '/' . $this->environment->format($file, 'emphasize'),
-                'hangingIndent'
-            )
-        );
+        if (!$this->command->preConfirmed || !$force) {
+            $this->environment->echoMessage(
+                $this->environment->format(
+                    $this->environment->format($this->command->name, 'emphasize')
+                    . "\n" . 'include-file (resolved): '
+                    . $utils->pathReplaceDocumentRoot($path) . '/' . $this->environment->format($file, 'emphasize'),
+                    'hangingIndent'
+                )
+            );
+        }
         // Request confirmation, ignore --yes/-y pre-confirmation option;
-        // ignore .risky_command_skip_confirm file placed in document root.
-        if (!$this->environment->confirm(
-            '(RISKY) Execute that include script? Type \'yes\' to continue:',
-            ['yes'],
-            '',
-            'Aborted executing include script.'
-        )) {
+        // ignore .risky_command_skip_confirm file placed in document root
+        // ...unless combined with --force/-f option.
+        if (
+            (!$this->command->preConfirmed || !$force)
+            && !$this->environment->confirm(
+                '(RISKY) Execute that include script? Type \'yes\' to continue:',
+                ['yes'],
+                '',
+                'Aborted executing include script.'
+            )
+        ) {
             exit;
         }
         // Check if the command is doable.------------------------------

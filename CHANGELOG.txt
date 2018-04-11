@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-04-11
+-----------------------------------
+- CLI utils-execute support 'yes'/-y pre-confimation
+  when combined with 'force'/-f option.
+
 SimpleComplex/Utils 1.x, 2018-04-07
 -----------------------------------
 - Release 1.2.
