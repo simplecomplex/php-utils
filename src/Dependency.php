@@ -89,9 +89,20 @@ class Dependency implements ContainerInterface
      */
     public static function container(bool $skipLocatingExternal = false) : ContainerInterface
     {
-        return static::$externalContainer ?? static::$internalContainer ??
-            ($skipLocatingExternal ? null : (static::$externalContainer = static::locateExternalContainer())) ??
-            (static::$internalContainer = new static());
+        if (isset(static::$externalContainer)) {
+            return static::$externalContainer;
+        }
+        if (isset(static::$internalContainer)) {
+            return static::$internalContainer;
+        }
+        if (
+            !$skipLocatingExternal
+            && ($container = static::locateExternalContainer())
+        ) {
+            static::injectExternalContainer($container);
+            return static::$externalContainer;
+        }
+        return (static::$internalContainer = new static());
     }
 
     /**
