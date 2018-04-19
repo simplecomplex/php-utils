@@ -111,10 +111,12 @@ class Dependency implements ContainerInterface
      * This implementation only supports Slim\App\Container or similar,
      * accessible via global var $app.
      *
+     * Method public for test reasons. Call container() instead.
+     *
      * @return ContainerInterface|null
      *      Null: none found.
      */
-    protected static function locateExternalContainer()
+    public static function locateExternalContainer()
     {
         // Get container from global var $app;
         // a Slim\App\Container or something similar.
