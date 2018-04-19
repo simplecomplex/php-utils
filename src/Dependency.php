@@ -79,14 +79,46 @@ class Dependency implements ContainerInterface
     /**
      * Get the external or internal dependency injection container.
      *
-     * Creates internal container if no container exists yet.
+     * Creates internal container if no container exists yet and an external
+     * container cannot be found.
+     *
+     * @param bool $skipLocatingExternal
+     *      True: do not attempt to locate an external container.
      *
      * @return ContainerInterface
      */
-    public static function container() : ContainerInterface
+    public static function container(bool $skipLocatingExternal = false) : ContainerInterface
     {
         return static::$externalContainer ?? static::$internalContainer ??
+            ($skipLocatingExternal ? null : (static::$externalContainer = static::locateExternalContainer())) ??
             (static::$internalContainer = new static());
+    }
+
+    /**
+     * Try finding an external container.
+     *
+     * This implementation only supports Slim\App\Container or similar,
+     * accessible via global var $app.
+     *
+     * @return ContainerInterface|null
+     *      Null: none found.
+     */
+    protected static function locateExternalContainer()
+    {
+        // Get container from global var $app;
+        // a Slim\App\Container or something similar.
+        if (empty($GLOBALS['app'])) {
+            /** @var \Slim\App $app */
+            $app = $GLOBALS['app'];
+            if (method_exists($app, 'getContainer')) {
+                /** @var \Psr\Container\ContainerInterface $container */
+                $container = $app->getContainer();
+                if ($container instanceof ContainerInterface) {
+                    return $container;
+                }
+            }
+        }
+        return null;
     }
 
     /**
