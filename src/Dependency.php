@@ -107,7 +107,7 @@ class Dependency implements ContainerInterface
     {
         // Get container from global var $app;
         // a Slim\App\Container or something similar.
-        if (empty($GLOBALS['app'])) {
+        if (!empty($GLOBALS['app'])) {
             /** @var \Slim\App $app */
             $app = $GLOBALS['app'];
             if (method_exists($app, 'getContainer')) {
