@@ -174,11 +174,14 @@ class CliUtils implements CliCommandInterface
                 'success'
             );
         } catch (\Throwable $xcptn) {
+            /** @var \Psr\Log\LoggerInterface $logger */
+            $logger = $container->get('logger');
             /** @var Inspect $inspect */
             $inspect = $container->get('inspect');
+            $logger->error('' . $inspect->trace($xcptn));
             $this->environment->echoMessage(
                 'Executing include script ' . $path . '/' . $this->environment->format($file, 'emphasize')
-                . ' produced exception.' . "\n" . 'Do check log.' . "\n" . $inspect->variable($xcptn)->toString(false),
+                . "\n" . ' produced error, check log.' . "\n" . $inspect->variable($xcptn)->toString(false),
                 'error'
             );
         }

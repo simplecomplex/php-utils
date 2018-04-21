@@ -1,5 +1,9 @@
 SimpleComplex/Utils 1.x, 2018-04-19
 -----------------------------------
+- CLI utils-execute should log exception trace.
+
+SimpleComplex/Utils 1.x, 2018-04-19
+-----------------------------------
 - Dependency try locating external container before resorting to internal
   container.
   Current support only global Slim\App\Container $app, but extendable.
