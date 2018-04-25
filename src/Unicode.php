@@ -70,7 +70,7 @@ class Unicode
         $support = static::$nativeSupport;
         if (!$support) {
             $support['mbstring'] = function_exists('mb_strlen');
-            $support['intl'] = class_exists('IntlChar');
+            $support['intl'] = function_exists('intl_error_name');
             static::$nativeSupport = $support;
         }
         if ($ext) {
