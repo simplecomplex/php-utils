@@ -14,7 +14,8 @@ use Psr\Container\ContainerInterface;
 /**
  * Bootstrapping methods.
  *
- * NB: Requires packages not listed among PHP composer requirements:
+ * NB: prepareDependencies() requires packages
+ * not listed among PHP composer requirements:
  * - simplecomplex/cache
  * - simplecomplex/config
  * - simplecomplex/json-log; unless prepareDependencies() arg logger
@@ -29,12 +30,12 @@ class Bootstrap
     /**
      * @var string
      */
-    const CLASS_CACHE_BROKER = \SimpleComplex\Cache\CacheBroker::class;
+    const CLASS_CACHE_BROKER = '\\SimpleComplex\\Cache\\CacheBroker';
 
     /**
      * @var string
      */
-    const CLASS_CONFIG = \SimpleComplex\Config\Config::class;
+    const CLASS_CONFIG = '\\SimpleComplex\\Config\\Config';
 
     /**
      * @var string
@@ -44,30 +45,35 @@ class Bootstrap
     /**
      * @var string
      */
-    const CLASS_INSPECT = \SimpleComplex\Inspect\Inspect::class;
+    const CLASS_INSPECT = '\\SimpleComplex\\Inspect\\Inspect';
 
     /**
      * @var string
      */
-    const CLASS_LOCALE = \SimpleComplex\Locale\Locale::class;
+    const CLASS_LOCALE = '\\SimpleComplex\\Locale\\Locale';
 
     /**
      * @var string
      */
-    const CLASS_VALIDATE = \SimpleComplex\Validate\Validate::class;
+    const CLASS_VALIDATE = '\\SimpleComplex\\Validate\\Validate';
 
     /**
-     * Set base dependencies for any kind of application; HTTP services or other.
+     * @var string
+     */
+    const CLASS_DATABASE_BROKER = '\\SimpleComplex\\Database\\DatabaseBroker';
+
+    /**
+     * Set base dependencies for any kind of application; using all/most
+     * SimpleComplex packages.
      *
-     * Bootstrapper utility.
-     *
-     * Prepares:
-     * @var \SimpleComplex\Cache\CacheBroker 'cache-broker'
-     * @var \SimpleComplex\Config\IniSectionedConfig 'config'
-     * @var \SimpleComplex\JsonLog\JsonLog 'logger' (or one passed by argument)
-     * @var \SimpleComplex\Inspect\Inspect 'inspect'
-     * @var \SimpleComplex\Locale\AbstractLocale 'locale'
-     * @var \SimpleComplex\Validate\Validate 'validate'
+     * Prepares container buckets:
+     * - \SimpleComplex\Cache\CacheBroker 'cache-broker'
+     * - \SimpleComplex\Config\IniSectionedConfig 'config'
+     * - \SimpleComplex\JsonLog\JsonLog 'logger' (or one passed by argument)
+     * - \SimpleComplex\Inspect\Inspect 'inspect'
+     * - \SimpleComplex\Locale\AbstractLocale 'locale'
+     * - \SimpleComplex\Validate\Validate 'validate'
+     * - \SimpleComplex\Database\DatabaseBroker 'database-broker' (if exists)
      *
      * @param ContainerInterface|null $container
      *      Like \Slim\Container; default is Dependency instance.
@@ -82,12 +88,15 @@ class Bootstrap
             Dependency::injectExternalContainer($container);
         }
         $container = Dependency::container();
+
         $cache_broker = static::CLASS_CACHE_BROKER;
         $config = static::CLASS_CONFIG;
         $json_log = static::CLASS_JSONLOG;
         $inspect = static::CLASS_INSPECT;
         $locale = static::CLASS_LOCALE;
         $validate = static::CLASS_VALIDATE;
+        $database_broker = static::CLASS_DATABASE_BROKER;
+
         Dependency::genericSetMultiple(
             [
                 'cache-broker' => function() use ($cache_broker) {
@@ -115,5 +124,92 @@ class Bootstrap
                 },
             ]
         );
+        if (class_exists($database_broker)) {
+            Dependency::genericSet('database-broker', function() use ($database_broker) {
+                return new $database_broker();
+            });
+        }
+    }
+
+    /**
+     * Set base dependencies for any kind of application; using all/most
+     * SimpleComplex packages if they exist.
+     *
+     * Prepares container buckets:
+     * - \SimpleComplex\Cache\CacheBroker 'cache-broker'
+     * - \SimpleComplex\Config\IniSectionedConfig 'config'
+     * - \SimpleComplex\JsonLog\JsonLog 'logger' (or one passed by argument)
+     * - \SimpleComplex\Inspect\Inspect 'inspect'
+     * - \SimpleComplex\Locale\AbstractLocale 'locale'
+     * - \SimpleComplex\Validate\Validate 'validate'
+     * - \SimpleComplex\Database\DatabaseBroker 'database-broker'
+     *
+     * @param ContainerInterface|null $container
+     *      Like \Slim\Container; default is Dependency instance.
+     * @param Callable|null $logger
+     *      Custom logger; default is JsonLog.
+     */
+    public static function prepareDependenciesIfExist(
+        /*?ContainerInterface*/ $container = null,
+        /*?Callable*/ $logger = null
+    ) {
+        if ($container) {
+            Dependency::injectExternalContainer($container);
+        }
+        $container = Dependency::container();
+
+        $cache_broker = static::CLASS_CACHE_BROKER;
+        $config = static::CLASS_CONFIG;
+        $json_log = static::CLASS_JSONLOG;
+        $inspect = static::CLASS_INSPECT;
+        $locale = static::CLASS_LOCALE;
+        $validate = static::CLASS_VALIDATE;
+        $database_broker = static::CLASS_DATABASE_BROKER;
+
+        if (class_exists($cache_broker)) {
+            Dependency::genericSet('cache-broker', function() use ($cache_broker) {
+                return new $cache_broker();
+            });
+        }
+        if (class_exists($config)) {
+            Dependency::genericSet('config', function() use ($config) {
+                /**
+                 * @var \SimpleComplex\Config\IniSectionedConfig
+                 */
+                return new $config('global');
+            });
+        }
+
+        if ($logger) {
+            Dependency::genericSet('logger', function() use ($container, $logger) {
+                return $logger;
+            });
+        } elseif (class_exists($json_log)) {
+            Dependency::genericSet('logger', function() use ($container, $json_log) {
+                return new $json_log($container->get('config'));
+            });
+        }
+
+        if (class_exists($inspect)) {
+            Dependency::genericSet('inspect', function() use ($container, $inspect) {
+                return new $inspect($container->get('config'));
+            });
+        }
+        if (class_exists('locale')) {
+            Dependency::genericSet('locale', function() use ($container, $locale) {
+                $make = $locale . '::create';
+                return $make($container->get('config'));
+            });
+        }
+        if (class_exists($validate)) {
+            Dependency::genericSet('validate', function() use ($validate) {
+                return new $validate();
+            });
+        }
+        if (class_exists($database_broker)) {
+            Dependency::genericSet('database-broker', function() use ($database_broker) {
+                return new $database_broker();
+            });
+        }
     }
 }
