@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * Extend to expose a set list of protected/public members for counting
+ * Extend to expose a set list of protected/public properties for counting
  * and foreach'ing.
  *
  * @package SimpleComplex\Utils
@@ -18,13 +18,13 @@ namespace SimpleComplex\Utils;
 abstract class Explorable implements \Countable, \Iterator
 {
     /**
-     * List of names of members (private, protected or public) which should be
-     * exposed as accessibles in count()'ing and foreach'ing.
+     * List of names of properties (private, protected or public) which should
+     * be exposed as accessibles in count()'ing and foreach'ing.
      *
-     * Private/protected members may also be readable via 'magic' __get(),
+     * Private/protected properties may also be readable via 'magic' __get(),
      * if the __get() uses explorableIndex.
      *
-     * @var array
+     * @var string[]
      */
     protected $explorableIndex = [];
 
@@ -110,15 +110,22 @@ abstract class Explorable implements \Countable, \Iterator
     // Do implement magic getter and setter if any exposed property is protected.
 
     /**
-     * @param $name
+     * Get a read-only property.
      *
-     * @return mixed|null
+     * @param string $name
+     *
+     * @return mixed
      *
      * @throws \OutOfBoundsException
-     *      If no such instance property exposed.
+     *      If no such instance property.
      *
-     * abstract function __get($name);
-     */
+    public function __get(string $name)
+    {
+        if (in_array($name, $this->explorableIndex, true)) {
+            return $this->{$name};
+        }
+        throw new \OutOfBoundsException(get_class($this) . ' instance exposes no property[' . $name . '].');
+    }*/
 
     /**
      * @param string $name
@@ -131,6 +138,11 @@ abstract class Explorable implements \Countable, \Iterator
      * @throws \RuntimeException
      *      If that instance property is read-only.
      *
-     * abstract function __set($name, $value);
-     */
+    public function __set(string $name, $value)
+    {
+        if (in_array($name, $this->explorableIndex, true)) {
+            throw new \RuntimeException(get_class($this) . ' instance property[' . $name . '] is read-only.');
+        }
+        throw new \OutOfBoundsException(get_class($this) . ' instance exposes no property[' . $name . '].');
+    }*/
 }

@@ -22,6 +22,7 @@ use Psr\Container\ContainerInterface;
  * - simplecomplex/inspect
  * - simplecomplex/locale
  * - simplecomplex/validate
+ * @see Bootstrap::prepareDependencies()
  *
  * @package SimpleComplex\Utils
  */
@@ -63,6 +64,11 @@ class Bootstrap
     const CLASS_DATABASE_BROKER = '\\SimpleComplex\\Database\\DatabaseBroker';
 
     /**
+     * @var bool
+     */
+    protected static $booted = false;
+
+    /**
      * Set base dependencies for any kind of application; using all/most
      * SimpleComplex packages.
      *
@@ -84,6 +90,11 @@ class Bootstrap
         /*?ContainerInterface*/ $container = null,
         /*?Callable*/ $logger = null
     ) {
+        if (static::$booted) {
+            return;
+        }
+        static::$booted = true;
+
         if ($container) {
             Dependency::injectExternalContainer($container);
         }
@@ -153,6 +164,11 @@ class Bootstrap
         /*?ContainerInterface*/ $container = null,
         /*?Callable*/ $logger = null
     ) {
+        if (static::$booted) {
+            return;
+        }
+        static::$booted = true;
+
         if ($container) {
             Dependency::injectExternalContainer($container);
         }

@@ -1,3 +1,12 @@
+SimpleComplex/Utils 1.x, 2018-05-20
+-----------------------------------
+- Freezable explorable object.
+- Prevent dupe bootstrapping.
+
+SimpleComplex/Utils 1.x, 2018-05-05
+-----------------------------------
+- Bootstrap prepare dependencies if exist.
+
 SimpleComplex/Utils 1.x, 2018-04-25
 -----------------------------------
 - Unicode use function to check for Intl support; class_exist() is lethal
