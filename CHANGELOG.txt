@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-05-21
+-----------------------------------
+- phpunit test helpers.
+- Release 1.4.
+
 SimpleComplex/Utils 1.x, 2018-05-20
 -----------------------------------
 - Freezable explorable object.
