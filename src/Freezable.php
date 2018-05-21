@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
+ * Immutable upon freeze()'ing.
+ *
  * Extend to expose a set list of freezable protected properties.
  *
  * Setting an ad hoc property spells error.

@@ -81,6 +81,8 @@ class Bootstrap
      * - \SimpleComplex\Validate\Validate 'validate'
      * - \SimpleComplex\Database\DatabaseBroker 'database-broker' (if exists)
      *
+     * Only prepares dependencies at first call, later calls are ignored.
+     *
      * @param ContainerInterface|null $container
      *      Like \Slim\Container; default is Dependency instance.
      * @param Callable|null $logger
@@ -154,6 +156,8 @@ class Bootstrap
      * - \SimpleComplex\Locale\AbstractLocale 'locale'
      * - \SimpleComplex\Validate\Validate 'validate'
      * - \SimpleComplex\Database\DatabaseBroker 'database-broker'
+     *
+     * Only prepares dependencies at first call, later calls are ignored.
      *
      * @param ContainerInterface|null $container
      *      Like \Slim\Container; default is Dependency instance.
