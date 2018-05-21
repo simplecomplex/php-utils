@@ -16,13 +16,17 @@
         "psr/container": "^1.0",
         "psr/log": "^1.0"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^6.5"
+    },
     "suggest": {
         "ext-mbstring": "PHP native multibyte features.",
         "simplecomplex/inspect": "Utils' CLI command features do NOT work without Inspect, however CliEnvironment do."
     },
     "autoload": {
         "psr-4": {
-            "SimpleComplex\\Utils\\": "src/"
+            "SimpleComplex\\Utils\\": "src/",
+            "SimpleComplex\\Tests\\Utils\\": "tests/src/"
         }
     }
 }
