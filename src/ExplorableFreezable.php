@@ -9,18 +9,32 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Interfaces\FreezableInterface;
+
 /**
  * Immutable upon freeze()'ing.
  *
  * Extend to expose a set list of freezable protected properties.
  *
+ * Abstract because an implementation must declare it's protected properties.
+ *
  * Setting an ad hoc property spells error.
- * @see Freezable::__set()
+ * @see ExplorableFreezable::__set()
  *
  * @package SimpleComplex\Utils
  */
-abstract class Freezable extends Explorable
+abstract class ExplorableFreezable extends Explorable implements FreezableInterface
 {
+    /**
+     * List of names of protected non-exposable properties.
+     *
+     * @var string[]
+     */
+    const NON_EXPLORABLES = [
+        'explorableIndex',
+        'frozen',
+    ];
+
     /**
      * List of names of protected freezable properties.
      *
@@ -34,26 +48,47 @@ abstract class Freezable extends Explorable
     protected $frozen = false;
 
     /**
-     * Builds index of all explorable and freezable properties.
+     * Builds index of all explorable+freezable properties.
+     *
+     * @param string[] $nonExplorables
+     *      Optional list of more non-explorable properties.
      */
-    public function __construct()
+    public function __construct(array $nonExplorables = [])
     {
-        $properties = get_object_vars($this);
-        unset(
-            $properties['explorableIndex'],
-            $properties['frozen']
-        );
-        $this->explorableIndex = array_keys($properties);
+        $property_names = array_keys(get_object_vars($this));
+        $this->explorableIndex = array_diff($property_names, self::NON_EXPLORABLES, $nonExplorables);
+    }
+
+    /**
+     * Clone will be unfrozen, recursively.
+     *
+     * @return void
+     */
+    public function __clone() /*: void*/
+    {
+        $this->frozen = false;
+        foreach ($this->explorableIndex as $name) {
+            if ($this->{$name} instanceof FreezableInterface) {
+                $this->{$name} = clone $this->{$name};
+            }
+        }
     }
 
     /**
      * Make all properties read-only.
+     *
+     * Recursive, freeze()s all properties that are FreezableInterface.
      *
      * @return void
      */
     public function freeze() /*: void */
     {
         $this->frozen = true;
+        foreach ($this->explorableIndex as $name) {
+            if ($this->{$name} instanceof FreezableInterface) {
+                $this->{$name}->freeze();
+            }
+        }
     }
 
     /**
