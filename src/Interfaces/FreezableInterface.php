@@ -28,9 +28,9 @@ interface FreezableInterface
      * Implementation may work recursively, freeze()ing all properties
      * that implement this interface.
      *
-     * @return void
+     * @return $this|object
      */
-    public function freeze() /*: void*/;
+    public function freeze();
 
     /**
      * @return bool

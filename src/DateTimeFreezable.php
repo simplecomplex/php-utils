@@ -12,26 +12,18 @@ namespace SimpleComplex\Utils;
 use SimpleComplex\Utils\Interfaces\FreezableInterface;
 
 /**
- * Freezable DateTime.
+ * Freezable package DateTime; not \DateTime.
+ *
+ * @see \SimpleComplex\Utils\DateTime
  *
  * @package SimpleComplex\Utils
  */
-class DateTimeFreezable extends \DateTime implements FreezableInterface
+class DateTimeFreezable extends DateTime implements FreezableInterface
 {
     /**
      * @var bool
      */
     protected $frozen = false;
-
-    /**
-     * @param \DateTimeInterface $dateTime
-     *
-     * @return DateTimeFreezable
-     */
-    public static function createFromDateTime(\DateTimeInterface $dateTime) : DateTimeFreezable
-    {
-        return (new static())->setTimestamp($dateTime->getTimestamp());
-    }
 
     /**
      * The clone will be unfrozen.
@@ -46,11 +38,12 @@ class DateTimeFreezable extends \DateTime implements FreezableInterface
     }
 
     /**
-     * @return void
+     * @return $this|DateTimeFreezable
      */
-    public function freeze() /*: void*/
+    public function freeze()
     {
         $this->frozen = true;
+        return $this;
     }
 
     /**
