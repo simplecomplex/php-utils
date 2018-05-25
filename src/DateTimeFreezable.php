@@ -18,7 +18,7 @@ use SimpleComplex\Utils\Interfaces\FreezableInterface;
  *
  * @package SimpleComplex\Utils
  */
-class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterface
+class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
 {
     /**
      * @var bool
@@ -40,7 +40,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
     /**
      * Chainable.
      *
-     * @return $this|DateTimeSimpleFreezable
+     * @return $this|DateTimeFreezable
      */
     public function freeze() /*: object*/
     {
@@ -59,7 +59,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
     /**
      * @param \DateInterval $interval
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -82,7 +82,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
     /**
      * @param string $modify
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -102,7 +102,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
      * @param int $month
      * @param int $day
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -122,7 +122,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
      * @param int $week
      * @param int $day
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -144,7 +144,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
      * @param int $microseconds
      *      Do not use this parameter when PHP 7.0 (<7.1).
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \LogicException
      *      PHP <7.1 and passed 4th argument for $microseconds.
@@ -173,7 +173,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
     /**
      * @param int $unixtimestamp
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -191,7 +191,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
     /**
      * @param \DateTimeZone $timezone
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -209,7 +209,7 @@ class DateTimeSimpleFreezable extends DateTimeSimple implements FreezableInterfa
     /**
      * @param \DateInterval $interval
      *
-     * @return $this|\DateTime|DateTimeSimpleFreezable
+     * @return $this|\DateTime|DateTimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.

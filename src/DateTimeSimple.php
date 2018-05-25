@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * DateTime with getters almost like Javascript Date.
+ * DateTime with getters almost like Javascript Date, and stringable.
  *
  * @package SimpleComplex\Utils
  */
@@ -93,23 +93,47 @@ class DateTimeSimple extends \DateTime
     }
 
     /**
-     * @param bool $utc
-     *      True: Z, no timezone marker, YYYY-...Z.
-     *      False: YYYY-...+/-HH:II
+     * To ISO-8601 with timezone marker.
+     *
+     * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
+     *
+     * Same as:
+     * @see DateTimeSimple::__toString().
      *
      * @return string
      */
-    public function getIso8601(bool $utc = false) : string
+    public function toIso8601Zoned() : string
     {
-        if (!$utc) {
-            return $this->format('c');
-        }
-        $str = (new \DateTime())->setTimestamp($this->getTimestamp())
-            ->setTimezone(new \DateTimeZone('UTC'))
+        return $this->format('c');
+    }
+
+    /**
+     * To ISO-8601 UTC.
+     *
+     * YYYY-MM-DDTHH:ii:ss.mmmmmmZ
+     *
+     * @return string
+     */
+    public function toIso8601Utc() : string
+    {
+        $str = (clone $this)->setTimezone(new \DateTimeZone('UTC'))
             ->format('c');
         if (($pos = strpos($str, '+'))) {
             return substr($str, 0, $pos) . 'Z';
         }
         return '' . preg_replace('/\-[\d:]+$/', '', $str) . 'Z';
+    }
+
+    /**
+     * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
+     *
+     * Same as:
+     * @see DateTimeSimple::toIso8601Zoned().
+     *
+     * @return string
+     */
+    public function __toString() : string
+    {
+        return $this->format('c');
     }
 }
