@@ -79,9 +79,11 @@ abstract class ExplorableFreezable extends Explorable implements FreezableInterf
      *
      * Recursive, freeze()s all properties that are FreezableInterface.
      *
+     * Chainable.
+     *
      * @return $this|ExplorableFreezable
      */
-    public function freeze()
+    public function freeze() /*: object*/
     {
         $this->frozen = true;
         foreach ($this->explorableIndex as $name) {

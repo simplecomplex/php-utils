@@ -14,16 +14,15 @@ namespace SimpleComplex\Utils;
  *
  * @package SimpleComplex\Utils
  */
-class DateTime extends \DateTime
+class DateTimeSimple extends \DateTime
 {
     /**
      * @param \DateTimeInterface $dateTime
      *
-     * @return DateTime
+     * @return DateTimeSimple
      */
-    public static function createFromDateTime(\DateTimeInterface $dateTime) : DateTime
+    public static function createFromDateTime(\DateTimeInterface $dateTime) : DateTimeSimple
     {
-        //return (new static())->setTimestamp($dateTime->getTimestamp());
         return new static($dateTime->format('Y-m-d H:i:s.u'), $dateTime->getTimezone());
     }
 
@@ -100,7 +99,7 @@ class DateTime extends \DateTime
      *
      * @return string
      */
-    public function getDateTimeIso8601(bool $utc = false) : string
+    public function getIso8601(bool $utc = false) : string
     {
         if (!$utc) {
             return $this->format('c');
