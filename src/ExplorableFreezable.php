@@ -26,37 +26,20 @@ use SimpleComplex\Utils\Interfaces\FreezableInterface;
 abstract class ExplorableFreezable extends Explorable implements FreezableInterface
 {
     /**
-     * List of names of protected non-exposable properties.
-     *
-     * @var string[]
-     */
-    const NON_EXPLORABLES = [
-        'explorableIndex',
-        'frozen',
-    ];
-
-    /**
-     * List of names of protected freezable properties.
-     *
-     * @var string[]
-     */
-    protected $explorableIndex = [];
-
-    /**
      * @var bool
      */
     protected $frozen = false;
 
     /**
-     * Builds index of all explorable+freezable properties.
+     * Auto-generates index of explorable properties+freezable properties.
      *
      * @param string[] $nonExplorables
      *      Optional list of more non-explorable properties.
      */
-    public function __construct(array $nonExplorables = [])
+    protected function explorablesAutoDefine(array $nonExplorables = [])
     {
-        $property_names = array_keys(get_object_vars($this));
-        $this->explorableIndex = array_diff($property_names, self::NON_EXPLORABLES, $nonExplorables);
+        $nonExplorables[] = 'frozen';
+        parent::explorablesAutoDefine($nonExplorables);
     }
 
     /**

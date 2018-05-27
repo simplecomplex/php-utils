@@ -1,3 +1,12 @@
+SimpleComplex/Utils 1.x, 2018-05-27
+-----------------------------------
+- DateTimeSimple override \DateTime::setTime() to support (though ignore)
+  $microseconds argument.
+- DateTimeSimple::setToDateStart().
+- Explorable::explorablesAutoDefine() auto-generates list of explorable
+  properties.
+- ExplorableGetSetTrait.
+
 SimpleComplex/Utils 1.x, 2018-05-25
 -----------------------------------
 - Chainable freeze().

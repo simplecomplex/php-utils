@@ -27,6 +27,43 @@ class DateTimeSimple extends \DateTime
     }
 
     /**
+     * PHP 7.0 support for arg $microseconds, though ignored.
+     *
+     * Fairly safe to ignore because \DateInterval PHP <7.1 doesn't record
+     * microseconds difference.
+     *
+     * @param int $hour
+     * @param int $minute
+     * @param int $second
+     * @param int $microseconds
+     *      Ignored when PHP 7.0 (<7.1).
+     *
+     * @return $this|\DateTime|DateTimeSimple
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function setTime($hour, $minute, $second = 0, $microseconds = 0)
+    {
+        if (PHP_MAJOR_VERSION == 7 && !PHP_MINOR_VERSION) {
+            return parent::setTime($hour, $minute, $second);
+        }
+        return parent::setTime($hour, $minute, $second, $microseconds);
+    }
+
+    /**
+     * Convenience method; set to midnight 00:00:00.000000.
+     *
+     * @return $this|\DateTime|DateTimeSimple
+     */
+    public function setToDateStart()
+    {
+        return $this->setTime(0, 0, 0, 0);
+    }
+
+    /**
      * Get full year.
      *
      * @return int
@@ -102,7 +139,7 @@ class DateTimeSimple extends \DateTime
      *
      * @return string
      */
-    public function toIso8601Zonal() : string
+    public function toISOZonal() : string
     {
         return $this->format('c');
     }
@@ -112,9 +149,11 @@ class DateTimeSimple extends \DateTime
      *
      * YYYY-MM-DDTHH:ii:ss.mmmmmmZ
      *
+     * Like Javascript Date.toISOString().
+     *
      * @return string
      */
-    public function toIso8601Utc() : string
+    public function toISOUTC() : string
     {
         $str = (clone $this)->setTimezone(new \DateTimeZone('UTC'))
             ->format('c');
@@ -128,7 +167,7 @@ class DateTimeSimple extends \DateTime
      * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
      *
      * Same as:
-     * @see DateTimeSimple::toIso8601Zoned().
+     * @see DateTimeSimple::toISOZonal().
      *
      * @return string
      */

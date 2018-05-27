@@ -28,6 +28,21 @@ abstract class Explorable implements \Countable, \Iterator
      */
     protected $explorableIndex = [];
 
+    /**
+     * Generates index of explorable properties based on the class' declared
+     * instance vars except $explorableIndex and arg $nonExplorables.
+     *
+     * For extendings class' constructor (typically).
+     *
+     * @param string[] $nonExplorables
+     *      Optional list of more non-explorable properties.
+     */
+    protected function explorablesAutoDefine(array $nonExplorables = [])
+    {
+        // get_object_vars() also includes unitialized (no default) vars.
+        $property_names = array_keys(get_object_vars($this));
+        $this->explorableIndex = array_diff($property_names, ['explorableIndex'], $nonExplorables);
+    }
 
     /**
      * @param string|int $name
@@ -107,7 +122,11 @@ abstract class Explorable implements \Countable, \Iterator
     }
 
 
-    // Do implement magic getter and setter if any exposed property is protected.
+    /**
+     * Do implement magic getter and setter if any exposed property is protected.
+     *
+     * @see \SimpleComplex\Utils\Traits\ExplorableGetSetTrait
+     */
 
     /**
      * Get a read-only property.

@@ -129,7 +129,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function setIsoDate($year, $week, $day = 1)
+    public function setISODate($year, $week, $day = 1)
     {
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
@@ -142,12 +142,9 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
      * @param int $minute
      * @param int $second
      * @param int $microseconds
-     *      Do not use this parameter when PHP 7.0 (<7.1).
      *
      * @return $this|\DateTime|DateTimeFreezable
      *
-     * @throws \LogicException
-     *      PHP <7.1 and passed 4th argument for $microseconds.
      * @throws \RuntimeException
      *      Frozen.
      * @throws \Exception
@@ -158,16 +155,22 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
         }
-        // PHP <7.1 \DateTime has no $microseconds parameter.
-        // Don't care to check for version <7 because this package explicitly
-        // requires >=7.0.
-        if (PHP_MAJOR_VERSION == 7 && !PHP_MINOR_VERSION) {
-            if (func_num_args() > 3) {
-                throw new \LogicException('DateTime::setTime() doesn\'t support arg $microseconds until PHP 7.1.');
-            }
-            return parent::setTime($hour, $minute, $second);
-        }
         return parent::setTime($hour, $minute, $second, $microseconds);
+    }
+
+    /**
+     * @return $this|\DateTime|DateTimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     */
+    public function setToDateStart()
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::setTime(0, 0, 0, 0);
     }
 
     /**
