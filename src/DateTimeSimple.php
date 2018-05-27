@@ -19,7 +19,7 @@ class DateTimeSimple extends \DateTime
     /**
      * @param \DateTimeInterface $dateTime
      *
-     * @return DateTimeSimple
+     * @return static|DateTimeSimple
      */
     public static function createFromDateTime(\DateTimeInterface $dateTime) : DateTimeSimple
     {
@@ -102,7 +102,7 @@ class DateTimeSimple extends \DateTime
      *
      * @return string
      */
-    public function toIso8601Zoned() : string
+    public function toIso8601Zonal() : string
     {
         return $this->format('c');
     }

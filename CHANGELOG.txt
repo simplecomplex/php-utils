@@ -1,7 +1,8 @@
 SimpleComplex/Utils 1.x, 2018-05-25
 -----------------------------------
 - Chainable freeze().
-- DateTimeSimple.
+- DateTime extension (DateTimeSimple) with Javascript-like getters
+  and stringable.
 
 SimpleComplex/Utils 1.x, 2018-05-23
 -----------------------------------
