@@ -21,7 +21,7 @@ use SimpleComplex\Utils\Bootstrap;
  * vendor/bin/phpunit vendor/simplecomplex/utils/tests/src/BootstrapTest.php
  * @endcode
  *
- * @package SimpleComplex\Tests\Database
+ * @package SimpleComplex\Tests\Utils
  */
 class BootstrapTest extends TestCase
 {

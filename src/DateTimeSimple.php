@@ -17,6 +17,33 @@ namespace SimpleComplex\Utils;
 class DateTimeSimple extends \DateTime
 {
     /**
+     * For formats, see:
+     * @see http://php.net/manual/en/function.date.php
+     *
+     * @param string $format
+     * @param string $time
+     * @param \DateTimeZone|null $timezone
+     *      Default: local timezone.
+     *
+     * @return static|DateTimeSimple
+     *
+     * @throws \Exception
+     *      Propagated; from \DateTime::createFromFormat().
+     */
+    public static function createFromFormat($format, $time, /*\DateTimeZone*/ $timezone = null) : DateTimeSimple
+    {
+        // NB: Type hinting (\DateTimeZone $timezone) would provoke E_WARNING.
+        // Catch 22: Specs say that native method's arg $timezone is type hinted
+        // \DateTimeZone, but warning when calling says it isn't.
+
+        // but warning when calling says.
+
+        return static::createFromDateTime(
+            parent::createFromFormat($format, $time, $timezone)
+        );
+    }
+
+    /**
      * @param \DateTimeInterface $dateTime
      *
      * @return static|DateTimeSimple
@@ -127,6 +154,34 @@ class DateTimeSimple extends \DateTime
     public function getMicroseconds() : int
     {
         return (int) $this->format('u');
+    }
+
+    /**
+     * @return string
+     */
+    public function getDateISOlocal() : string
+    {
+        return $this->format('Y-m-d');
+    }
+
+    /**
+     * @param bool $noSeconds
+     *
+     * @return string
+     */
+    public function getTimeISOlocal(bool $noSeconds = false) : string
+    {
+        return $this->format(!$noSeconds ? 'H:i:s' : 'H:i');
+    }
+
+    /**
+     * @param bool $noSeconds
+     *
+     * @return string
+     */
+    public function getDateTimeISOlocal(bool $noSeconds = false) : string
+    {
+        return $this->format(!$noSeconds ? 'Y-m-d H:i:s' : 'Y-m-d H:i');
     }
 
     /**
