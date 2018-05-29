@@ -12,13 +12,13 @@ namespace SimpleComplex\Utils;
 use SimpleComplex\Utils\Interfaces\FreezableInterface;
 
 /**
- * Freezable package DateTime; not \DateTime.
+ * Freezable (DateTime) Time.
  *
- * @see \SimpleComplex\Utils\DateTimeSimple
+ * @see \SimpleComplex\Utils\Time
  *
  * @package SimpleComplex\Utils
  */
-class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
+class TimeFreezable extends Time implements FreezableInterface
 {
     /**
      * @var bool
@@ -40,7 +40,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     /**
      * Chainable.
      *
-     * @return $this|DateTimeFreezable
+     * @return $this|TimeFreezable
      */
     public function freeze() /*: object*/
     {
@@ -59,7 +59,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     /**
      * @param \DateInterval $interval
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -82,7 +82,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     /**
      * @param string $modify
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -102,7 +102,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
      * @param int $month
      * @param int $day
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -122,7 +122,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
      * @param int $week
      * @param int $day
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -143,7 +143,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
      * @param int $second
      * @param int $microseconds
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -159,7 +159,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     }
 
     /**
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -176,7 +176,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     /**
      * @param int $unixtimestamp
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -194,7 +194,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     /**
      * @param \DateTimeZone $timezone
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -212,7 +212,7 @@ class DateTimeFreezable extends DateTimeSimple implements FreezableInterface
     /**
      * @param \DateInterval $interval
      *
-     * @return $this|\DateTime|DateTimeFreezable
+     * @return $this|\DateTime|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.

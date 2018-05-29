@@ -14,7 +14,7 @@ namespace SimpleComplex\Utils;
  *
  * @package SimpleComplex\Utils
  */
-class DateTimeSimple extends \DateTime
+class Time extends \DateTime
 {
     /**
      * For formats, see:
@@ -25,12 +25,12 @@ class DateTimeSimple extends \DateTime
      * @param \DateTimeZone|null $timezone
      *      Default: local timezone.
      *
-     * @return static|DateTimeSimple
+     * @return static|Time
      *
      * @throws \Exception
      *      Propagated; from \DateTime::createFromFormat().
      */
-    public static function createFromFormat($format, $time, /*\DateTimeZone*/ $timezone = null) : DateTimeSimple
+    public static function createFromFormat($format, $time, /*\DateTimeZone*/ $timezone = null) : Time
     {
         // NB: Type hinting (\DateTimeZone $timezone) would provoke E_WARNING.
         // Catch 22: Specs say that native method's arg $timezone is type hinted
@@ -46,9 +46,9 @@ class DateTimeSimple extends \DateTime
     /**
      * @param \DateTimeInterface $dateTime
      *
-     * @return static|DateTimeSimple
+     * @return static|Time
      */
-    public static function createFromDateTime(\DateTimeInterface $dateTime) : DateTimeSimple
+    public static function createFromDateTime(\DateTimeInterface $dateTime) : Time
     {
         return new static($dateTime->format('Y-m-d H:i:s.u'), $dateTime->getTimezone());
     }
@@ -65,7 +65,7 @@ class DateTimeSimple extends \DateTime
      * @param int $microseconds
      *      Ignored when PHP 7.0 (<7.1).
      *
-     * @return $this|\DateTime|DateTimeSimple
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -83,7 +83,7 @@ class DateTimeSimple extends \DateTime
     /**
      * Convenience method; set to midnight 00:00:00.000000.
      *
-     * @return $this|\DateTime|DateTimeSimple
+     * @return $this|\DateTime|Time
      */
     public function setToDateStart()
     {
@@ -190,7 +190,7 @@ class DateTimeSimple extends \DateTime
      * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
      *
      * Same as:
-     * @see DateTimeSimple::__toString().
+     * @see Time::__toString().
      *
      * @return string
      */
@@ -222,7 +222,7 @@ class DateTimeSimple extends \DateTime
      * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
      *
      * Same as:
-     * @see DateTimeSimple::toISOZonal().
+     * @see Time::toISOZonal().
      *
      * @return string
      */
