@@ -54,6 +54,20 @@ class Time extends \DateTime
     }
 
     /**
+     * Get interval as constant immutable object,
+     * a wrapped DateInterval with user-friendy methods for getting signed total
+     *
+     * @param \DateTimeInterface $dateTime
+     *      Supposedly equal to or later than this time.
+     *
+     * @return TimeIntervalConstant
+     */
+    public function diffConstant(\DateTimeInterface $dateTime) : TimeIntervalConstant
+    {
+        return new TimeIntervalConstant($this->diff($dateTime));
+    }
+
+    /**
      * PHP 7.0 support for arg $microseconds, though ignored.
      *
      * Fairly safe to ignore because \DateInterval PHP <7.1 doesn't record

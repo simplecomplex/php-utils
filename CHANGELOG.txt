@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-05-30
+-----------------------------------
+- Constant time interval class, mending shortcomings of native DateInterval.
+  And Time::diffConstant() to create such.
+
 SimpleComplex/Utils 1.x, 2018-05-29
 -----------------------------------
 - Time class renamed; from DateTimeSimple.
