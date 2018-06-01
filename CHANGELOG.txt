@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2018-06-01
+-----------------------------------
+- Freezables shan't freeze() if costly and already frozen.
+
 SimpleComplex/Utils 1.x, 2018-05-30
 -----------------------------------
 - Constant time interval class, mending shortcomings of native DateInterval.

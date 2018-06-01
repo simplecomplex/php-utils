@@ -27,6 +27,8 @@ interface FreezableInterface
      *
      * Implementation may work recursively, freeze()ing all properties
      * that implement this interface.
+     * If recursive or otherwise costly, doing nothing when already frozen
+     * is allowed.
      *
      * Chainable.
      *

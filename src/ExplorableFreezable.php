@@ -58,7 +58,7 @@ abstract class ExplorableFreezable extends Explorable implements FreezableInterf
     }
 
     /**
-     * Make all properties read-only.
+     * Make all properties read-only, unless already frozen.
      *
      * Recursive, freeze()s all properties that are FreezableInterface.
      *
@@ -68,10 +68,12 @@ abstract class ExplorableFreezable extends Explorable implements FreezableInterf
      */
     public function freeze() /*: object*/
     {
-        $this->frozen = true;
-        foreach ($this->explorableIndex as $name) {
-            if ($this->{$name} instanceof FreezableInterface) {
-                $this->{$name}->freeze();
+        if (!$this->frozen) {
+            $this->frozen = true;
+            foreach ($this->explorableIndex as $name) {
+                if ($this->{$name} instanceof FreezableInterface) {
+                    $this->{$name}->freeze();
+                }
             }
         }
         return $this;
