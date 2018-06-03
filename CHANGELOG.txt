@@ -1,3 +1,9 @@
+SimpleComplex/Utils 1.x, 2018-06-03
+-----------------------------------
+- Explorable toObject() and implement JsonSerializable.
+- Time implement JsonSerializable to serialize to ISO-8601 string.
+- Release 1.5.0.
+
 SimpleComplex/Utils 1.x, 2018-06-01
 -----------------------------------
 - Freezables shan't freeze() if costly and already frozen.

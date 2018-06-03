@@ -15,7 +15,7 @@ namespace SimpleComplex\Utils;
  *
  * @package SimpleComplex\Utils
  */
-abstract class Explorable implements \Countable, \Iterator
+abstract class Explorable implements \Countable, \Iterator /*~ Traversable*/, \JsonSerializable
 {
     /**
      * List of names of properties (private, protected or public) which should
@@ -121,6 +121,38 @@ abstract class Explorable implements \Countable, \Iterator
         return $key !== null && $key < count($this->explorableIndex);
     }
 
+    /**
+     * Dumps publicly readable properties to standard object.
+     *
+     * @param bool $recursive
+     *
+     * @return \stdClass
+     */
+    public function toObject(bool $recursive = false) : \stdClass
+    {
+        $o = new \stdClass();
+        if (!$recursive) {
+            foreach ($this->explorableIndex as $property) {
+                $o->{$property} = $this->{$property};
+            }
+        } else {
+            foreach ($this->explorableIndex as $property) {
+                $value = $this->{$property};
+                $o->{$property} = !($value instanceof Explorable) ? $value : $value->toObject(true);
+            }
+        }
+        return $o;
+    }
+
+    /**
+     * JSON serializes to object listing all publicly readable properties.
+     *
+     * @return string
+     */
+    public function jsonSerialize()
+    {
+        return $this->toObject(true);
+    }
 
     /**
      * Do implement magic getter and setter if any exposed property is protected.

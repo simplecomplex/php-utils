@@ -14,7 +14,7 @@ namespace SimpleComplex\Utils;
  *
  * @package SimpleComplex\Utils
  */
-class Time extends \DateTime
+class Time extends \DateTime implements \JsonSerializable
 {
     /**
      * For formats, see:
@@ -44,6 +44,8 @@ class Time extends \DateTime
     }
 
     /**
+     * Create from native \DateTime.
+     *
      * @param \DateTimeInterface $dateTime
      *
      * @return static|Time
@@ -51,6 +53,16 @@ class Time extends \DateTime
     public static function createFromDateTime(\DateTimeInterface $dateTime) : Time
     {
         return new static($dateTime->format('Y-m-d H:i:s.u'), $dateTime->getTimezone());
+    }
+
+    /**
+     * Get as native \DateTime.
+     *
+     * @return \DateTime
+     */
+    public function toDatetime() : \DateTime
+    {
+        return new \DateTime($this->format('Y-m-d H:i:s.u'), $this->getTimezone());
     }
 
     /**
@@ -243,5 +255,19 @@ class Time extends \DateTime
     public function __toString() : string
     {
         return $this->format('c');
+    }
+
+    /**
+     * JSON serializes to string ISO-8601 with timezone marker.
+     *
+     * Unlike native \DateTime which JSON serializes to object;
+     * which isgreat when communicating with other PHP base node,
+     * but a nuisance when communicating with anything else.
+     *
+     * @return string
+     */
+    public function jsonSerialize()
+    {
+        return $this->toISOZonal();
     }
 }
