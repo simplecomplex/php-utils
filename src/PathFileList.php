@@ -68,6 +68,8 @@ class PathFileList extends \ArrayObject
     public $requireExtensions;
 
     /**
+     * One of $requireExtensions has dot(s) within the extension.
+     *
      * Example: ['whatever.ini'].
      *
      * @var bool
@@ -86,6 +88,11 @@ class PathFileList extends \ArrayObject
 
     /**
      * PathFileList constructor.
+     *
+     * @code
+     * // Usage:
+     * $files = (new PathFileList('/absolute/path', ['no-leading-dot-extension']))->getArrayCopy();
+     * @endcode
      *
      * @see PathFileListUnique::FILENAMES_UNIQUE
      *
@@ -180,9 +187,12 @@ class PathFileList extends \ArrayObject
                     $matches = true;
                 } else {
                     foreach ($this->requireExtensions as $ext) {
-                        // Quick and dirty; if our long extension isn't at the end
-                        // it will be a false positive.
-                        if (strpos($filename, '.' . $ext) !== false) {
+                        // PHP>=7.1: strpos() negative offset support:
+                        // if (strpos($filename, '.' . $ext, - strlen('.' . $ext)) !== false) {
+                        if (
+                            ($pos = strpos($filename, '.' . $ext)) !== false
+                            && $pos == strlen($filename) - strlen('.' . $ext)
+                        ) {
                             $matches = true;
                             break;
                         }
