@@ -65,7 +65,7 @@ class PathFileList extends \ArrayObject
      *
      * @var array
      */
-    public $requireExtensions;
+    public $requireExtensions = [];
 
     /**
      * One of $requireExtensions has dot(s) within the extension.
@@ -127,12 +127,15 @@ class PathFileList extends \ArrayObject
 
         if ($requireExtensions) {
             foreach ($requireExtensions as $ext) {
-                if (strpos('.', $ext)) {
-                    $this->requireLongExtensions = true;
-                    break;
+                $needle = ltrim($ext, '.');
+                if ($needle !== '') {
+                    $this->requireExtensions[] = $needle;
+                    if (strpos('.', $needle)) {
+                        $this->requireLongExtensions = true;
+                        break;
+                    }
                 }
             }
-            $this->requireExtensions = $requireExtensions;
         }
 
         if ($maxDepth < 0) {
@@ -187,12 +190,7 @@ class PathFileList extends \ArrayObject
                     $matches = true;
                 } else {
                     foreach ($this->requireExtensions as $ext) {
-                        // PHP>=7.1: strpos() negative offset support:
-                        // if (strpos($filename, '.' . $ext, - strlen('.' . $ext)) !== false) {
-                        if (
-                            ($pos = strpos($filename, '.' . $ext)) !== false
-                            && $pos == strlen($filename) - strlen('.' . $ext)
-                        ) {
+                        if (strpos($filename, '.' . $ext) === strlen($filename) - strlen($ext) - 1) {
                             $matches = true;
                             break;
                         }
