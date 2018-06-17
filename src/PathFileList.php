@@ -9,6 +9,8 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Exception\FileNonUniqueException;
+
 /**
  * List all files in path, recursively, optionally requiring specific
  * file extension(s).
@@ -82,6 +84,8 @@ class PathFileList extends \ArrayObject
     public $maxDepth;
 
     /**
+     * @see \FilesystemIterator
+     *
      * @var int
      */
     public $flags;
@@ -107,7 +111,7 @@ class PathFileList extends \ArrayObject
      * @throws \InvalidArgumentException
      *      Arg path doesn't exist or isn't a directory.
      *      Arg maxDepth negative.
-     * @throws \RuntimeException
+     * @throws FileNonUniqueException
      *      Propagated, if class constant FILENAMES_UNIQUE
      *      and non-unique filename found.
      */
@@ -162,7 +166,7 @@ class PathFileList extends \ArrayObject
      * @param string $path
      * @param int $depth
      *
-     * @throws \RuntimeException
+     * @throws FileNonUniqueException
      *      If class constant FILENAMES_UNIQUE and non-unique filename found.
      */
     protected function traverseRecursively(string $path, int $depth = 0)
@@ -200,7 +204,7 @@ class PathFileList extends \ArrayObject
                     if (!static::FILENAMES_UNIQUE) {
                         $this->append($item->getPathname());
                     } elseif ($this->offsetExists($filename)) {
-                        throw new \RuntimeException(
+                        throw new FileNonUniqueException(
                             'Non-unique filename[' . $filename . '] found in paths[' . $this->offsetGet($filename) . ']'
                             . ' and[' . $item->getPathname() . '].'
                         );
