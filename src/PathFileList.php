@@ -12,6 +12,9 @@ namespace SimpleComplex\Utils;
 use SimpleComplex\Utils\Exception\FileNonUniqueException;
 
 /**
+ * @deprecated Use PathList instead.
+ * @see \SimpleComplex\Utils\PathList
+ *
  * List all files in path, recursively, optionally requiring specific
  * file extension(s).
  *
@@ -134,7 +137,7 @@ class PathFileList extends \ArrayObject
                 $needle = ltrim($ext, '.');
                 if ($needle !== '') {
                     $this->requireExtensions[] = $needle;
-                    if (strpos('.', $needle)) {
+                    if (strpos($needle, '.')) {
                         $this->requireLongExtensions = true;
                         break;
                     }

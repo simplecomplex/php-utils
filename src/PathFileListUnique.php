@@ -10,6 +10,10 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
+ * @deprecated Use PathList instead.
+ * @see \SimpleComplex\Utils\PathList
+ * @see \SimpleComplex\Utils\PathList::requireUnique()
+ *
  * PathFileList which uses filenames as keys and require that filenames
  * are unique across directories.
  *

@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-06-18
+-----------------------------------
+- PathList replaces PathFileList and PathFileListUnique, having better
+ and extendable filter capabilities and supporting finding dirs.
+
 SimpleComplex/Utils 1.x, 2018-06-17
 -----------------------------------
 - PathFileListUnique throw FileNonUniqueException to ease identification
