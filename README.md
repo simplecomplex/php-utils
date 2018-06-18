@@ -42,7 +42,7 @@ php cli.phpsh utils-execute include-file
 
 **``` Sanitize ```** delivers basic string sanitizers and converters.
 
-**``` PathFileList ```** hides the complexity of using FilesystemIterators.
+**``` PathList ```** hides the complexity of using FilesystemIterators.
 
 **``` Utils ```** parses ini strings/files, and delivers a range of other handy methods.
 
