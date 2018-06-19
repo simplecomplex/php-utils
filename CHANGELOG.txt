@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2018-06-19
+-----------------------------------
+- PathList features skipUnreadable, itemValue, customFilter.
+
 SimpleComplex/Utils 1.x, 2018-06-18
 -----------------------------------
 - PathList replaces PathFileList and PathFileListUnique, having better

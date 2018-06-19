@@ -8,8 +8,8 @@
 declare(strict_types=1);
 
 use SimpleComplex\Utils\Bootstrap;
-use \SimpleComplex\Utils\Dependency;
-use \SimpleComplex\Utils\CliEnvironment;
+use SimpleComplex\Utils\Dependency;
+use SimpleComplex\Utils\CliEnvironment;
 
 /**
  * Include script example, for 'utils-execute' CLI command.
@@ -32,6 +32,25 @@ $inspect = $container->get('inspect');
 $environment = CliEnvironment::getInstance();
 
 $utils = \SimpleComplex\Utils\Utils::getInstance();
+
+use SimpleComplex\Utils\PathList;
+
+//$list = (new PathList($utils->documentRoot() . '/backend/vendor/simplecomplex/utils'))
+$list = (new PathList('/home/jacob/Documents'))
+    //->includeExtensions(['php'])
+    ->dirs()
+    ->skipUnreadable()
+    /*->customFilter(function(\SplFileInfo $item) {
+        return $item->getSize() >= 5000;
+    })*/
+    ->itemValue(function(\SplFileInfo $item) {
+        return is_readable($item->getPathname());
+    })
+    ->find();
+$logger->debug(
+    "PathList\n"
+    . $inspect->variable($list->describe())
+);
 
 // Work...
 $a = [

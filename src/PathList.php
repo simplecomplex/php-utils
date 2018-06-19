@@ -15,8 +15,10 @@ use SimpleComplex\Utils\Exception\FileNonUniqueException;
  * List all files or directories in a path recursively,
  * optionally requiring, including, excluding by certain criteria.
  *
- * Array-like object, numerically indexed unless requireUnique;
- * then assocative keyed by filenames (or dirnames).
+ * Array-like object, numerically indexed unless:
+ * - requireUnique, then associative keyed by filenames (or dirnames)
+ * - itemValue, then associative keyed by pathnames
+ *
  * Skips . and ..
  * Converts backslash directory separator to forward slash.
  * Defaults to follow symbolic links.
@@ -52,11 +54,6 @@ class PathList extends \ArrayObject
     protected $skipSymLinks;
 
     /**
-     * @var bool
-     */
-    protected $traverseHidden = false;
-
-    /**
      * Values:
      * - zero: find files
      * - one: find directories
@@ -65,6 +62,21 @@ class PathList extends \ArrayObject
      * @var int
      */
     protected $dirs = 0;
+
+    /**
+     * @var callable
+     */
+    protected $itemValue;
+
+    /**
+     * @var bool
+     */
+    protected $traverseHidden = false;
+
+    /**
+     * @var bool
+     */
+    protected $skipUnreadable = false;
 
     /**
      * @var bool
@@ -97,6 +109,11 @@ class PathList extends \ArrayObject
     protected $excludeExtensions = [];
 
     /**
+     * @var callable
+     */
+    protected $customFilter;
+
+    /**
      * One of $requireExtensions has dot(s) within the extension.
      *
      * Example: ['whatever.ini'].
@@ -110,7 +127,7 @@ class PathList extends \ArrayObject
      *
      * @code
      * // Usage:
-     * $files = (new PathList('/absolute/path'))->includeExtensions('ini')->find();
+     * $list = (new PathList('/absolute/path'))->includeExtensions('ini')->find();
      * @endcode
      *
      * @see \FilesystemIterator
@@ -153,8 +170,10 @@ class PathList extends \ArrayObject
      *
      * @throws \LogicException
      *      Instance var path is empty.
+     * @throws \UnexpectedValueException
+     *      Propagated, FilesystemIterator cannot find or read a path.
      * @throws FileNonUniqueException
-     *      Propagated; if requireUnique and non-unique filename found.
+     *      Propagated, if requireUnique and non-unique filename found.
      */
     public function find() : PathList
     {
@@ -177,7 +196,7 @@ class PathList extends \ArrayObject
     }
 
     /**
-     * Set path to look in.
+     * Set path to find in.
      *
      * @param string $path
      *
@@ -200,6 +219,58 @@ class PathList extends \ArrayObject
     }
 
     /**
+     * Find directories, not files.
+     *
+     * @param bool $traverseMatches
+     *      True: traverse matching dirs too.
+     *
+     * @return $this|PathList
+     */
+    public function dirs(bool $traverseMatches = false) : PathList
+    {
+        $this->dirs = !$traverseMatches ? 1 : 2;
+        return $this;
+    }
+
+    /**
+     * Provide function to set list item values.
+     *
+     * List keys become full pathname and values become file item passed
+     * to this function.
+     *
+     * Not compatible with requireUnique.
+     *
+     * The value function must:
+     * - take an SplFileInfo item as first and only argument
+     * - return any type of value
+     *
+     * @code
+     * $list = (new PathList('/home/you/Documents'))
+     *     ->itemValue(function(\SplFileInfo $item) {
+     *         return $item->getSize();
+     *     })
+     *     ->find();
+     * @endcode
+     *
+     * @see \SplFileInfo
+     *
+     * @param callable $valueFunction
+     *
+     * @return $this|PathList
+     *
+     * @throws \LogicException
+     *      If requireUnique.
+     */
+    public function itemValue(callable $valueFunction)
+    {
+        if ($this->requireUnique) {
+            throw new \LogicException('Can\'t set itemValue function when requireUnique.');
+        }
+        $this->itemValue = $valueFunction;
+        return $this;
+    }
+
+    /**
      * Traverse .hidden dirs.
      *
      * If looking for dirs and set to travers-matching and a matching dir
@@ -215,16 +286,31 @@ class PathList extends \ArrayObject
     }
 
     /**
-     * Find directories, not files.
+     * Don't attempt to traverse unreadable dirs.
      *
-     * @param bool $traverseMatches
-     *      True: traverse matching dirs too.
+     * Otherwise find() may throw UnexpectedValueException when stumbling
+     * upon an unreadable dir.
+     * @see PathList::find()
+     *
+     * Slows down performance.
+     *
+     * If dirs and an unreadable dir matches filters then it still gets listed.
+     *
+     * @code
+     * $list = (new PathList('/home/you/Documents'))
+     *     ->dirs()
+     *     ->skipUnreadable()
+     *     ->itemValue(function(\SplFileInfo $item) {
+     *         return is_readable($item->getPathname());
+     *     })
+     *     ->find();
+     * @endcode
      *
      * @return $this|PathList
      */
-    public function dirs(bool $traverseMatches = false) : PathList
+    public function skipUnreadable()
     {
-        $this->dirs = !$traverseMatches ? 1 : 2;
+        $this->skipUnreadable = true;
         return $this;
     }
 
@@ -235,10 +321,20 @@ class PathList extends \ArrayObject
      * The list becomes associative array keyed by filenames (dirnames),
      * instead of numerically indexed array.
      *
+     * Incompatible with customValue.
+     *
      * @return $this|PathList
+     *
+     * @throws \LogicException
+     *      If customValue function set.
      */
     public function requireUnique() : PathList
     {
+        if ($this->customValue) {
+            throw new \LogicException(
+                'Can\'t requireUnique ' . (!$this->dirs ? 'filenames' : 'dirnames') . ' when customValue function set.'
+            );
+        }
         $this->requireUnique = true;
         return $this;
     }
@@ -388,6 +484,41 @@ class PathList extends \ArrayObject
     }
 
     /**
+     * Provide custom filter.
+     *
+     * The filter function must:
+     * - take an SplFileInfo item as first and only argument
+     * - return boolean, true on match
+     *
+     * @code
+     * $list = (new PathList('/home/you/Documents'))
+     *     ->customFilter(function(\SplFileInfo $item) {
+     *         return $item->getSize() >= 5000;
+     *     })
+     *     ->find();
+     * @endcode
+     *
+     * @see \SplFileInfo
+     *
+     * @param callable $filterFunction
+     *
+     * @return $this|PathList
+     */
+    public function customFilter(callable $filterFunction)
+    {
+        $this->customFilter = $filterFunction;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPath() : string
+    {
+        return $this->path ?? '';
+    }
+
+    /**
      * Dumps requirements, inclusions and exclusions to array.
      *
      * Adds bucket criteriaCount, counting actual filter criteria;
@@ -401,12 +532,14 @@ class PathList extends \ArrayObject
             'path' => $this->path,
             'maxDepth' => $this->maxDepth,
             'skipSymLinks' => $this->skipSymLinks,
-            'traverseHidden' => $this->traverseHidden,
             'dirs' => $this->dirs,
+            'itemValue' => $this->itemValue,
+            'traverseHidden' => $this->traverseHidden,
+            'skipUnreadable' => $this->skipUnreadable,
             'requireUnique' => $this->requireUnique,
-            //
+            // Count actual criteria.
             'criteriaCount' => (int) !$this->includeHidden,
-            // First real criteria.
+            // First actual criteria.
             'includeHidden' => $this->includeHidden,
         ];
         $possible_empties = [
@@ -414,6 +547,7 @@ class PathList extends \ArrayObject
             'excludeNames',
             'includeExtensions',
             'excludeExtensions',
+            'customFilter',
         ];
         foreach ($possible_empties as $key) {
             if ($this->{$key}) {
@@ -428,6 +562,8 @@ class PathList extends \ArrayObject
      * @param string $path
      * @param int $depth
      *
+     * @throws \UnexpectedValueException
+     *      FilesystemIterator cannot find or read a path.
      * @throws FileNonUniqueException
      *      Propagated; if requireUnique and non-unique item found.
      */
@@ -437,11 +573,15 @@ class PathList extends \ArrayObject
             return;
         }
 
+        /**
+         * @throws \UnexpectedValueException
+         */
         $iterator = new \FilesystemIterator(
             $path,
             \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS
             | ($this->skipSymLinks ? 0 : \FilesystemIterator::FOLLOW_SYMLINKS)
         );
+
         foreach ($iterator as $item) {
             $filename = $item->getFilename();
 
@@ -449,7 +589,16 @@ class PathList extends \ArrayObject
 
             if ($is_dir == $this->dirs && $this->filter($item)) {
                 if (!$this->requireUnique) {
-                    $this->append($item->getPathname());
+                    // Pathnames are key if itemValue.
+                    if ($this->itemValue) {
+                        $this->offsetSet(
+                            $item->getPathname(),
+                            call_user_func_array($this->itemValue, [$item])
+                        );
+                    }
+                    else {
+                        $this->append($item->getPathname());
+                    }
                 }
                 // Filenames are keys if requireUnique.
                 elseif ($this->offsetExists($filename)) {
@@ -473,7 +622,10 @@ class PathList extends \ArrayObject
             }
 
             if ($is_dir) {
-                $this->traverseRecursively($item->getPathname(), $depth + 1);
+                $path_name = $item->getPathname();
+                if (!$this->skipUnreadable || is_readable($path_name)) {
+                    $this->traverseRecursively($item->getPathname(), $depth + 1);
+                }
             }
         }
     }
@@ -536,6 +688,10 @@ class PathList extends \ArrayObject
                     }
                 }
             }
+        }
+
+        if ($this->customFilter) {
+            return call_user_func_array($this->customFilter, [$item]);
         }
 
         return true;
