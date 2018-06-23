@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-06-23
+-----------------------------------
+- Array merge unique recursive erring when non-unique assoc key and both values
+  aren't array.
+
 SimpleComplex/Utils 1.x, 2018-06-19
 -----------------------------------
 - PathList features skipUnreadable, itemValue, customFilter.

@@ -12,6 +12,7 @@ namespace SimpleComplex\Utils;
 use Psr\Log\LogLevel;
 use Psr\Log\InvalidArgumentException;
 use SimpleComplex\Utils\Exception\ConfigurationException;
+use SimpleComplex\Utils\Exception\KeyNonUniqueException;
 use SimpleComplex\Utils\Exception\ParseIniException;
 use SimpleComplex\Utils\Exception\ParseJsonException;
 
@@ -161,7 +162,7 @@ class Utils
      * @see array_merge_recursive()
      *
      * @param array $array0
-     * @param array[] $arrayN
+     * @param array ...$arrayN
      *      Any number of arguments.
      *
      * @return array
@@ -170,8 +171,10 @@ class Utils
     {
         foreach ($arrayN as $arr) {
             if (!$array0) {
+                // If first arg empty, use first of later args.
                 $array0 = $arr;
-            } elseif ($arr) {
+            }
+            elseif ($arr) {
                 foreach ($arr as $key => $value) {
                     // Dupe key.
                     if (array_key_exists($key, $array0)) {
@@ -186,6 +189,71 @@ class Utils
                         // Associative key: overwrite.
                         else {
                             $array0[$key] = $value;
+                        }
+                    }
+                    // Non-dupe key: append.
+                    else {
+                        $array0[$key] = $value;
+                    }
+                }
+            }
+        }
+        return $array0;
+    }
+
+    /**
+     * Merge arrays recursively, letting numerically indexed key values append
+     * and err on dupe associative key where original and candidate both have
+     * non-array value.
+     *
+     * @see Utils::arrayMergeRecursive()
+     *
+     * @param array $array0
+     * @param array ...$arrayN
+     *      Any number of arguments.
+     *
+     * @return array
+     *
+     * @throws KeyNonUniqueException
+     *      On non-unique associative key and both values aren't array.
+     */
+    function arrayMergeUniqueRecursive(array $array0, array ...$arrayN)
+    {
+        foreach ($arrayN as $arr) {
+            if (!$array0) {
+                // If first arg empty, use first of later args.
+                $array0 = $arr;
+            }
+            elseif ($arr) {
+                foreach ($arr as $key => $value) {
+                    // Dupe key.
+                    if (array_key_exists($key, $array0)) {
+                        // Both values array: recurse.
+                        if (is_array($value) && is_array($array0[$key])) {
+                            $array0[$key] = $this->arrayMergeUniqueRecursive($array0[$key], $value);
+                        }
+                        // Numeric key: append.
+                        elseif (!$key || ctype_digit('' . $key)) {
+                            $array0[] = $value;
+                        }
+                        // Associative key and both non-array: err.
+                        else {
+                            throw new KeyNonUniqueException(
+                                'Non-unique associative key[' . $key . '] having non-array value found, first is type['
+                                . static::getType($array0[$key]) . ']'
+                                . (
+                                    $array0[$key] === null ? ' value[null]' : (
+                                        is_scalar($array0[$key]) ? (' value[' . $array0[$key] . ']') : ''
+                                    )
+                                )
+                                . ', second is type[' . static::getType($value) . ']'
+                                . (
+                                    $value === null ? ' value[null]' : (
+                                        is_scalar($value) ? (' value[' . $value . ']') : ''
+                                    )
+                                )
+                                . '.'
+                            );
                         }
                     }
                     // Non-dupe key: append.
