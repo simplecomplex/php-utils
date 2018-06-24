@@ -8,6 +8,7 @@ SimpleComplex/Utils 1.x, 2018-06-24
 - PathList record whether paths are recorded in values, keys or not at all.
 - PathList requireUnique _are_ itemValue mutually compatible
 - PathList listDocumentRootReplaced(); though not when requireUnique+itemValue.
+- Release 1.7.
 
 SimpleComplex/Utils 1.x, 2018-06-23
 -----------------------------------
