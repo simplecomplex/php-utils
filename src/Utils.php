@@ -520,6 +520,11 @@ class Utils
     protected $documentRootsAll;
 
     /**
+     * @var string
+     */
+    protected $vendorDir;
+
+    /**
      * Real path document root.
      *
      * @return string
@@ -605,25 +610,68 @@ class Utils
     }
 
     /**
-     * Replaces all instances of document root in a path with a substitute.
+     * @see Utils::pathReplaceDocumentRoot()
      *
-     * Replaces real path document root as well as symlinked document root.
+     * @var string
+     */
+    const DOCUMENT_ROOT_REPLACER = '[doc_root]';
+
+    /**
+     * Replaces all variants of document root in a path with a substitute.
+     *
+     * The variants are real path document root and symlinked document root.
      *
      * @param string $path
      * @param string $substitute
+     * @param bool $leading
+     *      True: only if document root found from beginning of path,
+     *          and then only once.
      *
      * @return string
      */
-    public function pathReplaceDocumentRoot(string $path, string $substitute = '[document_root]') : string {
+    public function pathReplaceDocumentRoot(
+        string $path,
+        string $substitute = Utils::DOCUMENT_ROOT_REPLACER,
+        bool $leading = false
+    ) : string {
         if (!$this->documentRootsMinLength) {
             $this->documentRootsAll();
         }
         if (strlen($path) >= $this->documentRootsMinLength) {
             foreach ($this->documentRootsAll as $root) {
-                $path = str_replace($root, $substitute, $path);
+                if (!$leading) {
+                    $path = str_replace($root, $substitute, $path);
+                }
+                elseif (strpos($path, $root) === 0) {
+                    return $substitute . substr($path, strlen($root));
+                }
             }
         }
         return $path;
+    }
+
+    /**
+     * Get vendor dir relative to document root.
+     *
+     * @return string
+     */
+    public function vendorDir() : string
+    {
+        if (!$this->vendorDir) {
+            $this->vendorDir = trim(
+                str_replace(
+                    '/simplecomplex/utils/src',
+                    '',
+                    $this->pathReplaceDocumentRoot(
+                        DIRECTORY_SEPARATOR == '\\' ? str_replace('\\', '/', __DIR__) : __DIR__,
+                        '',
+                        true
+                    )
+                ),
+                '/'
+            );
+        }
+        return $this->vendorDir;
     }
 
     /**

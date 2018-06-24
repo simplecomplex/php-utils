@@ -1,3 +1,14 @@
+SimpleComplex/Utils 1.x, 2018-06-24
+-----------------------------------
+- Utils pathReplaceDocumentRoot() replacer is now a class constant,
+  and default is now [doc_root]; was [document_root].
+- Utils pathReplaceDocumentRoot() new third parameter (bool) leading.
+- Utils vendorDir(), relative to document root.
+- PathList bug: has itemValue property; not customValue.
+- PathList record whether paths are recorded in values, keys or not at all.
+- PathList requireUnique _are_ itemValue mutually compatible
+- PathList listDocumentRootReplaced(); though not when requireUnique+itemValue.
+
 SimpleComplex/Utils 1.x, 2018-06-23
 -----------------------------------
 - Array merge unique recursive erring when non-unique assoc key and both values

@@ -123,6 +123,19 @@ class PathList extends \ArrayObject
     protected $longExtensions = false;
 
     /**
+     * Where are paths recorded?
+     *
+     * Values: value|key|none; default: value.
+     *
+     * @see PathList::itemValue()
+     * @see PathList::requireUnique()
+     * @see PathList::listDocumentRootReplaced()
+     *
+     * @var string
+     */
+    protected $pathNameRecord = 'value';
+
+    /**
      * PathList constructor.
      *
      * @code
@@ -235,10 +248,10 @@ class PathList extends \ArrayObject
     /**
      * Provide function to set list item values.
      *
-     * List keys become full pathname and values become file item passed
+     * List keys become paths and values become file|dir items passed
      * to this function.
-     *
-     * Not compatible with requireUnique.
+     * Except if also requireUnique, then keys become filename|dirname
+     * and paths won't be recorded at all.
      *
      * The value function must:
      * - take an SplFileInfo item as first and only argument
@@ -257,15 +270,13 @@ class PathList extends \ArrayObject
      * @param callable $valueFunction
      *
      * @return $this|PathList
-     *
-     * @throws \LogicException
-     *      If requireUnique.
      */
     public function itemValue(callable $valueFunction)
     {
-        if ($this->requireUnique) {
-            throw new \LogicException('Can\'t set itemValue function when requireUnique.');
-        }
+        // Paths aren't recorded at all if requireUnique+itemValue
+        // because then key is filename|dirname and value is arbitrary.
+        $this->pathNameRecord = $this->requireUnique ? 'none' : 'key';
+
         $this->itemValue = $valueFunction;
         return $this;
     }
@@ -320,21 +331,18 @@ class PathList extends \ArrayObject
      *
      * The list becomes associative array keyed by filenames (dirnames),
      * instead of numerically indexed array.
-     *
-     * Incompatible with customValue.
+     * If also itemValue then paths won't be recorded at all.
      *
      * @return $this|PathList
-     *
-     * @throws \LogicException
-     *      If customValue function set.
      */
     public function requireUnique() : PathList
     {
-        if ($this->customValue) {
-            throw new \LogicException(
-                'Can\'t requireUnique ' . (!$this->dirs ? 'filenames' : 'dirnames') . ' when customValue function set.'
-            );
+        if ($this->itemValue) {
+            // Paths aren't recorded at all if requireUnique+itemValue
+            // because then key is filename|dirname and value is arbitrary.
+            $this->pathNameRecord = 'none';
         }
+
         $this->requireUnique = true;
         return $this;
     }
@@ -519,6 +527,41 @@ class PathList extends \ArrayObject
     }
 
     /**
+     * List all files|dirs' paths having document root replaced.
+     *
+     * Not compatible with requireUnique + itemValue combined,
+     * because then no record of files|dirs' paths.
+     *
+     * @return array
+     *      Numerically indexed.
+     *
+     * @throws \LogicException
+     *      If itemValue function set.
+     */
+    public function listDocumentRootReplaced()
+    {
+        if ($this->pathNameRecord == 'none') {
+            throw new \LogicException(
+                'Can\'t listDocumentRootReplaced() ' . (!$this->dirs ? 'filenames' : 'dirnames')
+                . ' when items\' paths aren\'t recorded'
+                . (!$this->requireUnique || !$this->itemValue ? '.' :
+                    (', incompatible when both requireUnique is \'on\' and itemValue function defined.')
+                )
+            );
+        }
+        $utils = Utils::getInstance();
+        $list = $this->getArrayCopy();
+        if ($this->pathNameRecord == 'key') {
+            $list = array_keys($list);
+        }
+        foreach ($list as &$path_name) {
+            $path_name = $utils->pathReplaceDocumentRoot($path_name, Utils::DOCUMENT_ROOT_REPLACER, true);
+        }
+        unset($path_name);
+        return $list;
+    }
+
+    /**
      * Dumps requirements, inclusions and exclusions to array.
      *
      * Adds bucket criteriaCount, counting actual filter criteria;
@@ -589,15 +632,15 @@ class PathList extends \ArrayObject
 
             if ($is_dir == $this->dirs && $this->filter($item)) {
                 if (!$this->requireUnique) {
-                    // Pathnames are key if itemValue.
-                    if ($this->itemValue) {
+                    if (!$this->itemValue) {
+                        $this->append($item->getPathname());
+                    }
+                    else {
+                        // Pathnames are key if itemValue and not requireUnique.
                         $this->offsetSet(
                             $item->getPathname(),
                             call_user_func_array($this->itemValue, [$item])
                         );
-                    }
-                    else {
-                        $this->append($item->getPathname());
                     }
                 }
                 // Filenames are keys if requireUnique.
@@ -609,7 +652,11 @@ class PathList extends \ArrayObject
                     );
                 }
                 else {
-                    $this->offsetSet($filename, $item->getPathname());
+                    $this->offsetSet(
+                        // Filenames are keys if requireUnique.
+                        $filename,
+                        !$this->itemValue ? $item->getPathname() : call_user_func_array($this->itemValue, [$item])
+                    );
                 }
 
                 // If directory and not set to traverse matching dir.
@@ -624,7 +671,7 @@ class PathList extends \ArrayObject
             if ($is_dir) {
                 $path_name = $item->getPathname();
                 if (!$this->skipUnreadable || is_readable($path_name)) {
-                    $this->traverseRecursively($item->getPathname(), $depth + 1);
+                    $this->traverseRecursively($path_name, $depth + 1);
                 }
             }
         }
