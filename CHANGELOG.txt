@@ -1,5 +1,12 @@
 SimpleComplex/Utils 1.x, 2018-06-24
 -----------------------------------
+- Major version last fixes (irregularity, however version 1.7 seem unused yet):
+  deprecated classes PathFileList and PathFileListUnique removed from source,
+  and PathList method clear() renamed (was reset()).
+- Release 1.7.1.
+
+SimpleComplex/Utils 1.x, 2018-06-24
+-----------------------------------
 - Utils pathReplaceDocumentRoot() replacer is now a class constant,
   and default is now [doc_root]; was [document_root].
 - Utils pathReplaceDocumentRoot() new third parameter (bool) leading.

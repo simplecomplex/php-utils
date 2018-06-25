@@ -109,6 +109,16 @@ class PathList extends \ArrayObject
     protected $excludeExtensions = [];
 
     /**
+     * @var string[]
+     */
+    protected $includeParents = [];
+
+    /**
+     * @var string[]
+     */
+    protected $excludeParents = [];
+
+    /**
      * @var callable
      */
     protected $customFilter;
@@ -202,7 +212,7 @@ class PathList extends \ArrayObject
      *
      * @return $this|PathList
      */
-    public function reset() : PathList
+    public function clear() : PathList
     {
         $this->exchangeArray([]);
         return $this;
@@ -370,12 +380,12 @@ class PathList extends \ArrayObject
      * Sets includeHidden to true if any of the names has leading dot.
      *
      * @param string[] $names
-     *      List of filenames; dirnames if dirs.
+     *      List of filenames (including extension); dirnames if dirs.
      *
      * @return $this|PathList
      *
      * @throws \LogicException
-     *      If non-empty excludeNames and includeExtensions.
+     *      If non-empty excludeNames or includeExtensions.
      */
     public function includeNames(array $names) : PathList
     {
@@ -396,12 +406,12 @@ class PathList extends \ArrayObject
     }
 
     /**
-     * Require that filename (dirname if dirs) doesn't match one of these names.
+     * Require that filename (dirname if dirs) doesn't match any of these names.
      *
      * Incompatible with includeNames and excludeExtensions.
      *
      * @param string[] $names
-     *      List of filenames; dirnames if dirs.
+     *      List of filenames (including extension); dirnames if dirs.
      *
      * @return $this|PathList
      *
@@ -421,7 +431,7 @@ class PathList extends \ArrayObject
     }
 
     /**
-     * Require that filename (dirname if dirs) doesn't match one of these extensions.
+     * Require that filename (dirname if dirs) matches one of these extensions.
      *
      * Incompatible with excludeExtensions and includeNames.
      *
@@ -457,9 +467,10 @@ class PathList extends \ArrayObject
     }
 
     /**
-     * Require that filename (dirname if dirs) matches one of these extensions.
+     * Require that filename (dirname if dirs) doesn't match any of these
+     * extensions.
      *
-     *  Incompatible with includeExtensions and excludeNames.
+     * Incompatible with includeExtensions and excludeNames.
      *
      * @param string[] $extensions
      *      List of extensions, with or without leading dot.
@@ -492,7 +503,75 @@ class PathList extends \ArrayObject
     }
 
     /**
+     * Require that parent pathname of files (dirnames if dirs) matches
+     * one of these paths.
+     *
+     * Matches multibyte chars even if locale isn't set.
+     *
+     * Cannot match a path like 'c:\' or 'c:/'; assumes that any path can have
+     * leading slash.
+     *
+     * Incompatible with excludeParents.
+     *
+     * @param string[] $parentPaths
+     *      Allowed to consist of more dirs, slash or backslash delimited.
+     *      Removes leading/trailing slashes.
+     *
+     * @return $this|PathList
+     *
+     * @throws \LogicException
+     *      If non-empty excludeParents.
+     */
+    public function includeParents(array $parentPaths)
+    {
+        if ($this->excludeParents) {
+            throw new \LogicException('Can\'t set includeParents when non-empty excludeParents.');
+        }
+        $this->includeParents = [];
+        $backslashed = DIRECTORY_SEPARATOR == '\\';
+        foreach ($parentPaths as $pathname) {
+            $this->includeParents[] = trim(!$backslashed ? $pathname : str_replace('\\', '/', $pathname), '/');
+        }
+        return $this;
+    }
+
+    /**
+     * Require that parent pathname of files (dirnames if dirs) doesn't match
+     * any of these paths.
+     *
+     * Matches multibyte chars even if locale isn't set.
+     *
+     * Cannot match a path like 'c:\' or 'c:/'; assumes that any path can have
+     * leading slash.
+     *
+     * Incompatible with includeParents.
+     *
+     * @param string[] $parentPaths
+     *      Allowed to consist of more dirs, slash or backslash delimited.
+     *      Removes leading/trailing slashes.
+     *
+     * @return $this|PathList
+     *
+     * @throws \LogicException
+     *      If non-empty includeParents.
+     */
+    public function excludeParents(array $parentPaths)
+    {
+        if ($this->includeParents) {
+            throw new \LogicException('Can\'t set excludeParents when non-empty includeParents.');
+        }
+        $this->excludeParents = [];
+        $backslashed = DIRECTORY_SEPARATOR == '\\';
+        foreach ($parentPaths as $pathname) {
+            $this->excludeParents[] = trim(!$backslashed ? $pathname : str_replace('\\', '/', $pathname), '/');
+        }
+        return $this;
+    }
+
+    /**
      * Provide custom filter.
+     *
+     * Gets applied after all built-in filters have been applied (if any).
      *
      * The filter function must:
      * - take an SplFileInfo item as first and only argument
@@ -554,10 +633,10 @@ class PathList extends \ArrayObject
         if ($this->pathNameRecord == 'key') {
             $list = array_keys($list);
         }
-        foreach ($list as &$path_name) {
-            $path_name = $utils->pathReplaceDocumentRoot($path_name, Utils::DOCUMENT_ROOT_REPLACER, true);
+        foreach ($list as &$pathname) {
+            $pathname = $utils->pathReplaceDocumentRoot($pathname, Utils::DOCUMENT_ROOT_REPLACER, true);
         }
-        unset($path_name);
+        unset($pathname);
         return $list;
     }
 
@@ -590,6 +669,8 @@ class PathList extends \ArrayObject
             'excludeNames',
             'includeExtensions',
             'excludeExtensions',
+            'includeParents',
+            'excludeParents',
             'customFilter',
         ];
         foreach ($possible_empties as $key) {
@@ -669,9 +750,9 @@ class PathList extends \ArrayObject
             }
 
             if ($is_dir) {
-                $path_name = $item->getPathname();
-                if (!$this->skipUnreadable || is_readable($path_name)) {
-                    $this->traverseRecursively($path_name, $depth + 1);
+                $pathname = $item->getPathname();
+                if (!$this->skipUnreadable || is_readable($pathname)) {
+                    $this->traverseRecursively($pathname, $depth + 1);
                 }
             }
         }
@@ -730,6 +811,40 @@ class PathList extends \ArrayObject
                     if (
                         ($pos = strpos($filename, '.' . $ext)) !== false
                         && $pos == strlen($filename) - strlen($ext) - 1
+                    ) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        if ($this->includeParents || $this->excludeParents) {
+            $parent_path = $item->getPathname();
+            $parent_path = substr($parent_path, 0, -strlen($filename) - 1);
+            if ($this->includeParents) {
+                if ($parent_path === false) {
+                    // No space for any parent path.
+                    return false;
+                }
+                $matches = false;
+                foreach ($this->includeParents as $name) {
+                    if (
+                        ($pos = strpos($parent_path, '/' . $name)) !== false
+                        && $pos == strlen($parent_path) - strlen($name) - 1
+                    ) {
+                        $matches = true;
+                        break;
+                    }
+                }
+                if (!$matches) {
+                    return false;
+                }
+            }
+            elseif ($parent_path !== false) {
+                foreach ($this->excludeParents as $name) {
+                    if (
+                        ($pos = strpos($parent_path, '/' . $name)) !== false
+                        && $pos == strlen($parent_path) - strlen($name) - 1
                     ) {
                         return false;
                     }
