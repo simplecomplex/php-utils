@@ -23,61 +23,108 @@ use SimpleComplex\Utils\CliEnvironment;
 
 Bootstrap::prepareDependenciesIfExist();
 
-$container = Dependency::container();
-/** @var \Psr\Log\LoggerInterface $logger */
-$logger = $container->get('logger');
-/** @var \SimpleComplex\Inspect\Inspect $inspect */
-$inspect = $container->get('inspect');
+use SimpleComplex\Utils\Time;
+use SimpleComplex\Utils\TimeFreezable;
+use SimpleComplex\Utils\PathList;
 
 $environment = CliEnvironment::getInstance();
 
-$utils = \SimpleComplex\Utils\Utils::getInstance();
+(function($environment) {
+    $container = Dependency::container();
+    /** @var \Psr\Log\LoggerInterface $logger */
+    $logger = $container->get('logger');
+    /** @var \SimpleComplex\Inspect\Inspect $inspect */
+    $inspect = $container->get('inspect');
 
-use SimpleComplex\Utils\PathList;
+    $utils = \SimpleComplex\Utils\Utils::getInstance();
 
-//$list = (new PathList($utils->documentRoot() . '/backend/vendor/simplecomplex/utils'))
-$list = (new PathList('/home/jacob/Documents'))
-    //->includeExtensions(['php'])
-    ->dirs()
-    ->skipUnreadable()
-    /*->customFilter(function(\SplFileInfo $item) {
-        return $item->getSize() >= 5000;
-    })*/
-    ->itemValue(function(\SplFileInfo $item) {
-        return is_readable($item->getPathname());
-    })
-    ->find();
-$logger->debug(
-    "PathList\n"
-    . $inspect->variable($list->describe())
-);
 
-// Work...
-$a = [
-    'a' => 'alpha',
-    'b' => 'beta',
-    'gamma'
-];
-$b = [
-    'a' => 'skrid',
-    'b' => null,
-    'omega',
-    'c' => 'theta',
-];
-$c = [
-];
+    $original = TimeFreezable::createFromDateTime(new \DateTime());
+    $original->addPart('month', 1);
+    $original->addPart('day', 4);
+    $logger->debug(
+        "timish\n"
+        . $inspect->variable([
+            '' . $original,
+            '',
+            '' . (clone $original)->addPart('month', 4),
+            '' . (clone $original)->addPart('month', 5),
+            '' . (clone $original)->addPart('month', 6),
+            '',
+            '' . (clone $original)->addPart('month', 4 + 12),
+            '' . (clone $original)->addPart('month', 5 + 12),
+            '' . (clone $original)->addPart('month', 6 + 12),
+            '',
+            '' . (clone $original)->addPart('month', 4 + 12 + 12),
+            '' . (clone $original)->addPart('month', 5 + 12 + 12),
+            '' . (clone $original)->addPart('month', 6 + 12 + 12),
+            '',
+            '' . (clone $original)->subPart('month', 4),
+            '' . (clone $original)->subPart('month', 5),
+            '' . (clone $original)->subPart('month', 6),
+            '' . (clone $original)->subPart('month', 7),
+            '' . (clone $original)->subPart('month', 8),
+            '',
+            '' . (clone $original)->subPart('month', 4 + 12),
+            '' . (clone $original)->subPart('month', 5 + 12),
+            '' . (clone $original)->subPart('month', 6 + 12),
+            '' . (clone $original)->subPart('month', 7 + 12),
+            '' . (clone $original)->subPart('month', 8 + 12),
+            '',
+            '' . (clone $original)->subPart('month', 4 + 12 + 12),
+            '' . (clone $original)->subPart('month', 5 + 12 + 12),
+            '' . (clone $original)->subPart('month', 6 + 12 + 12),
+            '' . (clone $original)->subPart('month', 7 + 12 + 12),
+            '' . (clone $original)->subPart('month', 8 + 12 + 12)
+        ])
+    );
 
-$logger->debug(
-    "array_replace_recursive\n"
-    . $inspect->variable(array_replace_recursive($a, $b, $c))
-);
-$logger->debug(
-    "array_replace_recursive\n"
-    . $inspect->variable($utils->arrayMergeRecursive($a, $b, $c))
-);
-$logger->debug(
-    "array_replace_recursive\n"
-    . $inspect->variable(array_merge_recursive($a, $b, $c))
-);
+    return;
+
+    //$list = (new PathList($utils->documentRoot() . '/backend/vendor/simplecomplex/utils'))
+    $list = (new PathList('/home/jacob/Documents'))
+        //->includeExtensions(['php'])
+        ->dirs()
+        ->skipUnreadable()
+        /*->customFilter(function(\SplFileInfo $item) {
+            return $item->getSize() >= 5000;
+        })*/
+        ->itemValue(function(\SplFileInfo $item) {
+            return is_readable($item->getPathname());
+        })
+        ->find();
+    $logger->debug(
+        "PathList\n"
+        . $inspect->variable($list->describe())
+    );
+
+    // Work...
+    $a = [
+        'a' => 'alpha',
+        'b' => 'beta',
+        'gamma'
+    ];
+    $b = [
+        'a' => 'skrid',
+        'b' => null,
+        'omega',
+        'c' => 'theta',
+    ];
+    $c = [
+    ];
+
+    $logger->debug(
+        "array_replace_recursive\n"
+        . $inspect->variable(array_replace_recursive($a, $b, $c))
+    );
+    $logger->debug(
+        "array_replace_recursive\n"
+        . $inspect->variable($utils->arrayMergeRecursive($a, $b, $c))
+    );
+    $logger->debug(
+        "array_replace_recursive\n"
+        . $inspect->variable(array_merge_recursive($a, $b, $c))
+    );
+})($environment);
 
 $environment->echoMessage('It worked :-)', 'success');

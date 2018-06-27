@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2018-06-27
+-----------------------------------
+- Time::addPart/subPart() to perform sensible year and month addition/
+  subtraction. And helpers isLeapYear() and monthLengthDays().
+
 SimpleComplex/Utils 1.x, 2018-06-24
 -----------------------------------
 - Major version last fixes (irregularity, however version 1.7 seem unused yet):

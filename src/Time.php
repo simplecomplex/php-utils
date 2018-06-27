@@ -117,6 +117,158 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Add to a date or time part.
+     *
+     * Validity adjustment when part is year:
+     * If current date is February 29th and target year isn't a leap year,
+     * then target date becomes February 28th.
+     *
+     * Validity adjustment when part is month:
+     * If current month is longer than target month and current day
+     * doesn't exist in target month, then target day becomes last day
+     * of target month.
+     *
+     * These validity adjustments are equivalent with database adjustments
+     * like MySQL::date_add() and MSSQL::dateadd().
+     *
+     * @param string $part
+     *      Values: year|month|day|hour|minute|second.
+     * @param int $amount
+     *      Subtracts if negative.
+     *
+     * @return $this|\DateTime|Time
+     */
+    public function addPart(string $part, int $amount)
+    {
+        if ($amount) {
+            switch ($part) {
+                case 'year':
+                    $year = (int) $this->format('Y');
+                    $month = (int) $this->format('m');
+                    $day = (int) $this->format('d');
+                    // Validity adjustment when part is year:
+                    // If current date is February 29th and target year isn't
+                    // a leap year, then target date becomes February 28th.
+                    // Target date is February 29th and target year isn't leap year.
+                    if ($month == 2 && $day == 29 && !date('L', mktime(1, 1, 1, 2, 1, $year + $amount))) {
+                        $day = 28;
+                    }
+                    return $this->setDate($year + $amount, $month, $day);
+                case 'month':
+                    $target_year = $year = (int) $this->format('Y');
+                    $month = (int) $this->format('m');
+                    $day = (int) $this->format('d');
+                    $target_month = $month + $amount;
+                    if ($target_month > 12) {
+                        $add_years = (int) floor($target_month / 12);
+                        $target_month -= $add_years * 12;
+                        $target_year += $add_years;
+                    }
+                    elseif ($target_month < 1) {
+                        $subtract_years = (int) ceil(-$target_month / 12);
+                        $target_month += $subtract_years * 12;
+                        $target_year -= $subtract_years;
+                    }
+                    if (!$target_month) {
+                        $target_month = 12;
+                        --$target_year;
+                    }
+                    // Validity adjustment when part is month:
+                    // If current month is longer than target month and current
+                    // day doesn't exist in target month, then target day
+                    // becomes last day of target month.
+                    if ($day > 28) {
+                        $max_day = $target_year == $year ? $this->monthLengthDays($target_month) :
+                            $this->monthLengthDays($target_month, $target_year);
+                        if ($day > $max_day) {
+                            $day = $max_day;
+                        }
+                    }
+                    return $this->setDate($target_year, $target_month, $day);
+                case 'day':
+                case 'hour':
+                case 'minute':
+                case 'second':
+                    if ($amount < 0) {
+                        $sign = '-';
+                        $num = $amount * -1;
+                    } else {
+                        $sign = '+';
+                        $num = $amount;
+                    }
+                    return $this->modify($sign . $num . ' ' . $part . ($num > 1 ? 's' : ''));
+                default:
+                    throw new \InvalidArgumentException('Arg part[' . $part . '] is not a supported a date part.');
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Subtract from a date or time part.
+     *
+     * See addPart() for year and month handling.
+     * @see Time::addPart()
+     *
+     * @param string $part
+     *      Values: year|month|day|hour|minute|second.
+     * @param int $amount
+     *      Adds if negative.
+     *
+     * @return $this|\DateTime|Time
+     */
+    public function subPart(string $part, int $amount)
+    {
+        return $this->addPart($part, $amount * -1);
+    }
+
+    /**
+     * @param int $year
+     *      Default: year of this object.
+     *
+     * @return bool
+     */
+    public function isLeapYear(int $year = null) : bool
+    {
+        return !!date(
+            'L',
+            $year === null ? $this->getTimestamp() : mktime(1, 1, 1, 2, 1, $year)
+        );
+    }
+
+    /**
+     * @param int $month
+     * @param int $year
+     *      Default: year of this object.
+     *
+     * @return int
+     *
+     * @throws \InvalidArgumentException
+     *      Arg month not 1 through 12.
+     */
+    public function monthLengthDays(int $month, int $year = null) : int
+    {
+        switch ($month) {
+            case 1:
+            case 3:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 12:
+                return 31;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                return 30;
+            case 2:
+                return !date('L', $year === null ? $this->getTimestamp() : mktime(1, 1, 1, 2, 1, $year)) ? 28 : 29;
+        }
+        throw new \InvalidArgumentException('Arg month[' . $month . '] is not 1 through 12.');
+    }
+
+    /**
      * Get full year.
      *
      * @return int
