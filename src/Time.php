@@ -27,6 +27,46 @@ class Time extends \DateTime implements \JsonSerializable
     protected $jsonSerializePrecision = '';
 
     /**
+     * Check that default timezone has offset equivalent of arg timezoneAllowed.
+     *
+     * @param string $timezoneAllowed
+     * @param bool $errOnMisMatch
+     *      True: throws exception on timezone mismatch.
+     *
+     * @return bool
+     *
+     * @throws \LogicException
+     *      If mismatch and arg errOnMisMatch; logic exception because
+     *      considered a configuration error.
+     */
+    public static function checkTimezoneDefault(string $timezoneAllowed, bool $errOnMisMatch = false) : bool
+    {
+        // Have to create \DateTimes because \DateTimeZone constructor
+        // requires a timezone argument, and \DateTimeZone::getOffset()
+        // requires a \DateTime argument.
+        $time_default = new \DateTime();
+        $offset_default = $time_default->getOffset();
+        $time_allowed = new \DateTime('now', new \DateTimeZone($timezoneAllowed));
+        $offset_allowed = $time_allowed->getOffset();
+        if ($offset_default !== $offset_allowed) {
+            if ($errOnMisMatch) {
+                // Can't simply set default timezone, because other program parts
+                // may have created dates prior to this.
+                //date_default_timezone_set(static::TIMEZONE_ALLOWED);
+                throw new \LogicException(
+                    'Illegal timezone[' . $time_default->getTimezone()->getName() . '] offset[' . $offset_default . ']'
+                    . ', must be equivalent of timezone[' . $timezoneAllowed . '] with offset[' . $offset_allowed
+                    . '], date.timezone ' . (!ini_get('date.timezone') ? 'not set in php.ini.' :
+                        'of php.ini is \'' . ini_get('date.timezone') . '\'.'
+                    )
+                );
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * For formats, see:
      * @see http://php.net/manual/en/function.date.php
      *
@@ -170,6 +210,35 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Set to last day of a month.
+     *
+     * @param int|null $month
+     *      Null: month of this object.
+     *
+     * @return Time
+     *
+     * @throws \InvalidArgumentException
+     *      Arg month not null or 1 through 12.
+     */
+    public function setToLastDayOfMonth(int $month = null) : Time
+    {
+        if ($month !== null) {
+            if ($month < 1 || $month > 12) {
+                throw new \InvalidArgumentException('Arg month[' . $month . '] isn\'t null or 1 through 12.');
+            }
+            $mnth = $month;
+        } else {
+            $mnth = (int) $this->format('m');
+        }
+
+        return $this->setDate(
+            (int) $this->format('Y'),
+            $mnth,
+            $this->monthLengthDays($mnth)
+        );
+    }
+
+    /**
      * Add to or subtract from one or more date parts.
      *
      * Validity adjustment when arg years:
@@ -186,7 +255,7 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * Native \DateTime::modify():
      * - is difficult to use and it's format argument isn't documented
-     * - makes nonsensical year|month addition|subtraction
+     * - makes nonsensical year|month addition/subtraction
      * - doesn't throw exception on failure
      *
      * @see \DateTime::modify()
@@ -315,8 +384,8 @@ class Time extends \DateTime implements \JsonSerializable
      * Number of days in a month of year.
      *
      * @param int $month
-     * @param int $year
-     *      Default: year of this object.
+     * @param int|null $year
+     *      Null: year of this object.
      *
      * @return int
      *

@@ -195,6 +195,23 @@ class TimeFreezable extends Time implements FreezableInterface
     }
 
     /**
+     * @param int|null $month
+     *
+     * @return $this|Time|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     */
+    public function setToLastDayOfMonth(int $month = null) : Time /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::setToLastDayOfMonth($month);
+    }
+
+    /**
      * @param int $year
      * @param int $week
      * @param int $day

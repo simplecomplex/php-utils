@@ -692,7 +692,7 @@ class Utils
     public function resolvePath(string $relativePath) : string
     {
         $path = $relativePath;
-        // Absolute.
+        // Unless absolute.
         if (
             strpos($path, '/') !== 0
             && (DIRECTORY_SEPARATOR == '/' || strpos($path, ':') !== 1)

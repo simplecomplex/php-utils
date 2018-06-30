@@ -6,6 +6,12 @@ SimpleComplex/Utils 1.x, 2018-06-30
 - Time ISO-8601 and JSON formatters support milliseconds|microseconds precision.
 - Time|TimeFreezable return type hints even when PHP return type invariance
   makes things look illogical.
+- Static Time::checkTimezoneDefault().
+- Time::setToLastDayOfMonth().
+- TestHelper::log().
+- Tests should use Utils::vendorDir() instead of declaring (easily wrong)
+  PATH_VENDOR constant.
+- Release 1.7.2.
 
 SimpleComplex/Utils 1.x, 2018-06-24
 -----------------------------------

@@ -24,22 +24,37 @@ class TestHelper
      *
      * @var string
      */
-    const PATH_TESTS = '/simplecomplex/utils/tests/src';
-
-    /**
-     * Expected (PHP composer or like-wise) vendor dir.
-     *
-     * @var string[]
-     */
-    const PATH_VENDOR = [
-        '/vendor',
-        '/backend/vendor',
-    ];
+    const PATH_TESTS = 'simplecomplex/utils/tests/src';
 
     /**
      * @var string
      */
     const LOG_LEVEL = 'debug';
+
+    /**
+     * @param string|mixed $message
+     *      Non-string gets stringified; if possible.
+     *
+     * @return void
+     */
+    public static function log($message) /*: void*/
+    {
+        try {
+            $msg = '' . $message;
+            $container = Dependency::container();
+            if (!$container->has('logger')) {
+                return;
+            }
+            /** @var \Psr\Log\LoggerInterface $logger */
+            $logger = $container->get('logger');
+            $logger->log(
+                static::LOG_LEVEL,
+                $msg
+            );
+        }
+        catch (\Throwable $ignore) {
+        }
+    }
 
     /**
      * @param string|mixed $message
@@ -50,8 +65,8 @@ class TestHelper
      */
     public static function logVariable($message, $subject) /*: void*/
     {
-        $msg = '' . $message;
         try {
+            $msg = '' . $message;
             $container = Dependency::container();
             if (!$container->has('logger')) {
                 return;
@@ -92,8 +107,8 @@ class TestHelper
      */
     public static function logTrace($message = '', \Throwable $xcptn = null) /*: void*/
     {
-        $msg = '' . $message;
         try {
+            $msg = '' . $message;
             $container = Dependency::container();
             if (!$container->has('logger')) {
                 return;
@@ -125,6 +140,8 @@ class TestHelper
     }
 
     /**
+     * @deprecated Use Utils::getInstance()->documentRoot() instead.
+     *
      * @return string
      *
      * @throws \SimpleComplex\Utils\Exception\ConfigurationException
@@ -138,13 +155,12 @@ class TestHelper
     /**
      * Find file relative to document root, vendor dir, or the tests dir.
      *
-     * @see TestHelper::PATH_VENDOR
      * @see TestHelper::PATH_TESTS
      *
      * @param string $path
      * @param string $relativeTo
      *      'document_root': relative to document root; default and fallback.
-     *      'vendor': relative to the vendor PATH_VENDOR.
+     *      'vendor': relative to the vendor dir.
      *      'tests': relative to PATH_TESTS.
      *
      * @throws \RuntimeException
@@ -157,25 +173,25 @@ class TestHelper
      */
     public static function fileFind(string $path, string $relativeTo = 'document_root') : string
     {
-        $document_root = static::documentRoot();
-        $absolute_path = Utils::getInstance()->resolvePath($path);
+        $utils = Utils::getInstance();
         switch ($relativeTo) {
             case 'tests':
             case 'test':
-                foreach (static::PATH_VENDOR as $vendor) {
-                    if (file_exists($document_root . $vendor . static::PATH_TESTS . $absolute_path)) {
-                        return $document_root . $vendor . static::PATH_TESTS . $absolute_path;
-                    }
+                $absolute_path = $utils->resolvePath(
+                    $utils->vendorDir() . '/' . trim(static::PATH_TESTS, '/\\') . '/' . trim($path, '/\\')
+                );
+                if (file_exists($absolute_path)) {
+                    return $absolute_path;
                 }
                 return '';
             case 'vendor':
-                foreach (static::PATH_VENDOR as $vendor) {
-                    if (file_exists($document_root . $vendor . $absolute_path)) {
-                        return $document_root . $vendor . $absolute_path;
-                    }
+                $absolute_path = $utils->resolvePath($utils->vendorDir() . '/' . trim($path, '/\\'));
+                if (file_exists($absolute_path)) {
+                    return $absolute_path;
                 }
                 return '';
         }
-        return file_exists($document_root . $absolute_path) ? ($document_root . $absolute_path) : '';
+        $absolute_path = $utils->resolvePath(trim($path, '/\\'));
+        return file_exists($absolute_path) ? $absolute_path : '';
     }
 }
