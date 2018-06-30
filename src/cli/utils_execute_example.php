@@ -39,7 +39,20 @@ $environment = CliEnvironment::getInstance();
     $utils = \SimpleComplex\Utils\Utils::getInstance();
 
 
-    $original = TimeFreezable::createFromDateTime(new \DateTime());
+    $original = new Time('2018-06-30T09:05:11.123456+02:00');
+
+    $logger->debug(
+        "Time\n"
+        . $inspect->variable([
+            '' . $original->toISOUTC('microseconds'),
+            '' . $original->toISOZonal('microseconds'),
+            '' . $original->modifySafely('+59 seconds')->toISOUTC('microseconds'),
+            $original->toISOZonal('microseconds')
+        ])
+    );
+    return;
+
+
     $original->addPart('month', 1);
     $original->addPart('day', 4);
     $logger->debug(

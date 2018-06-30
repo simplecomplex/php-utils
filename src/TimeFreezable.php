@@ -57,6 +57,42 @@ class TimeFreezable extends Time implements FreezableInterface
     }
 
     /**
+     * @param string $modify
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function modify($modify) : \DateTime /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::modify($modify);
+    }
+
+    /**
+     * @param string $modify
+     *
+     * @return $this|Time|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function modifySafely(string $modify) : Time /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::modifySafely($modify);
+    }
+
+    /**
      * @param \DateInterval $interval
      *
      * @return $this|\DateTime|TimeFreezable
@@ -66,7 +102,7 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function add(/*\DateInterval*/ $interval)
+    public function add(/*\DateInterval*/ $interval) : \DateTime /*self invariant*/
     {
         // NB: Type hinting (\DateInterval $interval)
         // would provoke E_WARNING when cloning.
@@ -80,7 +116,7 @@ class TimeFreezable extends Time implements FreezableInterface
     }
 
     /**
-     * @param string $modify
+     * @param \DateInterval $interval
      *
      * @return $this|\DateTime|TimeFreezable
      *
@@ -89,12 +125,17 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function modify($modify)
+    public function sub(/*\DateInterval*/ $interval) : \DateTime /*self invariant*/
     {
+        // NB: Type hinting (\DateInterval $interval)
+        // would provoke E_WARNING when cloning.
+        // Catch 22: Specs say that native \DateTime method is type hinted,
+        // but warning when cloning says it isn't.
+
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
         }
-        return parent::modify($modify);
+        return parent::sub($interval);
     }
 
     /**
@@ -109,32 +150,12 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function setDate($year, $month, $day)
+    public function setDate($year, $month, $day) : \DateTime /*self invariant*/
     {
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
         }
         return parent::setDate($year, $month, $day);
-    }
-
-    /**
-     * @param int $year
-     * @param int $week
-     * @param int $day
-     *
-     * @return $this|\DateTime|TimeFreezable
-     *
-     * @throws \RuntimeException
-     *      Frozen.
-     * @throws \Exception
-     *      Propagated.
-     */
-    public function setISODate($year, $week, $day = 1)
-    {
-        if ($this->frozen) {
-            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
-        }
-        return parent::setIsoDate($year, $week, $day);
     }
 
     /**
@@ -150,7 +171,7 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function setTime($hour, $minute, $second = 0, $microseconds = 0)
+    public function setTime($hour, $minute, $second = 0, $microseconds = 0) : \DateTime /*self invariant*/
     {
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
@@ -159,18 +180,38 @@ class TimeFreezable extends Time implements FreezableInterface
     }
 
     /**
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|Time|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
      * @throws \Exception
      */
-    public function setToDateStart()
+    public function setToDateStart() : Time /*self invariant*/
     {
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
         }
         return parent::setTime(0, 0, 0, 0);
+    }
+
+    /**
+     * @param int $year
+     * @param int $week
+     * @param int $day
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function setISODate($year, $week, $day = 1) : \DateTime /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::setIsoDate($year, $week, $day);
     }
 
     /**
@@ -183,7 +224,7 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function setTimestamp($unixtimestamp)
+    public function setTimestamp($unixtimestamp) : \DateTime /*self invariant*/
     {
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
@@ -201,7 +242,7 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \Exception
      *      Propagated.
      */
-    public function setTimezone($timezone)
+    public function setTimezone($timezone) : \DateTime /*self invariant*/
     {
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
@@ -210,25 +251,20 @@ class TimeFreezable extends Time implements FreezableInterface
     }
 
     /**
-     * @param \DateInterval $interval
+     * @param string $precision
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|Time|TimeFreezable
      *
      * @throws \RuntimeException
      *      Frozen.
      * @throws \Exception
      *      Propagated.
      */
-    public function sub(/*\DateInterval*/ $interval)
+    public function setJsonSerializePrecision(string $precision) : Time /*self invariant*/
     {
-        // NB: Type hinting (\DateInterval $interval)
-        // would provoke E_WARNING when cloning.
-        // Catch 22: Specs say that native \DateTime method is type hinted,
-        // but warning when cloning says it isn't.
-
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
         }
-        return parent::sub($interval);
+        return parent::setJsonSerializePrecision($precision);
     }
 }

@@ -1,7 +1,11 @@
-SimpleComplex/Utils 1.x, 2018-06-27
+SimpleComplex/Utils 1.x, 2018-06-30
 -----------------------------------
-- Time::addPart/subPart() to perform sensible year and month addition/
-  subtraction. And helpers isLeapYear() and monthLengthDays().
+- Time modifyDate() for sensible year and month addition/subtraction,
+  and modifyTime() just to avoid rogueness of modify().
+- Time helpers isLeapYear() and monthLengthDays().
+- Time ISO-8601 and JSON formatters support milliseconds|microseconds precision.
+- Time|TimeFreezable return type hints even when PHP return type invariance
+  makes things look illogical.
 
 SimpleComplex/Utils 1.x, 2018-06-24
 -----------------------------------

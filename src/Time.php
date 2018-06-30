@@ -17,6 +17,16 @@ namespace SimpleComplex\Utils;
 class Time extends \DateTime implements \JsonSerializable
 {
     /**
+     * Values: (empty)|milliseconds|microseconds; default empty.
+     *
+     * @see Time::jsonSerialize()
+     * @see Time::setJsonSerializePrecision()
+     *
+     * @var string
+     */
+    protected $jsonSerializePrecision = '';
+
+    /**
      * For formats, see:
      * @see http://php.net/manual/en/function.date.php
      *
@@ -35,8 +45,6 @@ class Time extends \DateTime implements \JsonSerializable
         // NB: Type hinting (\DateTimeZone $timezone) would provoke E_WARNING.
         // Catch 22: Specs say that native method's arg $timezone is type hinted
         // \DateTimeZone, but warning when calling says it isn't.
-
-        // but warning when calling says.
 
         return static::createFromDateTime(
             parent::createFromFormat($format, $time, $timezone)
@@ -80,7 +88,52 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * PHP 7.0 support for arg $microseconds, though ignored.
+     * Unlike \Datetime::format() this throws exception on failure.
+     *
+     * \Datetime::format() emits warning and returns false on failure.
+     *
+     * Can unfortunately not simply override Datetime::format() because that
+     * sends native \DateTime operations into perpetual loop.
+     *
+     * @param string $format
+     *
+     * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      Arg format invalid.
+     */
+    public function formatSafely(string $format) : string
+    {
+        $v = $this->format($format);
+        if (is_string($v)) {
+            return $v;
+        }
+        throw new \InvalidArgumentException('Arg format[' . $format . '] is invalid.');
+    }
+
+    /**
+     * Unlike \Datetime::modify() this throws exception on failure.
+     *
+     * \Datetime::modify() emits warning and returns false on failure.
+     *
+     * @param string $modify
+     *
+     * @return $this|Time
+     *
+     * @throws \InvalidArgumentException
+     *      Arg format invalid.
+     */
+    public function modifySafely(string $modify) : Time
+    {
+        $modified = $this->modify($modify);
+        if (($modified instanceof \DateTime)) {
+            return $this;
+        }
+        throw new \InvalidArgumentException('Arg modify[' . $modify . '] is invalid.');
+    }
+
+    /**
+     * PHP 7.0 support for arg $microseconds, though ignored when PHP <7.1.
      *
      * Fairly safe to ignore because \DateInterval PHP <7.1 doesn't record
      * microseconds difference.
@@ -98,7 +151,7 @@ class Time extends \DateTime implements \JsonSerializable
      * @throws \Exception
      *      Propagated.
      */
-    public function setTime($hour, $minute, $second = 0, $microseconds = 0)
+    public function setTime($hour, $minute, $second = 0, $microseconds = 0) : \DateTime /*self invariant*/
     {
         if (PHP_MAJOR_VERSION == 7 && !PHP_MINOR_VERSION) {
             return parent::setTime($hour, $minute, $second);
@@ -109,21 +162,21 @@ class Time extends \DateTime implements \JsonSerializable
     /**
      * Convenience method; set to midnight 00:00:00.000000.
      *
-     * @return $this|\DateTime|Time
+     * @return $this|Time
      */
-    public function setToDateStart()
+    public function setToDateStart() : Time
     {
         return $this->setTime(0, 0, 0, 0);
     }
 
     /**
-     * Add to a date or time part.
+     * Add to or subtract from one or more date parts.
      *
-     * Validity adjustment when part is year:
+     * Validity adjustment when arg years:
      * If current date is February 29th and target year isn't a leap year,
      * then target date becomes February 28th.
      *
-     * Validity adjustment when part is month:
+     * Validity adjustment when arg months:
      * If current month is longer than target month and current day
      * doesn't exist in target month, then target day becomes last day
      * of target month.
@@ -131,95 +184,117 @@ class Time extends \DateTime implements \JsonSerializable
      * These validity adjustments are equivalent with database adjustments
      * like MySQL::date_add() and MSSQL::dateadd().
      *
-     * @param string $part
-     *      Values: year|month|day|hour|minute|second.
-     * @param int $amount
+     * Native \DateTime::modify():
+     * - is difficult to use and it's format argument isn't documented
+     * - makes nonsensical year|month addition|subtraction
+     * - doesn't throw exception on failure
+     *
+     * @see \DateTime::modify()
+     *
+     * @param int $years
+     *      Subtracts if negative.
+     * @param int $months
+     *      Subtracts if negative.
+     * @param int $days
      *      Subtracts if negative.
      *
-     * @return $this|\DateTime|Time
+     * @return $this|Time
      */
-    public function addPart(string $part, int $amount)
+    public function modifyDate(int $years, int $months = 0, int $days = 0) : Time
     {
-        if ($amount) {
-            switch ($part) {
-                case 'year':
-                    $year = (int) $this->format('Y');
-                    $month = (int) $this->format('m');
-                    $day = (int) $this->format('d');
-                    // Validity adjustment when part is year:
-                    // If current date is February 29th and target year isn't
-                    // a leap year, then target date becomes February 28th.
-                    // Target date is February 29th and target year isn't leap year.
-                    if ($month == 2 && $day == 29 && !date('L', mktime(1, 1, 1, 2, 1, $year + $amount))) {
-                        $day = 28;
-                    }
-                    return $this->setDate($year + $amount, $month, $day);
-                case 'month':
-                    $target_year = $year = (int) $this->format('Y');
-                    $month = (int) $this->format('m');
-                    $day = (int) $this->format('d');
-                    $target_month = $month + $amount;
-                    if ($target_month > 12) {
-                        $add_years = (int) floor($target_month / 12);
-                        $target_month -= $add_years * 12;
-                        $target_year += $add_years;
-                    }
-                    elseif ($target_month < 1) {
-                        $subtract_years = (int) ceil(-$target_month / 12);
-                        $target_month += $subtract_years * 12;
-                        $target_year -= $subtract_years;
-                    }
-                    if (!$target_month) {
-                        $target_month = 12;
-                        --$target_year;
-                    }
-                    // Validity adjustment when part is month:
-                    // If current month is longer than target month and current
-                    // day doesn't exist in target month, then target day
-                    // becomes last day of target month.
-                    if ($day > 28) {
-                        $max_day = $target_year == $year ? $this->monthLengthDays($target_month) :
-                            $this->monthLengthDays($target_month, $target_year);
-                        if ($day > $max_day) {
-                            $day = $max_day;
-                        }
-                    }
-                    return $this->setDate($target_year, $target_month, $day);
-                case 'day':
-                case 'hour':
-                case 'minute':
-                case 'second':
-                    if ($amount < 0) {
-                        $sign = '-';
-                        $num = $amount * -1;
-                    } else {
-                        $sign = '+';
-                        $num = $amount;
-                    }
-                    return $this->modify($sign . $num . ' ' . $part . ($num > 1 ? 's' : ''));
-                default:
-                    throw new \InvalidArgumentException('Arg part[' . $part . '] is not a supported a date part.');
+        if ($years) {
+            $year = (int) $this->format('Y');
+            $month = (int) $this->format('m');
+            $day = (int) $this->format('d');
+            // Validity adjustment when part is year:
+            // If current date is February 29th and target year isn't
+            // a leap year, then target date becomes February 28th.
+            // Target date is February 29th and target year isn't leap year.
+            if ($month == 2 && $day == 29 && !date('L', mktime(1, 1, 1, 2, 1, $year + $years))) {
+                $day = 28;
             }
+            $this->setDate($year + $years, $month, $day);
         }
+
+        if ($months) {
+            $target_year = $year = (int) $this->format('Y');
+            $month = (int) $this->format('m');
+            $day = (int) $this->format('d');
+            $target_month = $month + $months;
+            if ($target_month > 12) {
+                $add_years = (int) floor($target_month / 12);
+                $target_month -= $add_years * 12;
+                $target_year += $add_years;
+            }
+            elseif ($target_month < 1) {
+                $subtract_years = (int) ceil(-$target_month / 12);
+                $target_month += $subtract_years * 12;
+                $target_year -= $subtract_years;
+            }
+            if (!$target_month) {
+                $target_month = 12;
+                --$target_year;
+            }
+            // Validity adjustment when part is month:
+            // If current month is longer than target month and current
+            // day doesn't exist in target month, then target day
+            // becomes last day of target month.
+            if ($day > 28) {
+                $max_day = $target_year == $year ? $this->monthLengthDays($target_month) :
+                    $this->monthLengthDays($target_month, $target_year);
+                if ($day > $max_day) {
+                    $day = $max_day;
+                }
+            }
+            $this->setDate($target_year, $target_month, $day);
+        }
+
+        if ($days) {
+            $this->modify(($days > 0 ? '+' : '-') . abs($days) . ' ' . (abs($days) > 1 ? 'days' : 'day'));
+        }
+
         return $this;
     }
 
     /**
-     * Subtract from a date or time part.
+     * Add to or subtract from one or more time parts.
      *
-     * See addPart() for year and month handling.
-     * @see Time::addPart()
+     * Native \DateTime::modify():
+     * - is difficult to use and it's format argument isn't documented
+     * - doesn't throw exception on failure
      *
-     * @param string $part
-     *      Values: year|month|day|hour|minute|second.
-     * @param int $amount
-     *      Adds if negative.
+     * @param int $hours
+     *      Subtracts if negative.
+     * @param int $minutes
+     *      Subtracts if negative.
+     * @param int $seconds
+     *      Subtracts if negative.
+     * @param int $microseconds
+     *      Subtracts if negative.
+     *      Ignored when PHP 7.0 (<7.1).
      *
-     * @return $this|\DateTime|Time
+     * @return $this|Time
      */
-    public function subPart(string $part, int $amount)
+    public function modifyTime(int $hours, int $minutes = 0, int $seconds = 0, int $microseconds = 0) : Time
     {
-        return $this->addPart($part, $amount * -1);
+        $modifiers = [];
+        if ($hours) {
+            $modifiers[] = ($hours > 0 ? '+' : '-') . abs($hours) . ' ' . (abs($hours) > 1 ? 'hours' : 'hour');
+        }
+        if ($minutes) {
+            $modifiers[] = ($minutes > 0 ? '+' : '-') . abs($minutes) . ' ' . (abs($minutes) > 1 ? 'minutes' : 'minute');
+        }
+        if ($seconds) {
+            $modifiers[] = ($seconds > 0 ? '+' : '-') . abs($seconds) . ' ' . (abs($seconds) > 1 ? 'seconds' : 'second');
+        }
+        if ($microseconds && (PHP_MAJOR_VERSION != 7 || PHP_MINOR_VERSION)) {
+            $modifiers[] = ($microseconds > 0 ? '+' : '-') . abs($microseconds)
+                . ' ' . (abs($microseconds) > 1 ? 'microseconds' : 'microsecond');
+        }
+        if ($modifiers) {
+            $this->modify(join(' ', $modifiers));
+        }
+        return $this;
     }
 
     /**
@@ -237,6 +312,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Number of days in a month of year.
+     *
      * @param int $month
      * @param int $year
      *      Default: year of this object.
@@ -335,6 +412,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Format to Y-m-d.
+     *
      * @return string
      */
     public function getDateISOlocal() : string
@@ -343,6 +422,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Format to H:i:s|H:i.
+     *
      * @param bool $noSeconds
      *
      * @return string
@@ -353,6 +434,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Format to Y-m-d H:i:s|Y-m-d H:i.
+     *
      * @param bool $noSeconds
      *
      * @return string
@@ -363,41 +446,95 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * To ISO-8601 with timezone marker.
+     * To ISO-8601 with timezone marker, optionally with milli- or microseconds
+     * precision.
      *
+     * Formats:
+     * YYYY-MM-DDTHH:ii:ss+HH:II
+     * YYYY-MM-DDTHH:ii:ss.mmm+HH:II
      * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
      *
      * Same as:
      * @see Time::__toString().
      *
+     * @param string $precision
+     *      Values: (empty)|milliseconds|microseconds.
+     *      Default: empty; with neither milli- nor microseconds.
+     *
      * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      Arg precision not empty or milliseconds|microseconds.
      */
-    public function toISOZonal() : string
+    public function toISOZonal(string $precision = '') : string
     {
-        return $this->format('c');
+        switch ($precision) {
+            case '':
+                $minor = '';
+                break;
+            case 'milliseconds':
+                $minor = '.' . $this->format('v');
+                break;
+            case 'microseconds':
+                $minor = '.' . $this->format('u');
+                break;
+            default:
+                throw new \InvalidArgumentException(
+                    'Arg precision[' . $precision . '] isn\'t empty or value milliseconds|microseconds.'
+                );
+        }
+        if (!$precision) {
+            return $this->format('c');
+        }
+        $str = $this->format('c');
+        return substr($str, 0, -6) . $minor . substr($str, -6);
     }
 
     /**
-     * To ISO-8601 UTC.
+     * To ISO-8601 UTC, optionally with milli- or microseconds precision.
      *
+     * Formats:
+     * YYYY-MM-DDTHH:ii:ssZ
+     * YYYY-MM-DDTHH:ii:ss.mmmZ
      * YYYY-MM-DDTHH:ii:ss.mmmmmmZ
      *
-     * Like Javascript Date.toISOString().
+     * Like Javascript Date.toISOString(); when milliseconds precision.
+     *
+     * @param string $precision
+     *      Values: (empty)|milliseconds|microseconds.
+     *      Default: empty; with neither milli- nor microseconds.
      *
      * @return string
+     *
+     * @throws \InvalidArgumentException
+     *      Arg precision not empty or milliseconds|microseconds.
      */
-    public function toISOUTC() : string
+    public function toISOUTC(string $precision = '') : string
     {
-        $str = (clone $this)->setTimezone(new \DateTimeZone('UTC'))
-            ->format('c');
-        if (($pos = strpos($str, '+'))) {
-            return substr($str, 0, $pos) . 'Z';
+        switch ($precision) {
+            case '':
+                $minor = '';
+                break;
+            case 'milliseconds':
+                $minor = '.' . $this->format('v');
+                break;
+            case 'microseconds':
+                $minor = '.' . $this->format('u');
+                break;
+            default:
+                throw new \InvalidArgumentException(
+                    'Arg precision[' . $precision . '] isn\'t empty or value milliseconds|microseconds.'
+                );
         }
-        return '' . preg_replace('/\-[\d:]+$/', '', $str) . 'Z';
+        return substr(
+                (clone $this)->setTimezone(new \DateTimeZone('UTC'))->format('c'),
+                0,
+                -6
+            ) . $minor . 'Z';
     }
 
     /**
-     * YYYY-MM-DDTHH:ii:ss.mmmmmm+HH:II
+     * Format to YYYY-MM-DDTHH:ii:ss+HH:II
      *
      * Same as:
      * @see Time::toISOZonal().
@@ -410,16 +547,48 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Set precision of JSON serialized representation.
+     *
+     * @see Time::jsonSerialize()
+     * @see \JsonSerializable
+     *
+     * @param string $precision
+     *      Values: (empty)|milliseconds|microseconds.
+     *      Default: empty; with neither milli- nor microseconds.
+     *
+     * @return $this|Time
+     *
+     * @throws \InvalidArgumentException
+     *      Arg precision not empty or milliseconds|microseconds.
+     */
+    public function setJsonSerializePrecision(string $precision) : Time
+    {
+        switch ($precision) {
+            case '':
+            case 'milliseconds':
+            case 'microseconds':
+                $this->jsonSerializePrecision = $precision;
+                return $this;
+        }
+        throw new \InvalidArgumentException(
+            'Arg precision[' . $precision . '] isn\'t empty or value milliseconds|microseconds.'
+        );
+    }
+
+    /**
      * JSON serializes to string ISO-8601 with timezone marker.
      *
      * Unlike native \DateTime which JSON serializes to object;
-     * which isgreat when communicating with other PHP base node,
+     * which is great when communicating with other PHP base node,
      * but a nuisance when communicating with anything else.
+     *
+     * @see Time::setJsonSerializePrecision()
+     * @see \JsonSerializable
      *
      * @return string
      */
     public function jsonSerialize()
     {
-        return $this->toISOZonal();
+        return $this->toISOZonal($this->jsonSerializePrecision);
     }
 }
