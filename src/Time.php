@@ -30,6 +30,7 @@ class Time extends \DateTime implements \JsonSerializable
      * Check that default timezone has offset equivalent of arg timezoneAllowed.
      *
      * @param string $timezoneAllowed
+     *      Examples: 'UTC', 'Europe/Copenhagen'.
      * @param bool $errOnMisMatch
      *      True: throws exception on timezone mismatch.
      *
@@ -50,9 +51,6 @@ class Time extends \DateTime implements \JsonSerializable
         $offset_allowed = $time_allowed->getOffset();
         if ($offset_default !== $offset_allowed) {
             if ($errOnMisMatch) {
-                // Can't simply set default timezone, because other program parts
-                // may have created dates prior to this.
-                //date_default_timezone_set(static::TIMEZONE_ALLOWED);
                 throw new \LogicException(
                     'Illegal timezone[' . $time_default->getTimezone()->getName() . '] offset[' . $offset_default . ']'
                     . ', must be equivalent of timezone[' . $timezoneAllowed . '] with offset[' . $offset_allowed
@@ -82,7 +80,8 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public static function createFromFormat($format, $time, /*\DateTimeZone*/ $timezone = null) : Time
     {
-        // NB: Type hinting (\DateTimeZone $timezone) would provoke E_WARNING.
+        // NB: Argument type hinting (\DateTimeZone $timezone)
+        // would provoke E_WARNING.
         // Catch 22: Specs say that native method's arg $timezone is type hinted
         // \DateTimeZone, but warning when calling says it isn't.
 

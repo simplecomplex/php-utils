@@ -104,7 +104,7 @@ class TimeFreezable extends Time implements FreezableInterface
      */
     public function add(/*\DateInterval*/ $interval) : \DateTime /*self invariant*/
     {
-        // NB: Type hinting (\DateInterval $interval)
+        // NB: Argument type hinting (\DateInterval $interval)
         // would provoke E_WARNING when cloning.
         // Catch 22: Specs say that native \DateTime method is type hinted,
         // but warning when cloning says it isn't.
@@ -127,7 +127,7 @@ class TimeFreezable extends Time implements FreezableInterface
      */
     public function sub(/*\DateInterval*/ $interval) : \DateTime /*self invariant*/
     {
-        // NB: Type hinting (\DateInterval $interval)
+        // NB: Argument type hinting (\DateInterval $interval)
         // would provoke E_WARNING when cloning.
         // Catch 22: Specs say that native \DateTime method is type hinted,
         // but warning when cloning says it isn't.
