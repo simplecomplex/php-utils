@@ -62,7 +62,9 @@ php cli.phpsh utils-execute include-file
 - [PSR-11 Container](https://github.com/php-fig/container)
 - [PSR-3 Log](https://github.com/php-fig/log)
 
-#### Suggestions ####
+#### Development requirements ####
+- [PHPUnit](https://github.com/sebastianbergmann/phpunit)
 
+#### Suggestions ####
 - PHP mbstring extension<!-- - PHP intl extension -->
 - [SimpleComplex Inspect](https://github.com/simplecomplex/inspect)
