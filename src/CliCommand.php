@@ -287,8 +287,9 @@ class CliCommand extends Explorable
     public function __toString() : string {
         $nl = static::FORMAT['newline'];
 
+        $name_trailing_space = static::FORMAT['midLine'] - strlen(static::FORMAT['indent'] . ($this->name));
         $output = static::FORMAT['indent'] . CliEnvironment::getInstance()->format($this->name, 'emphasize')
-            . str_repeat(' ', static::FORMAT['midLine'] - strlen(static::FORMAT['indent'] . ($this->name)))
+            . ($name_trailing_space < 2 ? '  ' : str_repeat(' ', $name_trailing_space))
             . wordwrap(
                 str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $this->description),
                 static::FORMAT['wrap'] - static::FORMAT['midLine'],
