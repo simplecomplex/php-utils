@@ -707,6 +707,60 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     }
 
     /**
+     * Finds command providers registered via list file placed in document root.
+     *
+     * File: [doc_root]/.utils_cli_command_providers
+     *
+     * @code
+     * # Declare hook implementation in bash setup script:
+     * echo '\VendorName\PackageName\CliPackageName' >> ${doc_root}'/.utils_cli_command_providers'
+     * @endcode
+     *
+     * @return $this|CliEnvironment
+     */
+    public function commandProvidersLoad() : CliEnvironment
+    {
+        $file = $this->getDocumentRoot() . '/.utils_cli_command_providers';
+        if (
+            file_exists($file)
+            && ($qualified_class_names = trim(file_get_contents($file)))
+            && ($qualified_class_names = explode("\n", $qualified_class_names))
+        ) {
+            $name = '';
+            try {
+                // Prevent dupes.
+                $qualified_class_names = array_unique($qualified_class_names);
+                foreach ($qualified_class_names as $name) {
+                    // Namespaces apparantly shan't be double backslashed
+                    // in this context.
+                    $name_fixed = str_replace('\\\\', '\\', $name);
+                    if (class_exists($name_fixed)) {
+                        $interfaces = class_implements($name_fixed);
+                        if ($interfaces && in_array(CliCommandInterface::class, $interfaces)) {
+                            new $name_fixed();
+                        } else {
+                            $this->echoMessage(
+                                'CLI command provider class doesn\'t implement CliCommandInterface: ' . $name . "\n",
+                                'warning'
+                            );
+                        }
+                    } else {
+                        $this->echoMessage('CLI command provider class not found: ' . $name . "\n", 'warning');
+                    }
+                }
+            } catch (\Throwable $xcptn) {
+                $this->echoMessage(
+                    'CLI command provider class instantiation failure: ' . $name
+                    . "\n" . get_class($xcptn) . '@' . $file . ':' . $xcptn->getLine()
+                    . ': ' . addcslashes($xcptn->getMessage(), "\0..\37") . "\n",
+                    'error'
+                );
+            }
+        }
+        return $this;
+    }
+
+    /**
      * Listens to input and forwards matched command
      * to it's provider.
      *

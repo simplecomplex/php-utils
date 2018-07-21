@@ -55,6 +55,7 @@ declare(strict_types=1);
 // Work.------------------------------------------------------------------------
 use SimpleComplex\Utils\CliEnvironment;
 use SimpleComplex\Utils\Dependency;
+use SimpleComplex\Utils\Bootstrap;
 
 /**
  * Exposes CLI commands of several packages, if they exist.
@@ -64,8 +65,7 @@ use SimpleComplex\Utils\Dependency;
  *
  * @code
  * # CLI
- * cd vendor/simplecomplex/utils/src/cli
- * php cli.phpsh -h
+ * php vendor/simplecomplex/utils/src/cli/cli.phpsh -h
  * @endcode
  *
  * @return mixed
@@ -75,26 +75,8 @@ use SimpleComplex\Utils\Dependency;
 function simple_complex_utils_cli()
 {
     $container = Dependency::container();
-    if (class_exists('\\SimpleComplex\\Cache\\CacheBroker')) {
-        Dependency::genericSet('cache-broker', function() {
-            return new \SimpleComplex\Cache\CacheBroker();
-        });
-    }
-    if (class_exists('\\SimpleComplex\\Config\\Config')) {
-        Dependency::genericSet('config', function() {
-            return new \SimpleComplex\Config\Config('global');
-        });
-    }
-    if (class_exists('\\SimpleComplex\\JsonLog\\JsonLog')) {
-        Dependency::genericSet('logger', function() use ($container) {
-            return new \SimpleComplex\JsonLog\JsonLog($container->has('config') ? $container->get('config') : null);
-        });
-    }
-    if (class_exists('\\SimpleComplex\\Inspect\\Inspect')) {
-        Dependency::genericSet('inspect', function() use ($container) {
-            return new \SimpleComplex\Inspect\Inspect($container->has('config') ? $container->get('config') : null);
-        });
-    }
+
+    Bootstrap::prepareDependenciesIfExist();
 
     // Exception handler, which catches errors that it itself instigates;
     // errors occurring while instantiating container objects.
@@ -137,8 +119,12 @@ function simple_complex_utils_cli()
         }
     }
 
-    // Let CliEnvironment listen to input and forward matched command
-    // to it's provider (in this case CliJsonLog or CliEnvironment self).
-    return CliEnvironment::getInstance()->forwardMatchedCommand();
+    // Let CliEnvironment:
+    // - find more command providers in [doc_root]/.utils_cli_command_providers
+    // - listen to input command name, arguments and options
+    // - forward matched command to it's provider
+    return CliEnvironment::getInstance()
+        ->commandProvidersLoad()
+        ->forwardMatchedCommand();
 }
 simple_complex_utils_cli();

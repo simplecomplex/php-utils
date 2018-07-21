@@ -1,3 +1,9 @@
+SimpleComplex/Utils 1.x, 2018-07-21
+-----------------------------------
+- CLI command provider hook; declare qualified class names
+  of CliCommandInterface implementations
+  in file [doc_root]/.utils_cli_command_providers.
+
 SimpleComplex/Utils 1.x, 2018-07-20
 -----------------------------------
 - CliCommand support longer command name than visual 'midLine'.
