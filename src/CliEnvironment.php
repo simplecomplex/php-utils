@@ -40,6 +40,7 @@ use SimpleComplex\Utils\Exception\ConfigurationException;
  * @property-read string $currentWorkingDir
  * @property-read string $documentRoot
  * @property-read int $documentRootDistance
+ * @property-read string $vendorDir
  * @property-read bool $riskyCommandRequireConfirm
  *
  * Intended as singleton - ::getInstance() - but constructor not protected.
@@ -248,6 +249,12 @@ class CliEnvironment extends Explorable implements CliCommandInterface
 
     /**
      * Read-only.
+     * @var string
+     */
+    protected $vendorDir;
+
+    /**
+     * Read-only.
      * @var bool
      */
     protected $riskyCommandRequireConfirm;
@@ -267,6 +274,7 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         'currentWorkingDir',
         'documentRoot',
         'documentRootDistance',
+        'vendorDir',
         'riskyCommandRequireConfirm',
     ];
 
@@ -306,6 +314,11 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                 return $this->getDocumentRoot();
             case 'documentRootDistance':
                 return $this->getDocumentRootDistance();
+            case 'vendorDir':
+                if (!$this->vendorDir) {
+                    $this->vendorDir = Utils::getInstance()->vendorDir();
+                }
+                return $this->vendorDir;
             case 'riskyCommandRequireConfirm':
                 if ($this->riskyCommandRequireConfirm === null) {
                     if (getenv('PHP_LIB_SIMPLECOMPLEX_UTILS_CLI_SKIP_CONFIRM')) {

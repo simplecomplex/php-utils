@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2018-07-22
+-----------------------------------
+- CliEnvironment expose vendorDir property.
+
 SimpleComplex/Utils 1.x, 2018-07-21
 -----------------------------------
 - CLI command provider hook; declare qualified class names
