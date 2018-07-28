@@ -11,6 +11,7 @@ namespace SimpleComplex\Utils;
 
 use SimpleComplex\Utils\Interfaces\CliCommandInterface;
 use SimpleComplex\Utils\Exception\ConfigurationException;
+use SimpleComplex\Utils\Exception\ParseIniException;
 
 /**
  * CLI PHP utility.
@@ -720,29 +721,24 @@ class CliEnvironment extends Explorable implements CliCommandInterface
     }
 
     /**
-     * Finds command providers registered via list file placed in document root.
+     * Finds command providers registered via .ini file placed in document root.
      *
-     * File: [doc_root]/.utils_cli_command_providers
+     * File: [doc_root]/.utils_cli_command_providers.ini
      *
      * @code
      * # Declare hook implementation in bash setup script:
-     * echo '\VendorName\PackageName\CliPackageName' >> ${doc_root}'/.utils_cli_command_providers'
+     * echo 'command-provider-alias = \VendorName\PackageName\CliPackageName' >> ${doc_root}'/.utils_cli_command_providers.ini'
      * @endcode
      *
      * @return $this|CliEnvironment
      */
     public function commandProvidersLoad() : CliEnvironment
     {
-        $file = $this->getDocumentRoot() . '/.utils_cli_command_providers';
-        if (
-            file_exists($file)
-            && ($qualified_class_names = trim(file_get_contents($file)))
-            && ($qualified_class_names = explode("\n", $qualified_class_names))
-        ) {
+        $file = $this->getDocumentRoot() . '/.utils_cli_command_providers.ini';
+        if (file_exists($file)) {
             $name = '';
             try {
-                // Prevent dupes.
-                $qualified_class_names = array_unique($qualified_class_names);
+                $qualified_class_names = Utils::getInstance()->parseIniFile($file);
                 foreach ($qualified_class_names as $name) {
                     // Namespaces apparantly shan't be double backslashed
                     // in this context.
@@ -761,7 +757,16 @@ class CliEnvironment extends Explorable implements CliCommandInterface
                         $this->echoMessage('CLI command provider class not found: ' . $name . "\n", 'warning');
                     }
                 }
-            } catch (\Throwable $xcptn) {
+            }
+            catch (ParseIniException $xcptn) {
+                $this->echoMessage(
+                    'CLI environment failed to parse CLI command provider .ini file: ' . $file
+                    . "\n" . get_class($xcptn) . '@' . $file . ':' . $xcptn->getLine()
+                    . ': ' . addcslashes($xcptn->getMessage(), "\0..\37") . "\n",
+                    'error'
+                );
+            }
+            catch (\Throwable $xcptn) {
                 $this->echoMessage(
                     'CLI command provider class instantiation failure: ' . $name
                     . "\n" . get_class($xcptn) . '@' . $file . ':' . $xcptn->getLine()

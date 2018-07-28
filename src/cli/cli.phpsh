@@ -2,7 +2,7 @@
 /**
  * SimpleComplex PHP Utils
  * @link      https://github.com/simplecomplex/php-utils
- * @copyright Copyright (c) 2014-2017 Jacob Friis Mathiasen
+ * @copyright Copyright (c) 2017-2018 Jacob Friis Mathiasen
  * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
  */
 declare(strict_types=1);
@@ -96,31 +96,8 @@ function simple_complex_utils_cli()
         }
     });
 
-    /**
-     * @see \SimpleComplex\Utils\Interfaces\CliCommandInterface
-     *
-     * @see \SimpleComplex\Utils\CliUtils
-     * @see \SimpleComplex\JsonLog\CliJsonLog
-     * @see \SimpleComplex\Cache\CliCache
-     * @see \SimpleComplex\Config\CliConfig
-     * @see \SimpleComplex\Locale\CliLocaleText
-     */
-    $implementations = [
-        '\\SimpleComplex\\Utils\\CliUtils',
-        '\\SimpleComplex\\JsonLog\\CliJsonLog',
-        '\\SimpleComplex\\Cache\\CliCache',
-        '\\SimpleComplex\\Config\\CliConfig',
-        '\\SimpleComplex\\Locale\\CliLocaleText',
-    ];
-
-    foreach ($implementations as $class) {
-        if (class_exists($class)) {
-            new $class();
-        }
-    }
-
     // Let CliEnvironment:
-    // - find more command providers in [doc_root]/.utils_cli_command_providers
+    // - find command providers in [doc_root]/.utils_cli_command_providers.ini
     // - listen to input command name, arguments and options
     // - forward matched command to it's provider
     return CliEnvironment::getInstance()
