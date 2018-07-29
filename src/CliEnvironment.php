@@ -725,6 +725,9 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      *
      * File: [doc_root]/.utils_cli_command_providers.ini
      *
+     * Format:
+     * PSR-4 path to CliCommandInterface implementation, by command provider alias.
+     *
      * @code
      * # Declare hook implementation in bash setup script:
      * echo 'command-provider-alias = \VendorName\PackageName\CliPackageName' >> ${doc_root}'/.utils_cli_command_providers.ini'

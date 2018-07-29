@@ -1,7 +1,8 @@
-SimpleComplex/Utils 1.x, 2018-07-28
+SimpleComplex/Utils 1.x, 2018-07-29
 -----------------------------------
 - CLI environment use .ini file for registering/loading
   command providers.
+- Release 1.8.
 
 SimpleComplex/Utils 1.x, 2018-07-22
 -----------------------------------
