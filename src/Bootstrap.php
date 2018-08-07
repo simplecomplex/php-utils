@@ -232,4 +232,149 @@ class Bootstrap
             });
         }
     }
+
+    /**
+     * Attempts to log trace or just exception details.
+     *
+     * Behaviour by arg $context:
+     * - http: sends 500 Internal Server Error and exits
+     * - cli: prints error message
+     * - empty or other: no behaviour apart from logging
+     *
+     * @param ContainerInterface $container
+     * @param string $context
+     *      Values: http|cli, or empty.
+     */
+    public static function setExceptionHandler(ContainerInterface $container, string $context = '') /*: void*/
+    {
+        set_exception_handler(function(\Throwable $throwable) use ($container, $context) {
+            $trace = $msg = null;
+            try {
+                $msg = get_class($throwable) . '(' . $throwable->getCode() . ')@' . $throwable->getFile() . ':'
+                    . $throwable->getLine() . ': ' . addcslashes($throwable->getMessage(), "\0..\37");
+                if ($container->has('inspect')) {
+                    $trace = '' . $container->get('inspect')->trace($throwable);
+                }
+                if ($container->has('logger')) {
+                    $container->get('logger')->error($trace ?? $throwable);
+                }
+                if ($trace) {
+                    $msg .= "\nCheck log.";
+                }
+            } catch (\Throwable $xcptn) {
+                // Log original exception.
+                if ($msg) {
+                    error_log($msg);
+                }
+                // Log this exception handler's own exception.
+                error_log(
+                    get_class($xcptn) . '(' . $xcptn->getCode() . ')@' . $xcptn->getFile() . ':'
+                    . $xcptn->getLine() . ': ' . addcslashes($xcptn->getMessage(), "\0..\37")
+                );
+            }
+            switch ($context) {
+                case 'http':
+                    header('HTTP/1.1 500 Internal Server Error');
+                    exit;
+                case 'cli':
+                    echo "\033[01;31m[error]\033[0m " . ($trace ? ($msg ?? $throwable) : $throwable) . "\n";
+                    break;
+            }
+        });
+    }
+
+    /**
+     * Attempts to log trace or just error details.
+     *
+     * Behaviour by arg $context:
+     * - http: sends 500 Internal Server Error and exits
+     * - cli: prints error message
+     * - empty or other: no behaviour apart from logging
+     *
+     * @param ContainerInterface $container
+     * @param string $context
+     *      Values: http|cli, or empty.
+     */
+    public static function setErrorHandler(ContainerInterface $container, string $context = '') /*: void*/
+    {
+        set_error_handler(function($severity, $message, $file, $line) use ($container, $context) {
+            if (!(error_reporting() & $severity)) {
+                // Pass-thru.
+                return false;
+            }
+            try {
+                $name = 'Unknown PHP error type';
+                $level = 'alert';
+                $types = [
+                    E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR',
+                    E_PARSE => 'E_PARSE',
+                ];
+                if (isset($types[$severity])) {
+                    $name = $types[$severity];
+                    $level = 'error';
+                }
+                else {
+                    $types = [
+                        E_WARNING => 'E_WARNING',
+                        E_CORE_WARNING => 'E_CORE_WARNING',
+                        E_COMPILE_WARNING => 'E_COMPILE_WARNING',
+                        E_USER_WARNING => 'E_USER_WARNING',
+                    ];
+                    if (isset($types[$severity])) {
+                        $name = $types[$severity];
+                        $level = 'warning';
+                    }
+                    else {
+                        $types = [
+                            E_NOTICE => 'E_NOTICE',
+                            E_USER_NOTICE => 'E_USER_NOTICE',
+                            E_STRICT => 'E_STRICT',
+                            E_DEPRECATED => 'E_DEPRECATED',
+                            E_USER_DEPRECATED => 'E_USER_DEPRECATED',
+                        ];
+                        if (isset($types[$severity])) {
+                            $name = $types[$severity];
+                            $level = 'notice';
+                        }
+                    }
+                }
+                $msg = rtrim(
+                        $name . '(' . $severity . ')@' . $file . ':' . $line . ': '
+                        . addcslashes($message, "\0..\37"),
+                        '.'
+                    ) . '.';
+                $trace = '';
+                if ($container->has('logger')) {
+                    if ($container->has('inspect')) {
+                        $trace = "\n" . $container->get('inspect')->trace(null, ['wrappers' => 1]);
+                    }
+                    $container->get('logger')->log($level, $msg . $trace);
+                } else {
+                    error_log($msg);
+                }
+                switch ($context) {
+                    case 'http':
+                        header('HTTP/1.1 500 Internal Server Error');
+                        exit;
+                    case 'cli':
+                        switch ($level) {
+                            case 'warning':
+                                echo "\033[01;33m[warning]\033[0m ";
+                                break;
+                            case 'notice':
+                                echo "\033[01;36m[notice]\033[0m ";
+                                break;
+                            default:
+                                echo "\033[01;31m[error]\033[0m ";
+                        }
+                        echo $msg  . (!$trace ? '' : "\nCheck log.") . "\n";
+                        break;
+                }
+                return true;
+            } catch (\Throwable $ignore) {
+            }
+            // Pass-thru.
+            return false;
+        });
+    }
 }

@@ -78,23 +78,8 @@ function simple_complex_utils_cli()
 
     Bootstrap::prepareDependenciesIfExist();
 
-    // Exception handler, which catches errors that it itself instigates;
-    // errors occurring while instantiating container objects.
-    set_exception_handler(function(\Throwable $throwable) use ($container) {
-        try {
-            $container = Dependency::container();
-            $trace = null;
-            if ($container->has('inspect')) {
-                $trace = '' . $container->get('inspect')->trace($throwable);
-            }
-            if ($container->has('logger')) {
-                $container->get('logger')->error($trace ?? $throwable);
-            }
-            echo ($trace ?? $throwable) . "\n"; exit;
-        } catch (\Throwable $xc) {
-            echo $throwable . "\n"; exit;
-        }
-    });
+    Bootstrap::setExceptionHandler($container, 'cli');
+    Bootstrap::setErrorHandler($container, 'cli');
 
     // Let CliEnvironment:
     // - find command providers in [doc_root]/.utils_cli_command_providers.ini

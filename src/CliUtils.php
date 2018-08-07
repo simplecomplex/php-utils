@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
-use SimpleComplex\Inspect\Inspect;
 use SimpleComplex\Utils\Interfaces\CliCommandInterface;
 
 /**
@@ -85,6 +84,8 @@ class CliUtils implements CliCommandInterface
      *
      * @return void
      *      Exits.
+     *
+     * @throws \Throwable
      */
     protected function cmdExecute() /*: void*/
     {
@@ -171,19 +172,19 @@ class CliUtils implements CliCommandInterface
             $this->environment->echoMessage(
                 'Executed include script '
                 . $utils->pathReplaceDocumentRoot($path) . '/' . $this->environment->format($file, 'emphasize'),
-                'success'
+                'notice'
             );
         } catch (\Throwable $xcptn) {
-            /** @var \Psr\Log\LoggerInterface $logger */
-            $logger = $container->get('logger');
-            /** @var Inspect $inspect */
-            $inspect = $container->get('inspect');
-            $logger->error('' . $inspect->trace($xcptn));
             $this->environment->echoMessage(
                 'Executing include script ' . $path . '/' . $this->environment->format($file, 'emphasize')
-                . "\n" . ' produced error, check log.' . "\n" . $inspect->variable($xcptn)->toString(false),
-                'error'
+                . "\n" . ' produced error.',
+                'warning'
             );
+            /**
+             * Pass on to
+             * @see Bootstrap::setExceptionHandler()
+             */
+            throw $xcptn;
         }
         exit;
     }

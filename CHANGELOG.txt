@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2018-08-07
+-----------------------------------
+- Bootstrap methods for setting exception and error handlers.
+
 SimpleComplex/Utils 1.x, 2018-07-29
 -----------------------------------
 - CLI environment use .ini file for registering/loading

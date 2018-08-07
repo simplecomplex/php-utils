@@ -133,6 +133,39 @@ class Utils
     }
 
     /**
+     * @param int $haystack
+     * @param int $needle
+     *
+     * @return bool
+     */
+    public static function bitMaskHas(int $haystack, int $needle) : bool
+    {
+        return ($haystack & $needle) == $needle;
+    }
+
+    /**
+     * @param int $haystack
+     * @param int $needle
+     *
+     * @return int
+     */
+    public static function bitMaskSet(int $haystack, int $needle) : int
+    {
+        return ($haystack | $needle);
+    }
+
+    /**
+     * @param int $haystack
+     * @param int $needle
+     *
+     * @return int
+     */
+    public static function bitMaskRemove(int $haystack, int $needle) : int
+    {
+        return ($haystack & ~$needle);
+    }
+
+    /**
      * Class name without namespace.
      *
      * @param string $className
