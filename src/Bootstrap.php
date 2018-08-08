@@ -234,7 +234,7 @@ class Bootstrap
     }
 
     /**
-     * Attempts to log trace or just exception details.
+     * Attempts to log trace, or just exception details.
      *
      * Behaviour by arg $context:
      * - http: sends 500 Internal Server Error and exits
@@ -250,8 +250,11 @@ class Bootstrap
         set_exception_handler(function(\Throwable $throwable) use ($container, $context) {
             $trace = $msg = null;
             try {
-                $msg = get_class($throwable) . '(' . $throwable->getCode() . ')@' . $throwable->getFile() . ':'
-                    . $throwable->getLine() . ': ' . addcslashes($throwable->getMessage(), "\0..\37");
+                $msg = rtrim(
+                        get_class($throwable) . '(' . $throwable->getCode() . ')@' . $throwable->getFile() . ':'
+                        . $throwable->getLine() . ': ' . addcslashes($throwable->getMessage(), "\0..\37"),
+                        '.'
+                    ) . '.';
                 if ($container->has('inspect')) {
                     $trace = '' . $container->get('inspect')->trace($throwable);
                 }
@@ -259,7 +262,7 @@ class Bootstrap
                     $container->get('logger')->error($trace ?? $throwable);
                 }
                 if ($trace) {
-                    $msg .= "\nCheck log.";
+                    $msg .= "\n- Check log.";
                 }
             } catch (\Throwable $xcptn) {
                 // Log original exception.
@@ -284,7 +287,7 @@ class Bootstrap
     }
 
     /**
-     * Attempts to log trace or just error details.
+     * Attempts to log trace, or just error details.
      *
      * Behaviour by arg $context:
      * - http: sends 500 Internal Server Error and exits
@@ -367,7 +370,7 @@ class Bootstrap
                             default:
                                 echo "\033[01;31m[error]\033[0m ";
                         }
-                        echo $msg  . (!$trace ? '' : "\nCheck log.") . "\n";
+                        echo $msg  . (!$trace ? '' : "\n- Check log.") . "\n";
                         break;
                 }
                 return true;
