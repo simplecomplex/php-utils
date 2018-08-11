@@ -41,50 +41,52 @@ $environment = CliEnvironment::getInstance();
     $b = 8;
     $c = 127;
 
-    $a_c = Utils::bitMaskSet($a, $c);
-    $b_c = Utils::bitMaskSet($b, $c);
-    $a_b = Utils::bitMaskSet($a, $b);
-    $a_b_c = Utils::bitMaskSet(Utils::bitMaskSet($a, $b), $c);
+    $a_c = Utils::bitMask('set', $a, $c);
+    $b_c = Utils::bitMask('set', $b, $c);
+    $a_b = Utils::bitMask('set', $a, $b);
+    $a_b_c = Utils::bitMask('set', Utils::bitMask('set', $a, $b), $c);
 
     echo $inspect->variable([
             'a' => $a,
             'b' => $b,
             'c' => $c,
-            'c hasnt a' => !Utils::bitMaskHas($c, $a),
-            'c hasnt b' => !Utils::bitMaskHas($c, $b),
-            'b hasnt a' => !Utils::bitMaskHas($b, $a),
+            'c has a' => Utils::bitMask('has', $c, $a),
+            'c has b' => Utils::bitMask('has', $c, $b),
+            'b has a' => Utils::bitMask('has', $b, $a),
+            'a has b' => Utils::bitMask('has', $a, $b),
+            'a remove c' => Utils::bitMask('has', $a, $c),
             'c without c' => ($c & $c),
             'c without a' => ($c & $a),
             'c without b' => ($c & $b),
             'b without a' => ($b & $a),
             'a + c' => $a_c,
-            'a + c has a' => Utils::bitMaskHas($a_c, $a),
-            'a + c has c' => Utils::bitMaskHas($a_c, $c),
+            'a + c has a' => Utils::bitMask('has', $a_c, $a),
+            'a + c has c' => Utils::bitMask('has', $a_c, $c),
             'a + c hasnt b' => ($a_c & $b),
-            'a + c remove a' => Utils::bitMaskRemove($a_c, $a) == $c,
-            'a + c remove c' => Utils::bitMaskRemove($a_c, $c) == $a,
-            'a + c remove b' => Utils::bitMaskRemove($a_c, $b),
+            'a + c remove a' => Utils::bitMask('remove', $a_c, $a) == $c,
+            'a + c remove c' => Utils::bitMask('remove', $a_c, $c) == $a,
+            'a + c remove b' => Utils::bitMask('remove', $a_c, $b),
             'b + c' => $b_c,
-            'b + c has b' => Utils::bitMaskHas($b_c, $b),
-            'b + c has c' => Utils::bitMaskHas($b_c, $c),
+            'b + c has b' => Utils::bitMask('has', $b_c, $b),
+            'b + c has c' => Utils::bitMask('has', $b_c, $c),
             'b + c hasnt a' => ($b_c & $a),
-            'b + c remove b' => Utils::bitMaskRemove($b_c, $b) == $c,
-            'b + c remove c' => Utils::bitMaskRemove($b_c, $c) == $b,
-            'b + c remove a' => Utils::bitMaskRemove($b_c, $a),
+            'b + c remove b' => Utils::bitMask('remove', $b_c, $b) == $c,
+            'b + c remove c' => Utils::bitMask('remove', $b_c, $c) == $b,
+            'b + c remove a' => Utils::bitMask('remove', $b_c, $a),
             'a + b' => $a_b,
-            'a + b has a' => Utils::bitMaskHas($a_b, $a),
-            'a + b has b' => Utils::bitMaskHas($a_b, $b),
+            'a + b has a' => Utils::bitMask('has', $a_b, $a),
+            'a + b has b' => Utils::bitMask('has', $a_b, $b),
             'a + b hasnt c' => ($a_b & $c),
-            'a + b remove a' => Utils::bitMaskRemove($a_b, $a) == $b,
-            'a + b remove b' => Utils::bitMaskRemove($a_b, $b) == $a,
-            'a + b remove c' => Utils::bitMaskRemove($a_b, $c),
+            'a + b remove a' => Utils::bitMask('remove', $a_b, $a) == $b,
+            'a + b remove b' => Utils::bitMask('remove', $a_b, $b) == $a,
+            'a + b remove c' => Utils::bitMask('remove', $a_b, $c),
             'a + b + c' => $a_b_c,
-            'a + b + c has a' => Utils::bitMaskHas($a_b_c, $a),
-            'a + b + c has b' => Utils::bitMaskHas($a_b_c, $b),
-            'a + b + c has c' => Utils::bitMaskHas($a_b_c, $c),
-            'a + b + c remove a' => Utils::bitMaskRemove($a_b_c, $a) == Utils::bitMaskSet($b, $c),
-            'a + b + c remove b' => Utils::bitMaskRemove($a_b_c, $b) == Utils::bitMaskSet($a, $c),
-            'a + b + c remove c' => Utils::bitMaskRemove($a_b_c, $c) == Utils::bitMaskSet($a, $b),
+            'a + b + c has a' => Utils::bitMask('has', $a_b_c, $a),
+            'a + b + c has b' => Utils::bitMask('has', $a_b_c, $b),
+            'a + b + c has c' => Utils::bitMask('has', $a_b_c, $c),
+            'a + b + c remove a' => Utils::bitMask('remove', $a_b_c, $a) == Utils::bitMask('set', $b, $c),
+            'a + b + c remove b' => Utils::bitMask('remove', $a_b_c, $b) == Utils::bitMask('set', $a, $c),
+            'a + b + c remove c' => Utils::bitMask('remove', $a_b_c, $c) == Utils::bitMask('set', $a, $b),
             (1 | 2 | 4 | 8 | 16 | 32 | 64),
         ]) . "\n";
     return;

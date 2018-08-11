@@ -133,36 +133,37 @@ class Utils
     }
 
     /**
-     * @param int $haystack
-     * @param int $needle
-     *
-     * @return bool
-     */
-    public static function bitMaskHas(int $haystack, int $needle) : bool
-    {
-        return ($haystack & $needle) == $needle;
-    }
-
-    /**
-     * @param int $haystack
-     * @param int $needle
+     * @param string $action
+     *      Values: has|set|remove.
+     * @param int $mask
+     * @param int $subject
      *
      * @return int
-     */
-    public static function bitMaskSet(int $haystack, int $needle) : int
-    {
-        return ($haystack | $needle);
-    }
-
-    /**
-     * @param int $haystack
-     * @param int $needle
+     *      If action 'has': subject if tests positive, otherwise zero.
+     *      Otherwise final mask.
      *
-     * @return int
+     * @throws \InvalidArgumentException
+     *      Arg action not supported.
+     *      Arg mask or subject negative.
      */
-    public static function bitMaskRemove(int $haystack, int $needle) : int
+    public static function bitMask(string $action, int $mask, int $subject) : int
     {
-        return ($haystack & ~$needle);
+        if ($mask < 0) {
+            throw new \InvalidArgumentException('Arg mask[' . $mask . '] cannot be negative.');
+        }
+        if ($subject < 0) {
+            throw new \InvalidArgumentException('Arg subject[' . $subject . '] cannot be negative.');
+        }
+        switch ($action) {
+            case 'has':
+                // Testing for == subject is probably redundant, but anyway.
+                return ($mask & $subject) == $subject ? $subject : 0;
+            case 'set':
+                return ($mask | $subject);
+            case 'remove':
+                return ($mask & ~$subject);
+        }
+        throw new \InvalidArgumentException('Arg action[' . $action . '] not supported.');
     }
 
     /**

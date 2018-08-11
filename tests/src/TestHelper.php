@@ -102,10 +102,12 @@ class TestHelper
      *      Non-string gets stringified; if possible.
      * @param \Throwable|null $xcptn
      *      Null: do backtrace.
+     * @param array $options
+     *      For Inspect.
      *
      * @return void
      */
-    public static function logTrace($message = '', \Throwable $xcptn = null) /*: void*/
+    public static function logTrace($message = '', \Throwable $xcptn = null, array $options = []) /*: void*/
     {
         try {
             $msg = '' . $message;
@@ -118,15 +120,25 @@ class TestHelper
             if ($container->has('inspect')) {
                 /** @var \SimpleComplex\Inspect\Inspect $inspect */
                 $inspect = $container->get('inspect');
+                if (!$options) {
+                    $opts = [
+                        'wrappers' => 1,
+                        'limit' => 3,
+                    ];
+                } else {
+                    $opts = $options;
+                    if (!isset($opts['wrappers'])) {
+                        $opts['wrappers'] = 1;
+                    } else {
+                        $opts['wrappers'] += 1;
+                    }
+                    if (!isset($opts['limit'])) {
+                        $opts['limit'] = 3;
+                    }
+                }
                 $logger->log(
                     static::LOG_LEVEL,
-                    $msg . (!$msg ? '' : "\n") . $inspect->trace(
-                        $xcptn,
-                        [
-                            'wrappers' => 1,
-                            'trace_limit' => 1,
-                        ]
-                    )
+                    $msg . (!$msg ? '' : "\n") . $inspect->trace($xcptn, $opts)
                 );
             }
             elseif ($xcptn) {

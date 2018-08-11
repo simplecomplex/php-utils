@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2018-08-11
+-----------------------------------
+- Utils bitmask feature reduced to single method.
+
 SimpleComplex/Utils 1.x, 2018-08-07
 -----------------------------------
 - Bootstrap methods for setting exception and error handlers.
