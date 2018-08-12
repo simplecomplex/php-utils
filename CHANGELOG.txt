@@ -1,3 +1,9 @@
+SimpleComplex/Utils 1.x, 2018-08-12
+-----------------------------------
+- phpunit TestHelper method for circumventing phpunit's propensity to consume
+  all exceptions.
+- Release 1.8.1.
+
 SimpleComplex/Utils 1.x, 2018-08-11
 -----------------------------------
 - Utils bitmask feature reduced to single method.

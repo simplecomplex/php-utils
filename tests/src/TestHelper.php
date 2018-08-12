@@ -152,6 +152,45 @@ class TestHelper
     }
 
     /**
+     * Call method and log trace on exception, bypassing phpunit's exception
+     * handler.
+     *
+     * phpunit consumes all exceptions (and errors) bypassing any handlers set
+     * userland. Doing a method call via a non-test class apparantly circumvents
+     * that behaviour.
+     *
+     * @param string $description
+     *      Short action description.
+     * @param object $object
+     * @param string $method
+     * @param array $args
+     *
+     * @return mixed
+     *
+     * @throws \Throwable
+     */
+    public static function logOnError(string $description, /*object */$object, string $method, array $args = [])
+    {
+        try {
+            if (!is_object($object)) {
+                throw new \TypeError('Arg $object type[' . Utils::getType($object) . '] is not object.');
+            }
+            if ($method === '') {
+                throw new \InvalidArgumentException('Arg $method cannot be empty.');
+            }
+            if (!method_exists($object, $method)) {
+                throw new \InvalidArgumentException('Arg $object type[' . Utils::getType($object)
+                    . '] has no $method[' . $method . '].');
+            }
+            return !$args ? $object->{$method}() :
+                $object->{$method}(...$args);
+        } catch (\Throwable $xcptn) {
+            static::logTrace($description, $xcptn);
+            throw $xcptn;
+        }
+    }
+
+    /**
      * @deprecated Use Utils::getInstance()->documentRoot() instead.
      *
      * @return string

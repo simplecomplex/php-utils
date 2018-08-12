@@ -261,9 +261,6 @@ class Bootstrap
                 if ($container->has('logger')) {
                     $container->get('logger')->error($trace ?? $throwable);
                 }
-                if ($trace) {
-                    $msg .= "\n- Check log.";
-                }
             } catch (\Throwable $xcptn) {
                 // Log original exception.
                 if ($msg) {
@@ -280,7 +277,7 @@ class Bootstrap
                     header('HTTP/1.1 500 Internal Server Error');
                     exit;
                 case 'cli':
-                    echo "\033[01;31m[error]\033[0m " . ($trace ? ($msg ?? $throwable) : $throwable) . "\n";
+                    echo "\033[01;31m[error]\033[0m " . ($trace ? ($msg . "\n- Check log.") : $throwable) . "\n";
                     break;
             }
         });
