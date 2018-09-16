@@ -173,7 +173,7 @@ class Utils
      *
      * @return string
      */
-    public function classUnqualified(string $className) : string
+    public static function classUnqualified(string $className) : string
     {
         $pos = strrpos($className, '\\');
         return $pos || $pos === 0 ? substr($className, $pos + 1) : $className;
