@@ -117,20 +117,20 @@ class TimeIntervalConstant extends Explorable
                 case 'totalSeconds':
                     $sign = !$this->dateInterval->invert ? 1 : -1;
                     $days = $this->dateInterval->days;
+                    // \DateInterval::days is false unless created
+                    // via \DateTime::diff().
                     if ($days === false) {
                         $days = (int) $this->dateInterval->format('%a');
                     }
                     if ($name == 'totalDays') {
                         return !$days ? $days : ($sign * $days);
                     }
-                    $hours = $days * 24;
+                    $hours = ($days * 24) + $this->dateInterval->h;
                     if ($name == 'totalHours') {
-                        $hours += $this->dateInterval->h;
                         return !$hours ? $hours : ($sign * $hours);
                     }
-                    $minutes = $hours * 60;
+                    $minutes = ($hours * 60) + $this->dateInterval->i;
                     if ($name == 'totalMinutes') {
-                        $minutes += $this->dateInterval->i;
                         return !$minutes ? $minutes : ($sign * $minutes);
                     }
                     $seconds = ($minutes * 60) + $this->dateInterval->s;

@@ -1,5 +1,6 @@
 SimpleComplex/Utils 1.x, 2018-09-16
 -----------------------------------
+- TimeIntervalConstant totalMinutes, totalSeconds didn't include days and hours.
 - Utils::classUnqualified() is now a static method.
 
 SimpleComplex/Utils 1.x, 2018-08-12
