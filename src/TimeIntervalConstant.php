@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * Wrapped native DateInterval plus totalling properties for days thru seconds.
+ * Wrapped native DateInterval plus totalling props for months thru seconds.
  *
  * Constant, not only immutable; attempting to set a property spells exception.
  *
@@ -33,6 +33,7 @@ namespace SimpleComplex\Utils;
  * @property-read int|bool $days  Use $totalDays instead.
  *
  * Own properties; signed totals (negative if negative diff):
+ * @property-read int $totalMonths
  * @property-read int $totalDays
  * @property-read int $totalHours
  * @property-read int $totalMinutes
@@ -60,6 +61,7 @@ class TimeIntervalConstant extends Explorable
         $this->dateInterval = $interval;
 
         $this->explorableIndex = array_keys(get_object_vars($interval));
+        $this->explorableIndex[] = 'totalMonths';
         $this->explorableIndex[] = 'totalDays';
         $this->explorableIndex[] = 'totalHours';
         $this->explorableIndex[] = 'totalMinutes';
@@ -111,6 +113,9 @@ class TimeIntervalConstant extends Explorable
     {
         if (in_array($name, $this->explorableIndex, true)) {
             switch ($name) {
+                case 'totalMonths':
+                    return (!$this->dateInterval->invert ? 1 : -1)
+                        * ((int) ($this->dateInterval->format('%y') * 12) + (int) $this->dateInterval->format('%m'));
                 case 'totalDays':
                 case 'totalHours':
                 case 'totalMinutes':
