@@ -286,9 +286,10 @@ class Bootstrap
     /**
      * Attempts to log trace, or just error details.
      *
-     * Behaviour by arg $context:
-     * - http: sends 500 Internal Server Error and exits
-     * - cli: prints error message
+     * Behaviour by arg $context + error level:
+     * - http + notice: pass-thru (ignore, but log)
+     * - http + other: sends 500 Internal Server Error and exits
+     * - cli + any: prints error message
      * - empty or other: no behaviour apart from logging
      *
      * @param ContainerInterface $container
@@ -354,6 +355,9 @@ class Bootstrap
                 }
                 switch ($context) {
                     case 'http':
+                        if ($level == 'notice') {
+                            return true;
+                        }
                         header('HTTP/1.1 500 Internal Server Error');
                         exit;
                     case 'cli':

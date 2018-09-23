@@ -1,3 +1,8 @@
+SimpleComplex/Utils 2.x, 2018-09-23
+-----------------------------------
+- Bootstrap error handler shan't exit on mere PHP notice.
+- Release 1.9.2.
+
 SimpleComplex/Utils 2.x, 2018-09-22
 -----------------------------------
 - TimeIntervalConstant::totalMonths.
