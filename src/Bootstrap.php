@@ -355,6 +355,7 @@ class Bootstrap
                 }
                 switch ($context) {
                     case 'http':
+                        // Don't err/die on notice.
                         if ($level == 'notice') {
                             return true;
                         }
