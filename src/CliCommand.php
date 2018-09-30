@@ -338,7 +338,8 @@ class CliCommand extends Explorable
                         $line .= ' -' . $short;
                     }
                 }
-                $output .= $nl . $line . str_repeat(' ', static::FORMAT['midLine'] - strlen($line))
+                $output .= $nl . $line
+                    . str_repeat(' ', ($non_negative = static::FORMAT['midLine'] - strlen($line)) < 0 ? 0 : $non_negative)
                     . wordwrap(
                         str_replace("\n", "\n" . str_repeat(' ', static::FORMAT['midLine']), $dscrptn),
                         static::FORMAT['wrap'] - static::FORMAT['midLine'],
