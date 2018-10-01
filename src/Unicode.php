@@ -322,6 +322,26 @@ class Unicode
      *
      * @return string
      */
+    public function toLowerCase($var)
+    {
+        $v = '' . $var;
+        if ($v === '') {
+            return '';
+        }
+        if (static::$nativeSupport['mbstring']) {
+            return mb_strtolower($v);
+        }
+        return $v;
+    }
+
+    /**
+     * Does nothing (except stringifying) if no mb_string support.
+     *
+     * @param mixed $var
+     *      Gets stringified.
+     *
+     * @return string
+     */
     public function toUpperCaseFirst($var)
     {
         $v = '' . $var;
