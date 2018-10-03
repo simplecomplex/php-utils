@@ -1,3 +1,8 @@
+SimpleComplex/Utils 2.x, 2018-10-03
+-----------------------------------
+- Utils::parseIniString() fix that native parse_ini_string() ignores
+  INI_SCANNER_RAW argument when it comes to array key names.
+
 SimpleComplex/Utils 2.x, 2018-10-01
 -----------------------------------
 - CliCommand toString shan't err on exceptionally long option name.
