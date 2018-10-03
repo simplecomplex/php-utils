@@ -1085,12 +1085,16 @@ class Utils
             // Remove single-quoting from array keys.
             $keys_unquoted = [];
             foreach ($arr as $key0 => $val0) {
+                // Level 0.
+                // Obsolete if it's a section (no substitution there),
+                // but we cannot know if section or not.
                 $le0 = strlen($key0);
                 if ($le0 > 2 && $key0{0} === '\'' && $key0{$le0 - 1} === '\'') {
                     $k0 = substr($key0, 1, $le0 - 2);
                 } else {
                     $k0 = $key0;
                 }
+                // Level 1.
                 if ($processSections && is_array($val0)) {
                     // Sectional.
                     $keys_unquoted[$k0] = [];
