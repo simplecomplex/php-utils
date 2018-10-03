@@ -1060,7 +1060,7 @@ class Utils
         // by single-quoting key; parse_ini_string() INI_SCANNER_RAW
         // doesn't turn off that substitution :-(
         $ini = preg_replace(
-            '/\n([^;\[]+)\[([A-Z\d_]+)\][ ]?=/',
+            '/\n([^;\n\[]+)\[([A-Z\d_]+)\][ ]?=/',
             "\n" . '$1[\'$2\'] =',
             str_replace("\r", '', $ini)
         );
