@@ -1060,7 +1060,7 @@ class Utils
         // by single-quoting key; parse_ini_string() INI_SCANNER_RAW
         // doesn't turn off that substitution :-(
         $ini = preg_replace(
-            '/\n([^;\n\[]+)\[([A-Z\d_]+)\][ ]?=/',
+            '/\n([^;\n\[]+)\[([A-Z_][A-Z\d_]+)\][ ]?=/',
             "\n" . '$1[\'$2\'] =',
             str_replace("\r", '', $ini)
         );
@@ -1114,6 +1114,7 @@ class Utils
                     $keys_unquoted[$k0] = $val0;
                 }
             }
+            unset($arr);
 
             if ($typed) {
                 $this->typeArrayValues($keys_unquoted, static::PARSE_INI_REPLACE);
@@ -1240,7 +1241,7 @@ class Utils
     const ARRAY_RECURSION_LIMIT = 10;
 
     /**
-     * Casts bucket values that are 'null', 'true', 'false', '...numeric',
+     * Casts bucket string values that are 'null', 'true', 'false', numeric,
      * and replaces by arg stringReplace in strings; recursively.
      *
      * @param array &$arr
