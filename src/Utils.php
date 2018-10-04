@@ -1032,6 +1032,11 @@ class Utils
      * ?{}|&~![()^"
      * Those characters have - undocumented - 'special meaning'.
      *
+     * Even with INI_SCANNER_RAW parse_ini_*() substitute array keys with PHP
+     * constants - this method also prevents that.
+     * The downside of that fix is that an array key which is deliberately
+     * single-quoted will be unquoted in the output.
+     *
      * @see parse_ini_string()
      *
      * @param string $ini
@@ -1050,6 +1055,16 @@ class Utils
         if (!$ini) {
             return [];
         }
+
+        // Prevent array key substitution by PHP constant;
+        // by single-quoting key; parse_ini_string() INI_SCANNER_RAW
+        // doesn't turn off that substitution :-(
+        $ini = preg_replace(
+            '/\n([^;\n\[]+)\[([A-Z_][A-Z\d_]+)\][ ]?=/',
+            "\n" . '$1[\'$2\'] =',
+            str_replace("\r", '', $ini)
+        );
+
         // Suppress PHP error; wrongly reported as syntax warning.
         $arr = @parse_ini_string($ini, $processSections, INI_SCANNER_RAW);
         if (!is_array($arr)) {
@@ -1066,8 +1081,45 @@ class Utils
             }
             throw new ParseIniException('Failed parsing ini content.');
         }
-        if ($arr && $typed) {
-            $this->typeArrayValues($arr, static::PARSE_INI_REPLACE);
+        if ($arr) {
+            // Remove single-quoting from array keys.
+            $keys_unquoted = [];
+            foreach ($arr as $key0 => $val0) {
+                // Level 0.
+                // Obsolete if it's a section (no substitution there),
+                // but we cannot know if section or not.
+                $le0 = strlen($key0);
+                if ($le0 > 2 && $key0{0} === '\'' && $key0{$le0 - 1} === '\'') {
+                    $k0 = substr($key0, 1, $le0 - 2);
+                } else {
+                    $k0 = $key0;
+                }
+                // Level 1.
+                if ($processSections && is_array($val0)) {
+                    // Sectional.
+                    $keys_unquoted[$k0] = [];
+                    foreach ($val0 as $key1 => $val1) {
+                        if (
+                            is_string($key1)
+                            && ($le1 = strlen($key1)) > 2 && $key1{0} === '\'' && $key1{$le1 - 1} === '\''
+                        ) {
+                            $k1 = substr($key1, 1, $le1 - 2);
+                        } else {
+                            $k1 = $key1;
+                        }
+                        $keys_unquoted[$k0][$k1] = $val1;
+                    }
+                }
+                else {
+                    $keys_unquoted[$k0] = $val0;
+                }
+            }
+            unset($arr);
+
+            if ($typed) {
+                $this->typeArrayValues($keys_unquoted, static::PARSE_INI_REPLACE);
+            }
+            return $keys_unquoted;
         }
         return $arr;
     }
@@ -1189,7 +1241,7 @@ class Utils
     const ARRAY_RECURSION_LIMIT = 10;
 
     /**
-     * Casts bucket values that are 'null', 'true', 'false', '...numeric',
+     * Casts bucket string values that are 'null', 'true', 'false', numeric,
      * and replaces by arg stringReplace in strings; recursively.
      *
      * @param array &$arr
