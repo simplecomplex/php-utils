@@ -1,5 +1,11 @@
 SimpleComplex/Utils 2.x, 2018-10-04
 -----------------------------------
+- Exception/error-handlers shan't look like PHP fatal error
+  white-screen-of-death.
+- Release 1.9.6.
+
+SimpleComplex/Utils 2.x, 2018-10-04
+-----------------------------------
 - Release 1.9.5.
 
 SimpleComplex/Utils 2.x, 2018-10-03
