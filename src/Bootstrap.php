@@ -275,6 +275,8 @@ class Bootstrap
             switch ($context) {
                 case 'http':
                     header('HTTP/1.1 500 Internal Server Error');
+                    // Don't appear like PHP fatal error white-screen-of-death.
+                    echo '<html><body><h1 style="font-family:sans-serif;color:darkblue">Internal Server Error</h1></body></html>';
                     exit;
                 case 'cli':
                     echo "\033[01;31m[error]\033[0m " . ($trace ? ($msg . "\n- Check log.") : $throwable) . "\n";
@@ -300,7 +302,7 @@ class Bootstrap
     {
         set_error_handler(function($severity, $message, $file, $line) use ($container, $context) {
             if (!(error_reporting() & $severity)) {
-                // Pass-thru.
+                // Pass-thru to PHP default error handler.
                 return false;
             }
             try {
@@ -360,6 +362,8 @@ class Bootstrap
                             return true;
                         }
                         header('HTTP/1.1 500 Internal Server Error');
+                        // Don't appear like PHP fatal error white-screen-of-death.
+                        echo '<html><body><h1 style="font-family:sans-serif;color:darkblue">Internal Server Error</h1></body></html>';
                         exit;
                     case 'cli':
                         switch ($level) {
@@ -373,12 +377,16 @@ class Bootstrap
                                 echo "\033[01;31m[error]\033[0m ";
                         }
                         echo $msg  . (!$trace ? '' : "\n- Check log.") . "\n";
-                        break;
+                        exit;
+                    default:
+                        // Don't err/die on notice.
+                        if ($level == 'notice') {
+                            return true;
+                        }
                 }
-                return true;
             } catch (\Throwable $ignore) {
             }
-            // Pass-thru.
+            // Pass-thru to PHP default error handler.
             return false;
         });
     }
