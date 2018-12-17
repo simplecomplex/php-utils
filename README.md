@@ -27,13 +27,13 @@ specify a simple way of defining PHP CLI commands, and auto-generate --help outp
 
 ```bash
 # List all commands in the system, and their providers.
-php cli.phpsh -h
+php cli.php -h
 
 # One command's help.
-php cli.phpsh utils-xxx -h
+php cli.php utils-xxx -h
 
 # (RISKY) Execute included PHP script.
-php cli.phpsh utils-execute include-file
+php cli.php utils-execute include-file
 ```
 
 #### Odds and ends ####

@@ -16,7 +16,7 @@ use SimpleComplex\Utils\CliEnvironment;
  * @code
  * # CLI
  * cd vendor/simplecomplex/utils/src/cli
- * php cli.phpsh utils-execute backend/vendor/simplecomplex/utils/src/cli/utils_execute_example.php -yf
+ * php cli.php utils-execute backend/vendor/simplecomplex/utils/src/cli/utils_execute_example.php -yf
  * @endcode
  */
 
