@@ -1,3 +1,8 @@
+SimpleComplex/Utils 2.x, 2018-12-17
+-----------------------------------
+- Renamed cli.php; from cli.phpsh.
+- Release 1.9.7.
+
 SimpleComplex/Utils 2.x, 2018-10-04
 -----------------------------------
 - Exception/error-handlers shan't look like PHP fatal error

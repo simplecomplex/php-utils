@@ -65,7 +65,7 @@ use SimpleComplex\Utils\Bootstrap;
  *
  * @code
  * # CLI
- * php vendor/simplecomplex/utils/src/cli/cli.phpsh -h
+ * php vendor/simplecomplex/utils/src/cli/cli.php -h
  * @endcode
  *
  * @return mixed

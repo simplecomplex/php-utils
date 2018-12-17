@@ -21,7 +21,7 @@ use SimpleComplex\Utils\Interfaces\CliCommandInterface;
  * @code
  * # CLI
  * cd vendor/simplecomplex/utils/src/cli
- * php cli.phpsh utils -h
+ * php cli.php utils -h
  * @endcode
  *
  * @package SimpleComplex\Utils
