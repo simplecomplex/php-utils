@@ -1,9 +1,20 @@
-SimpleComplex/Utils 2.x, 2018-12-17
+SimpleComplex/Utils 2.x, 2019-01-03
+-----------------------------------
+- Time ISO-8601 local getters must always use local (default) timezone,
+  or secure equivalent timezone offset.
+- TimeLocal and TimeLocalFreezable secures that a new object uses a timezone
+  compatible with local timezone.
+- (to be) Release 2.0.
+  New major release because methods getDateISOlocal, getTimeISOlocal,
+  getDateTimeISOlocal will render differently for Time object whose timezone
+  offset doesn't match local (default) timezone.
+
+SimpleComplex/Utils 1.x, 2018-12-17
 -----------------------------------
 - Renamed cli.php; from cli.phpsh.
 - Release 1.9.7.
 
-SimpleComplex/Utils 2.x, 2018-10-04
+SimpleComplex/Utils 1.x, 2018-10-04
 -----------------------------------
 - Exception/error-handlers shan't look like PHP fatal error
   white-screen-of-death.
@@ -13,18 +24,18 @@ SimpleComplex/Utils 2.x, 2018-10-04
 -----------------------------------
 - Release 1.9.5.
 
-SimpleComplex/Utils 2.x, 2018-10-03
+SimpleComplex/Utils 1.x, 2018-10-03
 -----------------------------------
 - Utils::parseIniString() fix that native parse_ini_string() ignores
   INI_SCANNER_RAW argument when it comes to array key names.
 
-SimpleComplex/Utils 2.x, 2018-10-01
+SimpleComplex/Utils 1.x, 2018-10-01
 -----------------------------------
 - CliCommand toString shan't err on exceptionally long option name.
 - Unicode::toLowerCase (Doh).
 - Release 1.9.4.
 
-SimpleComplex/Utils 2.x, 2018-09-23
+SimpleComplex/Utils 1.x, 2018-09-23
 -----------------------------------
 - Bootstrap error handler shan't exit on mere PHP notice.
 - Release 1.9.2.

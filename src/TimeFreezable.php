@@ -257,7 +257,7 @@ class TimeFreezable extends Time implements FreezableInterface
      * @throws \RuntimeException
      *      Frozen.
      * @throws \Exception
-     *      Propagated.
+     *      Propagated from \DateTime::setTimezone().
      */
     public function setTimezone($timezone) : \DateTime /*self invariant*/
     {

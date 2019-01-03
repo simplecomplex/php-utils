@@ -17,6 +17,43 @@ namespace SimpleComplex\Utils;
 class Time extends \DateTime implements \JsonSerializable
 {
     /**
+     * Name of local (default) timezone.
+     *
+     * Gets established once; first time a Time object is constructed.
+     * @see Time::__construct()
+     *
+     * Beware of changing default timezone after using a Time object.
+     * @see date_default_timezone_set()
+     *
+     * @var string
+     */
+    protected static $timezoneLocalName;
+
+    /**
+     * Offset of local (default) timezone.
+     *
+     * Gets established once; first time a Time object is constructed.
+     * @see Time::__construct()
+     *
+     * Beware of changing default timezone after using a Time object.
+     * @see date_default_timezone_set()
+     *
+     * @var int
+     */
+    protected static $timezoneLocalOffset;
+
+    /**
+     * Whether this object's timezone offset matches local (default) offset.
+     *
+     * @see Time::offsetIsLocal()
+     * @see Time::__construct()
+     * @see Time::setTimezone()
+     *
+     * @var bool|null
+     */
+    protected $timezoneOffsetIsLocal;
+
+    /**
      * Values: (empty)|milliseconds|microseconds; default empty.
      *
      * @see Time::jsonSerialize()
@@ -30,7 +67,8 @@ class Time extends \DateTime implements \JsonSerializable
      * Check that default timezone has offset equivalent of arg timezoneAllowed.
      *
      * @param string $timezoneAllowed
-     *      Examples: 'UTC', 'Europe/Copenhagen'.
+     *      Examples: 'Z', 'UTC', 'Europe/Copenhagen'.
+     *      Z and UTC seem to be the same.
      * @param bool $errOnMisMatch
      *      True: throws exception on timezone mismatch.
      *
@@ -100,6 +138,59 @@ class Time extends \DateTime implements \JsonSerializable
     public static function createFromDateTime(\DateTimeInterface $dateTime) : Time
     {
         return new static($dateTime->format('Y-m-d H:i:s.u'), $dateTime->getTimezone());
+    }
+
+    /**
+     * Checks whether the new object's timezone matches local (default) offset.
+     * @see Time::offsetIsLocal()
+     *
+     * Memorizes local (default) timezone name and offset first time called.
+     * @see Time::$timezoneLocalName
+     * @see Time::$timezoneLocalOffset
+     *
+     * @param string $time
+     * @param \DateTimeZone $timezone
+     */
+    public function __construct($time = 'now', /*\DateTimeZone*/ $timezone = null)
+    {
+        parent::__construct($time, $timezone);
+        // Memorize local (default) timezone name and offset once and for all.
+        if (!static::$timezoneLocalName) {
+            $time_default = new \DateTime();
+            static::$timezoneLocalName = $time_default->getTimezone()->getName();
+            static::$timezoneLocalOffset = $time_default->getOffset();
+        }
+        // Flag whether this object's timezone offset matches local (default).
+        $this->timezoneOffsetIsLocal = $this->getOffset() == static::$timezoneLocalOffset;
+    }
+
+    /**
+     * Checks whether the object's new timezone matches local (default) offset.
+     * @see Time::offsetIsLocal()
+     *
+     * @param \DateTimeZone $timezone
+     *
+     * @return $this|\DateTime
+     *
+     * @throws \Exception
+     *      Propagated from \DateTime::setTimezone().
+     */
+    public function setTimezone($timezone) : \DateTime /*self invariant*/
+    {
+        parent::setTimezone($timezone);
+        // Flag whether this object's timezone offset matches local (default).
+        $this->timezoneOffsetIsLocal = $this->getOffset() == static::$timezoneLocalOffset;
+        return $this;
+    }
+
+    /**
+     * Whether this object's timezone offset matches local (default) offset.
+     *
+     * @return bool
+     */
+    public function offsetIsLocal() : bool
+    {
+        return $this->timezoneOffsetIsLocal;
     }
 
     /**
@@ -414,7 +505,13 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * Get full year.
+     * Get full (YYYY) year.
+     *
+     * Beware that timezone (unlike Javascript) may not be local.
+     * @see TimeLocal
+     * @see Time::getDateISOlocal()
+     * @see Time::getTimeISOlocal()
+     * @see Time::getDateTimeISOlocal()
      *
      * @return int
      */
@@ -424,6 +521,12 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Beware that timezone (unlike Javascript) may not be local.
+     * @see TimeLocal
+     * @see Time::getDateISOlocal()
+     * @see Time::getTimeISOlocal()
+     * @see Time::getDateTimeISOlocal()
+     *
      * @return int
      */
     public function getMonth() : int
@@ -432,6 +535,12 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Beware that timezone (unlike Javascript) may not be local.
+     * @see TimeLocal
+     * @see Time::getDateISOlocal()
+     * @see Time::getTimeISOlocal()
+     * @see Time::getDateTimeISOlocal()
+     *
      * @return int
      */
     public function getDate() : int
@@ -440,6 +549,12 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Beware that timezone (unlike Javascript) may not be local.
+     * @see TimeLocal
+     * @see Time::getDateISOlocal()
+     * @see Time::getTimeISOlocal()
+     * @see Time::getDateTimeISOlocal()
+     *
      * @return int
      */
     public function getHours() : int
@@ -448,6 +563,12 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Beware that timezone (unlike Javascript) may not be local.
+     * @see TimeLocal
+     * @see Time::getDateISOlocal()
+     * @see Time::getTimeISOlocal()
+     * @see Time::getDateTimeISOlocal()
+     *
      * @return int
      */
     public function getMinutes() : int
@@ -456,6 +577,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Timezone independent.
+     *
      * @return int
      */
     public function getSeconds() : int
@@ -464,6 +587,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Timezone independent.
+     *
      * @return int
      */
     public function getMilliseconds() : int
@@ -472,6 +597,8 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Timezone independent.
+     *
      * @return int
      */
     public function getMicroseconds() : int
@@ -480,17 +607,22 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * Format to Y-m-d.
+     * Format to Y-m-d, using local (default) timezone.
      *
      * @return string
      */
     public function getDateISOlocal() : string
     {
-        return $this->format('Y-m-d');
+        if ($this->timezoneOffsetIsLocal) {
+            $that = $this;
+        } else {
+            $that = (clone $this)->setTimezone(new \DateTimeZone(static::$timezoneLocalName));
+        }
+        return $that->format('Y-m-d');
     }
 
     /**
-     * Format to H:i:s|H:i.
+     * Format to H:i:s|H:i, using local (default) timezone.
      *
      * @param bool $noSeconds
      *
@@ -498,11 +630,16 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function getTimeISOlocal(bool $noSeconds = false) : string
     {
-        return $this->format(!$noSeconds ? 'H:i:s' : 'H:i');
+        if ($this->timezoneOffsetIsLocal) {
+            $that = $this;
+        } else {
+            $that = (clone $this)->setTimezone(new \DateTimeZone(static::$timezoneLocalName));
+        }
+        return $that->format(!$noSeconds ? 'H:i:s' : 'H:i');
     }
 
     /**
-     * Format to Y-m-d H:i:s|Y-m-d H:i.
+     * Format to Y-m-d H:i:s|Y-m-d H:i, using local (default) timezone.
      *
      * @param bool $noSeconds
      *
@@ -510,7 +647,12 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function getDateTimeISOlocal(bool $noSeconds = false) : string
     {
-        return $this->format(!$noSeconds ? 'Y-m-d H:i:s' : 'Y-m-d H:i');
+        if ($this->timezoneOffsetIsLocal) {
+            $that = $this;
+        } else {
+            $that = (clone $this)->setTimezone(new \DateTimeZone(static::$timezoneLocalName));
+        }
+        return $that->format(!$noSeconds ? 'Y-m-d H:i:s' : 'Y-m-d H:i');
     }
 
     /**
