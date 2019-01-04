@@ -38,6 +38,11 @@ class Time extends \DateTime implements \JsonSerializable
      * Beware of changing default timezone after using a Time object.
      * @see date_default_timezone_set()
      *
+     * Have to memorize the offset separately from the DateTimeZone object,
+     * because the offset cannot (easily) be established from that object
+     * directly; DateTimeZone::getTransitions() or via construction
+     * of a DateTime using the DateTimeZone object.
+     *
      * @var int
      */
     protected static $timezoneLocalOffset;
@@ -64,7 +69,34 @@ class Time extends \DateTime implements \JsonSerializable
     protected $jsonSerializePrecision = '';
 
     /**
+     * Get the local (default) timezone which gets memorized first time
+     * the Time constructor gets called.
+     *
+     * @see Time::$timezoneLocal
+     * @see Time::$timezoneLocalOffset
+     *
+     * @param bool $offset
+     *      True: get offset, not the timezone object.
+     *
+     * @return \DateTimeZone|int
+     */
+    public static function getTimezoneLocalInternal(bool $offset = false)
+    {
+        if ($offset) {
+            return static::$timezoneLocalOffset;
+        }
+        return static::$timezoneLocal;
+    }
+
+    /**
      * Check that default timezone has offset equivalent of arg timezoneAllowed.
+     *
+     * Call to ensure that local default timezone is set, and accords with what
+     * is expected.
+     *
+     * Does NOT rely on (use) the internally memorized local (default) timezone
+     * object which get established first time the Time constructor gets called.
+     * @see Time::$timezoneLocal
      *
      * @param string $timezoneAllowed
      *      Examples: 'Z', 'UTC', 'Europe/Copenhagen'.

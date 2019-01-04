@@ -6,6 +6,7 @@ SimpleComplex/Utils 1.x, 2019-01-04
   ensure local timezone.
 - TimeLocal and TimeLocalFreezable secures that a new object uses a timezone
   compatible with local timezone.
+- Static Time::getTimezoneLocalInternal().
 
 SimpleComplex/Utils 1.x, 2018-12-17
 -----------------------------------
