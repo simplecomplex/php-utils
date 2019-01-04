@@ -7,6 +7,7 @@ SimpleComplex/Utils 1.x, 2019-01-04
 - TimeLocal and TimeLocalFreezable secures that a new object uses a timezone
   compatible with local timezone.
 - Static Time::getTimezoneLocalInternal().
+- phpunit's assert... methods are static, not instance methods.
 
 SimpleComplex/Utils 1.x, 2018-12-17
 -----------------------------------

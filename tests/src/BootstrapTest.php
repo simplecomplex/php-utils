@@ -41,7 +41,7 @@ class BootstrapTest extends TestCase
 
         $container = Dependency::container();
 
-        $this->assertInstanceOf(ContainerInterface::class, $container);
+        static::assertInstanceOf(ContainerInterface::class, $container);
 
         return $container;
     }

@@ -30,7 +30,7 @@ class TimeTest extends TestCase
     public function testInstantiation()
     {
         $container = (new BootstrapTest())->testDependencies();
-        $this->assertInstanceOf(ContainerInterface::class, $container);
+        static::assertInstanceOf(ContainerInterface::class, $container);
     }
 
     /**
@@ -41,19 +41,19 @@ class TimeTest extends TestCase
     public function testValidateTimezoneDefault()
     {
         $timezone_default = date_default_timezone_get();
-        $this->assertTrue(Time::checkTimezoneDefault($timezone_default));
+        static::assertTrue(Time::checkTimezoneDefault($timezone_default));
 
         $offset_default = (new Time())->getOffset();
-        $this->assertInternalType('int', $offset_default);
+        static::assertInternalType('int', $offset_default);
         if (!$offset_default) {
-            $this->assertTrue(Time::checkTimezoneDefault('UTC'));
-            $this->assertFalse(Time::checkTimezoneDefault('Europe/Copenhagen'));
+            static::assertTrue(Time::checkTimezoneDefault('UTC'));
+            static::assertFalse(Time::checkTimezoneDefault('Europe/Copenhagen'));
             /**
              * @throws \LogicException
              */
             Time::checkTimezoneDefault('Europe/Copenhagen', true);
         } else {
-            $this->assertFalse(Time::checkTimezoneDefault('UTC'));
+            static::assertFalse(Time::checkTimezoneDefault('UTC'));
             /**
              * @throws \LogicException
              */
@@ -69,12 +69,12 @@ class TimeTest extends TestCase
         $time = new Time('2018-01-01');
 
         $years = $months = $days = 1;
-        $this->assertSame('2018-01-01', (clone $time)->modifyDate(0, 0)->getDateISO());
-        $this->assertSame('2019-02-02', (clone $time)->modifyDate($years, $months, $days)->getDateISO());
+        static::assertSame('2018-01-01', (clone $time)->modifyDate(0, 0)->getDateISO());
+        static::assertSame('2019-02-02', (clone $time)->modifyDate($years, $months, $days)->getDateISO());
         // 2017-01-01
         // 2016-12-01
         // 2016-11-30
-        $this->assertSame('2016-11-30', (clone $time)->modifyDate(-$years, -$months, -$days)->getDateISO());
+        static::assertSame('2016-11-30', (clone $time)->modifyDate(-$years, -$months, -$days)->getDateISO());
 
         // Modifying month only.------------------------------------------------
         $log = [];
@@ -100,7 +100,7 @@ class TimeTest extends TestCase
                 $yr += 2;
                 $mnth += ($months - 24);
             }
-            $this->assertSame(
+            static::assertSame(
                 ($yr)
                 . '-' . str_pad('' . $mnth, 2, '0', STR_PAD_LEFT)
                 . '-' . str_pad('' . ($day), 2, '0', STR_PAD_LEFT),
@@ -130,7 +130,7 @@ class TimeTest extends TestCase
                 $yr -= 2;
                 $mnth += ($months + 24);
             }
-            $this->assertSame(
+            static::assertSame(
                 ($yr)
                 . '-' . str_pad('' . $mnth, 2, '0', STR_PAD_LEFT)
                 . '-' . str_pad('' . ($day), 2, '0', STR_PAD_LEFT),
@@ -160,7 +160,7 @@ class TimeTest extends TestCase
                 $yr += 2;
                 $mnth += ($months - 24);
             }
-            $this->assertSame(
+            static::assertSame(
                 ($yr)
                 . '-' . str_pad('' . $mnth, 2, '0', STR_PAD_LEFT)
                 . '-' . str_pad('' . ($day), 2, '0', STR_PAD_LEFT),
@@ -190,7 +190,7 @@ class TimeTest extends TestCase
                 $yr -= 2;
                 $mnth += ($months + 24);
             }
-            $this->assertSame(
+            static::assertSame(
                 ($yr)
                 . '-' . str_pad('' . $mnth, 2, '0', STR_PAD_LEFT)
                 . '-' . str_pad('' . ($day), 2, '0', STR_PAD_LEFT),
@@ -205,23 +205,23 @@ class TimeTest extends TestCase
 
         // Days only.
         $time = new Time('2018-01-01');
-        $this->assertSame('2018-01-02', (clone $time)->modifyDate(0, 0, 1)->getDateISO());
+        static::assertSame('2018-01-02', (clone $time)->modifyDate(0, 0, 1)->getDateISO());
 
         // Last day of February.
         $time = new Time('2018-01-31');
-        $this->assertSame('2018-02-28', (clone $time)->modifyDate(0, 1)->getDateISO());
+        static::assertSame('2018-02-28', (clone $time)->modifyDate(0, 1)->getDateISO());
         // Leap year last day of February.
-        $this->assertSame('2020-02-29', (clone $time)->modifyDate(2, 1)->getDateISO());
+        static::assertSame('2020-02-29', (clone $time)->modifyDate(2, 1)->getDateISO());
 
         // Last day of February.
         $time = new Time('2018-01-01');
-        $this->assertSame('2018-02-28', (clone $time)->modifyDate(0, 1)->setToLastDayOfMonth()->getDateISO());
+        static::assertSame('2018-02-28', (clone $time)->modifyDate(0, 1)->setToLastDayOfMonth()->getDateISO());
         $time = new Time('2018-03-31');
-        $this->assertSame('2018-02-28', (clone $time)->modifyDate(0, -1)->getDateISO());
+        static::assertSame('2018-02-28', (clone $time)->modifyDate(0, -1)->getDateISO());
 
 
         $time = new Time('2018-01-01');
-        $this->assertSame('2018-02-20', (clone $time)->modifyDate(0, 0, 50)->getDateISO());
+        static::assertSame('2018-02-20', (clone $time)->modifyDate(0, 0, 50)->getDateISO());
     }
 
     /**
@@ -230,8 +230,8 @@ class TimeTest extends TestCase
     public function testModifyTime()
     {
         $time = new Time('2018-01-01 15:37:13');
-        $this->assertSame('2018-01-01 16:38:14', (clone $time)->modifyTime(1, 1, 1)->getDateTimeISO());
-        $this->assertSame('2018-01-02 16:38:14', (clone $time)->modifyTime(25, 1, 1)->getDateTimeISO());
-        $this->assertSame('2017-12-31 14:36:12', (clone $time)->modifyTime(-25, -1, -1)->getDateTimeISO());
+        static::assertSame('2018-01-01 16:38:14', (clone $time)->modifyTime(1, 1, 1)->getDateTimeISO());
+        static::assertSame('2018-01-02 16:38:14', (clone $time)->modifyTime(25, 1, 1)->getDateTimeISO());
+        static::assertSame('2017-12-31 14:36:12', (clone $time)->modifyTime(-25, -1, -1)->getDateTimeISO());
     }
 }
