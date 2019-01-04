@@ -41,7 +41,7 @@ class TimeLocal extends Time
     {
         parent::__construct($time, $timezone);
         if (!$this->timezoneOffsetIsLocal) {
-            $this->setTimezone((new \DateTime())->getTimezone());
+            $this->setTimezone(static::$timezoneLocal);
         }
     }
 }
