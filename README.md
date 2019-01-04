@@ -36,6 +36,23 @@ php cli.php utils-xxx -h
 php cli.php utils-execute include-file
 ```
 
+#### Time ####
+
+**``` Time ```** extends the native DateTime class to provide more, simpler and safer getters and setters.  
+
+It's inspired by Javascript's Date class, and also secures better Javascript interoperability
+by JSON serialization to ISO-8601 timestamp string - _not_ a phoney Javascript object representing a DateTime's inner properties. 
+
+And ``` Time ``` is stringable (sic!), to ISO-8601.
+
+Derivative classes **``` TimeLocal ```**, **``` TimeFreezable ```** provider further means for safe DateTime handling,
+along with **``` TimeIntervalConstant ```**.
+
+#### Explorable ####
+
+The abstract **``` Explorable ```** class provides simple means for making protected members of an object readable,  
+and optionally mutable via dedicated methods.
+
 #### Odds and ends ####
 
 **``` Unicode ```** abstracts mbstring.

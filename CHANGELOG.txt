@@ -8,6 +8,7 @@ SimpleComplex/Utils 1.x, 2019-01-04
   compatible with local timezone.
 - Static Time::getTimezoneLocalInternal().
 - phpunit's assert... methods are static, not instance methods.
+- Release 1.10.
 
 SimpleComplex/Utils 1.x, 2018-12-17
 -----------------------------------
