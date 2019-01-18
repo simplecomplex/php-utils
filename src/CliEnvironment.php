@@ -138,6 +138,11 @@ class CliEnvironment extends Explorable implements CliCommandInterface
      */
     const MESSAGE_STATUS = [
         // Light red.
+        'failure' => "\033[01;31m[error]\033[0m",
+        // Syslog levels.
+        'emergency' => "\033[01;31m[error]\033[0m",
+        'alert' => "\033[01;31m[error]\033[0m",
+        'critical' => "\033[01;31m[error]\033[0m",
         'error' => "\033[01;31m[error]\033[0m",
         // Light yellow.
         'warning' => "\033[01;33m[warning]\033[0m",
@@ -145,6 +150,8 @@ class CliEnvironment extends Explorable implements CliCommandInterface
         'notice' => "\033[01;36m[notice]\033[0m",
         // White.
         'info' => "\033[01;37m[info]\033[0m",
+        'debug' => "\033[01;37m[info]\033[0m",
+        // /Syslog levels.
         // Light green.
         'success' => "\033[01;32m[success]\033[0m",
     ];
