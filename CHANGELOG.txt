@@ -1,3 +1,8 @@
+SimpleComplex/Utils 1.x, 2019-01-21
+-----------------------------------
+- Custom exception class accommodating user message.
+- Release 1.11.
+
 SimpleComplex/Utils 1.x, 2019-01-18
 -----------------------------------
 - CLI echoMessage() status argument must support all syslog severity levels.
