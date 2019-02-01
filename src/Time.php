@@ -343,6 +343,35 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Set to first day of a month.
+     *
+     * @param int|null $month
+     *      Null: month of this object.
+     *
+     * @return Time
+     *
+     * @throws \InvalidArgumentException
+     *      Arg month not null or 1 through 12.
+     */
+    public function setToFirstDayOfMonth(int $month = null) : Time
+    {
+        if ($month !== null) {
+            if ($month < 1 || $month > 12) {
+                throw new \InvalidArgumentException('Arg month[' . $month . '] isn\'t null or 1 through 12.');
+            }
+            $mnth = $month;
+        } else {
+            $mnth = (int) $this->format('m');
+        }
+
+        return $this->setDate(
+            (int) $this->format('Y'),
+            $mnth,
+            1
+        );
+    }
+
+    /**
      * Set to last day of a month.
      *
      * @param int|null $month
