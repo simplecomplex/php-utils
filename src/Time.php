@@ -2,7 +2,7 @@
 /**
  * SimpleComplex PHP Utils
  * @link      https://github.com/simplecomplex/php-utils
- * @copyright Copyright (c) 2017-2018 Jacob Friis Mathiasen
+ * @copyright Copyright (c) 2017-2019 Jacob Friis Mathiasen
  * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
  */
 declare(strict_types=1);
@@ -340,6 +340,35 @@ class Time extends \DateTime implements \JsonSerializable
     public function setToDateStart() : Time
     {
         return $this->setTime(0, 0, 0, 0);
+    }
+
+    /**
+     * Set to first day of a month.
+     *
+     * @param int|null $month
+     *      Null: month of this object.
+     *
+     * @return Time
+     *
+     * @throws \InvalidArgumentException
+     *      Arg month not null or 1 through 12.
+     */
+    public function setToFirstDayOfMonth(int $month = null) : Time
+    {
+        if ($month !== null) {
+            if ($month < 1 || $month > 12) {
+                throw new \InvalidArgumentException('Arg month[' . $month . '] isn\'t null or 1 through 12.');
+            }
+            $mnth = $month;
+        } else {
+            $mnth = (int) $this->format('m');
+        }
+
+        return $this->setDate(
+            (int) $this->format('Y'),
+            $mnth,
+            1
+        );
     }
 
     /**

@@ -2,6 +2,8 @@ SimpleComplex/Utils 1.x, 2019-01-21
 -----------------------------------
 - Custom exception class accommodating user message.
 - Release 1.11.
+- StdObject class which supports setting properties during initialization
+  and is stringable.
 
 SimpleComplex/Utils 1.x, 2019-01-18
 -----------------------------------
