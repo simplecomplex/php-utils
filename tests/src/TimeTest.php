@@ -43,9 +43,8 @@ class TimeTest extends TestCase
         $timezone_default = date_default_timezone_get();
         static::assertTrue(Time::checkTimezoneDefault($timezone_default));
 
-        $offset_default = (new Time())->getOffset();
-        static::assertInternalType('int', $offset_default);
-        if (!$offset_default) {
+        $tz_default = (new Time())->getTimezone()->getName();
+        if ($tz_default == 'UTC' || $tz_default == 'Z') {
             static::assertTrue(Time::checkTimezoneDefault('UTC'));
             static::assertFalse(Time::checkTimezoneDefault('Europe/Copenhagen'));
             /**
@@ -237,6 +236,8 @@ class TimeTest extends TestCase
 
     /**
      * @see \SimpleComplex\Utils\Time::diffConstant()
+     *
+     * @expectedException \RuntimeException
      */
     public function testDiffConstant()
     {
@@ -262,5 +263,12 @@ class TimeTest extends TestCase
         static::assertSame(1, $first->diffConstant($last)->totalMonths);
 
         date_default_timezone_set($tz_default);
+
+        /**
+         * Throws exception because the two date don't have the same timezone.
+         * @see \SimpleComplex\Utils\Time::diffConstant()
+         */
+        $last = (new Time('2019-03-01', new \DateTimeZone('UTC')))->setToDateStart();
+        static::assertSame(1, $first->diffConstant($last)->totalMonths);
     }
 }

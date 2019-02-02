@@ -10,8 +10,8 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * Time which uses local (default) timezone, or secures that timezone offset
- * matches local timezone offset.
+ * Time which uses local (default) timezone, or secures that timezone
+ * matches local timezone.
  *
  * Secures that presumable (but not actual) local timezone getters return
  * values according to local timezone.
@@ -31,8 +31,8 @@ namespace SimpleComplex\Utils;
 class TimeLocal extends Time
 {
     /**
-     * Sets timezone to local (default) upon initial construction, if the
-     * timezone offset doesn't match local timezone offset.
+     * Sets timezone to local (default) upon initial construction,
+     * if the timezone doesn't match local timezone.
      *
      * @param string $time
      * @param \DateTimeZone $timezone
@@ -40,7 +40,7 @@ class TimeLocal extends Time
     public function __construct($time = 'now', /*\DateTimeZone*/ $timezone = null)
     {
         parent::__construct($time, $timezone);
-        if (!$this->timezoneOffsetIsLocal) {
+        if (!$this->timezoneIsLocal) {
             $this->setTimezone(static::$timezoneLocal);
         }
     }

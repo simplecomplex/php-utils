@@ -30,33 +30,39 @@ class Time extends \DateTime implements \JsonSerializable
     protected static $timezoneLocal;
 
     /**
-     * Offset of local (default) timezone.
+     * Local (default) timezone name.
      *
-     * Gets established once; first time a Time object is constructed.
-     * @see Time::__construct()
+     * 'Z' is recorded as 'UTC', to ease comparison;
+     * they are considered the same.
      *
-     * Beware of changing default timezone after using a Time object.
-     * @see date_default_timezone_set()
-     *
-     * Have to memorize the offset separately from the DateTimeZone object,
-     * because the offset cannot (easily) be established from that object
-     * directly; DateTimeZone::getTransitions() or via construction
-     * of a DateTime using the DateTimeZone object.
-     *
-     * @var int
+     * @var string
      */
-    protected static $timezoneLocalOffset;
+    protected static $timezoneLocalName;
 
     /**
-     * Whether this object's timezone offset matches local (default) offset.
+     * This object's timezone name.
      *
-     * @see Time::offsetIsLocal()
+     * 'Z' is recorded as 'UTC', to ease comparison;
+     * they are considered the same.
+     *
+     * @see Time::timezoneIsLocal()
+     * @see Time::__construct()
+     * @see Time::setTimezone()
+     *
+     * @var string
+     */
+    protected $timezoneName;
+
+    /**
+     * Whether this object's timezone is same as local (default) timezone.
+     *
+     * @see Time::timezoneIsLocal()
      * @see Time::__construct()
      * @see Time::setTimezone()
      *
      * @var bool|null
      */
-    protected $timezoneOffsetIsLocal;
+    protected $timezoneIsLocal;
 
     /**
      * Values: (empty)|milliseconds|microseconds; default empty.
@@ -72,24 +78,21 @@ class Time extends \DateTime implements \JsonSerializable
      * Get the local (default) timezone which gets memorized first time
      * the Time constructor gets called.
      *
-     * @see Time::$timezoneLocal
-     * @see Time::$timezoneLocalOffset
+     * Returns clone to prevent tampering.
      *
-     * @param bool $offset
-     *      True: get offset, not the timezone object.
+     * @see Time::timezoneIsLocal()
+     * @see Time::$timezoneLocal
+     * @see Time::$timezoneLocalName
      *
      * @return \DateTimeZone|int
      */
-    public static function getTimezoneLocalInternal(bool $offset = false)
+    public static function getTimezoneLocalInternal()
     {
-        if ($offset) {
-            return static::$timezoneLocalOffset;
-        }
-        return static::$timezoneLocal;
+        return clone static::$timezoneLocal;
     }
 
     /**
-     * Check that default timezone has offset equivalent of arg timezoneAllowed.
+     * Check that default timezone is equivalent of arg timezoneAllowed.
      *
      * Call to ensure that local default timezone is set, and accords with what
      * is expected.
@@ -99,8 +102,8 @@ class Time extends \DateTime implements \JsonSerializable
      * @see Time::$timezoneLocal
      *
      * @param string $timezoneAllowed
-     *      Examples: 'Z', 'UTC', 'Europe/Copenhagen'.
-     *      Z and UTC seem to be the same.
+     *      Examples: 'UTC', 'Z', 'Europe/Copenhagen'.
+     *      UTC and Z are considered the same.
      * @param bool $errOnMisMatch
      *      True: throws exception on timezone mismatch.
      *
@@ -112,19 +115,20 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public static function checkTimezoneDefault(string $timezoneAllowed, bool $errOnMisMatch = false) : bool
     {
-        // Have to create \DateTimes because \DateTimeZone constructor
-        // requires a timezone argument, and \DateTimeZone::getOffset()
-        // requires a \DateTime argument.
         $time_default = new \DateTime();
-        $offset_default = $time_default->getOffset();
-        $time_allowed = new \DateTime('now', new \DateTimeZone($timezoneAllowed));
-        $offset_allowed = $time_allowed->getOffset();
-        if ($offset_default !== $offset_allowed) {
+        $tz_default = $time_default->getTimezone()->getName();
+        if (
+            ($timezoneAllowed == 'UTC' || $timezoneAllowed == 'Z')
+            && ($tz_default == 'UTC' || $tz_default == 'Z')
+        ) {
+            return true;
+        }
+        if ($tz_default != $timezoneAllowed) {
             if ($errOnMisMatch) {
                 throw new \LogicException(
-                    'Illegal timezone[' . $time_default->getTimezone()->getName() . '] offset[' . $offset_default . ']'
-                    . ', must be equivalent of timezone[' . $timezoneAllowed . '] with offset[' . $offset_allowed
-                    . '], date.timezone ' . (!ini_get('date.timezone') ? 'not set in php.ini.' :
+                    'Default timezone[' . $tz_default. '] doesn\'t match allowed timezone[' . $timezoneAllowed
+                    . '], date.timezone '
+                    . (!ini_get('date.timezone') ? 'not set in php.ini.' :
                         'of php.ini is \'' . ini_get('date.timezone') . '\'.'
                     )
                 );
@@ -173,12 +177,10 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * Checks whether the new object's timezone matches local (default) offset.
-     * @see Time::offsetIsLocal()
+     * Checks whether the new object's timezone matches local (default) timezone.
      *
      * Memorizes local (default) timezone first time called.
-     * @see Time::$timezoneLocal
-     * @see Time::$timezoneLocalOffset
+     * @see Time::timezoneIsLocal()
      *
      * @param string $time
      * @param \DateTimeZone $timezone
@@ -186,19 +188,25 @@ class Time extends \DateTime implements \JsonSerializable
     public function __construct($time = 'now', /*\DateTimeZone*/ $timezone = null)
     {
         parent::__construct($time, $timezone);
-        // Memorize local (default) timezone name and offset once and for all.
+        // Memorize local (default) timezone once and for all.
         if (!static::$timezoneLocal) {
             $time_default = new \DateTime();
-            static::$timezoneLocal = $time_default->getTimezone();
-            static::$timezoneLocalOffset = $time_default->getOffset();
+            static::$timezoneLocal = $tz = $time_default->getTimezone();
+            $tz_name = $tz->getName();
+            static::$timezoneLocalName = $tz_name == 'Z' ? 'UTC' : $tz_name;
         }
-        // Flag whether this object's timezone offset matches local (default).
-        $this->timezoneOffsetIsLocal = $this->getOffset() == static::$timezoneLocalOffset;
+        // Flag whether this object's timezone is same as local (default).
+        $tz_name = $this->getTimezone()->getName();
+        if ($tz_name == 'Z') {
+            $tz_name = 'UTC';
+        }
+        $this->timezoneName = $tz_name;
+        $this->timezoneIsLocal = $tz_name == static::$timezoneLocalName;
     }
 
     /**
-     * Checks whether the object's new timezone matches local (default) offset.
-     * @see Time::offsetIsLocal()
+     * Checks whether the object's new timezone matches local (default) timezone.
+     * @see Time::timezoneIsLocal()
      *
      * @param \DateTimeZone $timezone
      *
@@ -210,8 +218,13 @@ class Time extends \DateTime implements \JsonSerializable
     public function setTimezone($timezone) : \DateTime /*self invariant*/
     {
         parent::setTimezone($timezone);
-        // Flag whether this object's timezone offset matches local (default).
-        $this->timezoneOffsetIsLocal = $this->getOffset() == static::$timezoneLocalOffset;
+        // Flag whether this object's timezone is same as local (default).
+        $tz_name = $this->getTimezone()->getName();
+        if ($tz_name == 'Z') {
+            $tz_name = 'UTC';
+        }
+        $this->timezoneName = $tz_name;
+        $this->timezoneIsLocal = $tz_name == static::$timezoneLocalName;
         return $this;
     }
 
@@ -227,13 +240,24 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * Whether this object's timezone offset matches local (default) offset.
+     * @deprecated Use timezoneIsLocal() instead.
+     * @see Time::timezoneIsLocal()
      *
      * @return bool
      */
     public function offsetIsLocal() : bool
     {
-        return $this->timezoneOffsetIsLocal;
+        return $this->timezoneIsLocal;
+    }
+
+    /**
+     * Whether this object's timezone is same as local (default) timezone.
+     *
+     * @return bool
+     */
+    public function timezoneIsLocal() : bool
+    {
+        return $this->timezoneIsLocal;
     }
 
     /**
@@ -260,21 +284,36 @@ class Time extends \DateTime implements \JsonSerializable
      *      Supposedly equal to or later than this time.
      *
      * @return TimeIntervalConstant
+     *
+     * @throws \RuntimeException
+     *      If this and arg dateTime don't have the same timezone.
      */
     public function diffConstant(\DateTimeInterface $dateTime) : TimeIntervalConstant
     {
+        $tz_name = $dateTime->getTimezone()->getName();
+        if ($tz_name == 'Z') {
+            $tz_name = 'UTC';
+        }
+        // When native diff()|\DateInterval fails for non-UTC datetime
+        // then comparing datetimes with differing timezone certainly
+        // will fail too.
+        if ($tz_name != $this->timezoneName) {
+            throw new \RuntimeException(
+                'Cannot diff DateTimes that don\'t have the same timezone, saw this timezone[' . $this->timezoneName
+                . '] and arg dateTime timezone[' . $tz_name . '].'
+            );
+        }
+        // Swell, both are UTC.
+        if ($tz_name == 'UTC') {
+            return new TimeIntervalConstant($this->diff($dateTime));
+        }
         // Use UTC equivalent DateTimes.
-        $baseline = $this;
-        $deviant = $dateTime;
-        $tz_utc = null;
-        if ($baseline->getOffset()) {
-            $tz_utc = new \DateTimeZone('UTC');
-            $baseline = new \DateTime($this->format('Y-m-d H:i:s.u'), $tz_utc);
-        }
-        if ($deviant->getOffset()) {
-            $deviant = new \DateTime($deviant->format('Y-m-d H:i:s.u'), $tz_utc ?? new \DateTimeZone('UTC'));
-        }
-        return new TimeIntervalConstant($baseline->diff($deviant));
+        $tz_utc = new \DateTimeZone('UTC');
+        return new TimeIntervalConstant(
+            (new \DateTime($this->format('Y-m-d H:i:s.u'), $tz_utc))->diff(
+                new \DateTime($dateTime->format('Y-m-d H:i:s.u'), $tz_utc)
+            )
+        );
     }
 
     /**
@@ -811,7 +850,7 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function toDateISOLocal() : string
     {
-        if ($this->timezoneOffsetIsLocal) {
+        if ($this->timezoneIsLocal) {
             $that = $this;
         } else {
             $that = (clone $this)->setTimezone(static::$timezoneLocal);
@@ -830,7 +869,7 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function toTimeISOLocal(bool $noSeconds = false) : string
     {
-        if ($this->timezoneOffsetIsLocal) {
+        if ($this->timezoneIsLocal) {
             $that = $this;
         } else {
             $that = (clone $this)->setTimezone(static::$timezoneLocal);
@@ -849,7 +888,7 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function toDateTimeISOLocal(bool $noSeconds = false) : string
     {
-        if ($this->timezoneOffsetIsLocal) {
+        if ($this->timezoneIsLocal) {
             $that = $this;
         } else {
             $that = (clone $this)->setTimezone(static::$timezoneLocal);
