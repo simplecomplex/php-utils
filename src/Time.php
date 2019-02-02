@@ -248,7 +248,13 @@ class Time extends \DateTime implements \JsonSerializable
 
     /**
      * Get interval as constant immutable object,
-     * a wrapped DateInterval with user-friendy methods for getting signed total
+     * a wrapped DateInterval with user-friendy methods for getting signed total.
+     *
+     * Fixes that native diff()|\DateInterval calculation doesn't work correctly
+     * with other timezone than UTC.
+     * @see https://bugs.php.net/bug.php?id=52480
+     * @see \DateTime::diff()
+     * @see \DateInterval
      *
      * @param \DateTimeInterface $dateTime
      *      Supposedly equal to or later than this time.
@@ -257,7 +263,18 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function diffConstant(\DateTimeInterface $dateTime) : TimeIntervalConstant
     {
-        return new TimeIntervalConstant($this->diff($dateTime));
+        // Use UTC equivalent DateTimes.
+        $baseline = $this;
+        $deviant = $dateTime;
+        $tz_utc = null;
+        if ($baseline->getOffset()) {
+            $tz_utc = new \DateTimeZone('UTC');
+            $baseline = new \DateTime($this->format('Y-m-d H:i:s.u'), $tz_utc);
+        }
+        if ($deviant->getOffset()) {
+            $deviant = new \DateTime($deviant->format('Y-m-d H:i:s.u'), $tz_utc ?? new \DateTimeZone('UTC'));
+        }
+        return new TimeIntervalConstant($baseline->diff($deviant));
     }
 
     /**
