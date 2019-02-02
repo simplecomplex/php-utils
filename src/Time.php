@@ -274,6 +274,14 @@ class Time extends \DateTime implements \JsonSerializable
      * Get interval as constant immutable object,
      * a wrapped DateInterval with user-friendy methods for getting signed total.
      *
+     * Comparison when non-UTC timezone
+     * --------------------------------
+     * Baseline (this): uses verbatim clone, but with UTC timezone.
+     * Deviant (arg dateTime) when same timezone as baseline:
+     * uses verbatim clone, but with UTC timezone.
+     * Deviant when dissimilar timezone from baseline (and truthy arg
+     * allowUnEqualTimezones): sets timezone of clone to UTC.
+     *
      * Fixes that native diff()|\DateInterval calculation doesn't work correctly
      * with other timezone than UTC.
      * @see https://bugs.php.net/bug.php?id=52480
@@ -282,38 +290,69 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * @param \DateTimeInterface $dateTime
      *      Supposedly equal to or later than this time.
+     * @param bool $allowUnEqualTimezones
+     *      Err if the two datetimes have dissimilar timezones.
      *
      * @return TimeIntervalConstant
      *
      * @throws \RuntimeException
      *      If this and arg dateTime don't have the same timezone.
      */
-    public function diffConstant(\DateTimeInterface $dateTime) : TimeIntervalConstant
+    public function diffConstant(\DateTimeInterface $dateTime, bool $allowUnEqualTimezones = false) : TimeIntervalConstant
     {
-        $tz_name = $dateTime->getTimezone()->getName();
+        $baseline = $this;
+        $deviant = $dateTime;
+        $tz_utc = null;
+
+        if ($this->timezoneName != 'UTC') {
+            $tz_utc = new \DateTimeZone('UTC');
+            // Do verbatim comparison.
+            $baseline = new \DateTime($this->format('Y-m-d H:i:s.u'), $tz_utc);
+        }
+
+        $tz_name = $deviant->getTimezone()->getName();
         if ($tz_name == 'Z') {
             $tz_name = 'UTC';
         }
-        // When native diff()|\DateInterval fails for non-UTC datetime
-        // then comparing datetimes with differing timezone certainly
-        // will fail too.
-        if ($tz_name != $this->timezoneName) {
-            throw new \RuntimeException(
-                'Cannot diff DateTimes that don\'t have the same timezone, saw this timezone[' . $this->timezoneName
-                . '] and arg dateTime timezone[' . $tz_name . '].'
-            );
+
+        if ($tz_name != 'UTC') {
+            if ($tz_name == $this->timezoneName || ($dateTime->getOffset() == $this->getOffset())) {
+                // Do verbatim comparison.
+                $deviant = new \DateTime($dateTime->format('Y-m-d H:i:s.u'), $tz_utc ?? new \DateTimeZone('UTC'));
+            }
+            elseif (!$allowUnEqualTimezones) {
+                throw new \RuntimeException(
+                    'Will not diff DateTimes that don\'t have the same timezone, saw this timezone[' . $this->timezoneName
+                    . '] and arg dateTime timezone[' . $tz_name . '].'
+                );
+            }
+            else {
+                // Move into UTC timezone.
+                if ($dateTime instanceof \DateTime) {
+                    $deviant = (clone $dateTime)->setTimezone($tz_utc ?? new \DateTimeZone('UTC'));
+                }
+                elseif ($dateTime instanceof \DateTimeImmutable) {
+                    // No need to clone explicitly; immutable returns clone.
+                    $deviant = $dateTime->setTimezone($tz_utc ?? new \DateTimeZone('UTC'));
+                }
+                /**
+                 * DateTimeInterface doesn't dictate a setTimezone() method.
+                 * @see \DateTimeInterface
+                 */
+                elseif (method_exists($dateTime, 'setTimezone')) {
+                    // IDE: we just checked that that method exists.
+                    $deviant = (clone $dateTime)->setTimezone($tz_utc ?? new \DateTimeZone('UTC'));
+                }
+                else {
+                    throw new \RuntimeException(
+                        'Cannot diff non-UTC DateTimeInterface class[' . get_class($dateTime)
+                        . '] having no setTimezone method, against this Time instance.'
+                    );
+                }
+            }
         }
-        // Swell, both are UTC.
-        if ($tz_name == 'UTC') {
-            return new TimeIntervalConstant($this->diff($dateTime));
-        }
-        // Use UTC equivalent DateTimes.
-        $tz_utc = new \DateTimeZone('UTC');
-        return new TimeIntervalConstant(
-            (new \DateTime($this->format('Y-m-d H:i:s.u'), $tz_utc))->diff(
-                new \DateTime($dateTime->format('Y-m-d H:i:s.u'), $tz_utc)
-            )
-        );
+
+        return new TimeIntervalConstant($baseline->diff($deviant));
     }
 
     /**
