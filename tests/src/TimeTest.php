@@ -234,4 +234,33 @@ class TimeTest extends TestCase
         static::assertSame('2018-01-02 16:38:14', (clone $time)->modifyTime(25, 1, 1)->getDateTimeISO());
         static::assertSame('2017-12-31 14:36:12', (clone $time)->modifyTime(-25, -1, -1)->getDateTimeISO());
     }
+
+    /**
+     * @see \SimpleComplex\Utils\Time::diffConstant()
+     */
+    public function testDiffConstant()
+    {
+        /**
+         * \SimpleComplex\Utils\Time::diffConstant()
+         *
+         * Fixes that native diff()|\DateInterval calculation doesn't work correctly
+         * with other timezone than UTC.
+         * @see https://bugs.php.net/bug.php?id=52480
+         */
+
+        $tz_default = date_default_timezone_get();
+
+        date_default_timezone_set('UTC');
+        $first = (new Time('2019-02-01'))->setToDateStart();
+        $last = (new Time('2019-03-01'))->setToDateStart();
+        static::assertSame(1, $first->diffConstant($last)->totalMonths);
+
+        // This would fail if that bug wasn't handled.
+        date_default_timezone_set('Europe/Copenhagen');
+        $first = (new Time('2019-02-01'))->setToDateStart();
+        $last = (new Time('2019-03-01'))->setToDateStart();
+        static::assertSame(1, $first->diffConstant($last)->totalMonths);
+
+        date_default_timezone_set($tz_default);
+    }
 }
