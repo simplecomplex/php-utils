@@ -43,9 +43,8 @@ class TimeTest extends TestCase
         $timezone_default = date_default_timezone_get();
         static::assertTrue(Time::checkTimezoneDefault($timezone_default));
 
-        $offset_default = (new Time())->getOffset();
-        static::assertInternalType('int', $offset_default);
-        if (!$offset_default) {
+        $tz_default = (new Time())->getTimezone()->getName();
+        if ($tz_default == 'UTC' || $tz_default == 'Z') {
             static::assertTrue(Time::checkTimezoneDefault('UTC'));
             static::assertFalse(Time::checkTimezoneDefault('Europe/Copenhagen'));
             /**
@@ -237,6 +236,8 @@ class TimeTest extends TestCase
 
     /**
      * @see \SimpleComplex\Utils\Time::diffConstant()
+     *
+     * @expectedException \RuntimeException
      */
     public function testDiffConstant()
     {
@@ -261,6 +262,24 @@ class TimeTest extends TestCase
         $last = (new Time('2019-03-01'))->setToDateStart();
         static::assertSame(1, $first->diffConstant($last)->totalMonths);
 
+        // Reset, for posterity.
         date_default_timezone_set($tz_default);
+
+        // When baseline is non-UTC: use verbatim clone.
+        $first = (new Time('2019-02-01', new \DateTimeZone('Europe/Copenhagen')))->setToDateStart();
+        $last = (new Time('2019-03-01', new \DateTimeZone('UTC')))->setToDateStart();
+        static::assertSame(1, $first->diffConstant($last, true)->totalMonths);
+
+        // When deviant is non-UTC (and base is UTC), move deviant into UTC.
+        $first = (new Time('2019-02-01', new \DateTimeZone('UTC')))->setToDateStart();
+        $last = (new Time('2019-03-01', new \DateTimeZone('Europe/Copenhagen')))->setToDateStart();
+        static::assertSame(0, $first->diffConstant($last, true)->totalMonths);
+
+        /**
+         * Throws exception because the two dates don't have the same timezone,
+         * and falsy arg $allowUnEqualTimezones.
+         * @see \SimpleComplex\Utils\Time::diffConstant()
+         */
+        static::assertSame(0, $first->diffConstant($last, false)->totalMonths);
     }
 }

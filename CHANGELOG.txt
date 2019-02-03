@@ -1,9 +1,24 @@
+SimpleComplex/Utils 1.x, 2019-02-03
+-----------------------------------
+- Release 1.13.
+
 SimpleComplex/Utils 1.x, 2019-02-02
 -----------------------------------
 - Time::diffConstant() must fix that native diff()|\DateInterval calculation
   doesn't work correctly with other timezone than UTC
   (https://bugs.php.net/bug.php?id=52480).
 - Release 1.12.
+- Serious Time bug: using offset to compare timezone is an absolute no-go
+  due to daylight saving time.
+  All timezone comparisions now use timezone name, and the comparisons are only
+  forgiving in the sense that UTC and Z are considered the same.
+  Removed Time instance var timezoneOffsetIsLocal
+  and class var $timezoneLocalOffset.
+  Removed Time::getTimezoneLocalInternal() $offset parameter.
+  Time::getTimezoneLocalInternal() now returns clone, not the actual object.
+  Time::checkTimezoneDefault() now checks name, not offset.
+- Time::diffConstant() now throws exception if the two datetimes
+  don't have comparable timezones and falsy (new) argument allowUnEqualTimezones.
 
 SimpleComplex/Utils 1.x, 2019-01-21
 -----------------------------------

@@ -11,7 +11,10 @@ namespace SimpleComplex\Utils;
 
 /**
  * Freezable Time which uses local (default) timezone, or secures that timezone
- * offset matches local timezone offset.
+ * matches local timezone.
+ *
+ * Works like TimeLocal but cannot extend that class, because of PHP extension
+ * restriction (only one parent).
  *
  * @see \SimpleComplex\Utils\TimeFreezable
  * @see \SimpleComplex\Utils\TimeLocal
@@ -22,7 +25,7 @@ class TimeLocalFreezable extends TimeFreezable
 {
     /**
      * Sets timezone to local (default) upon initial construction, if the
-     * timezone offset doesn't match local timezone offset.
+     * timezone doesn't match local timezone.
      *
      * @param string $time
      * @param \DateTimeZone $timezone
@@ -30,7 +33,7 @@ class TimeLocalFreezable extends TimeFreezable
     public function __construct($time = 'now', /*\DateTimeZone*/ $timezone = null)
     {
         parent::__construct($time, $timezone);
-        if (!$this->timezoneOffsetIsLocal) {
+        if (!$this->timezoneIsLocal) {
             $this->setTimezone(static::$timezoneLocal);
         }
     }
