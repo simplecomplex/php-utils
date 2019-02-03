@@ -1,3 +1,7 @@
+SimpleComplex/Utils 1.x, 2019-02-03
+-----------------------------------
+- Release 1.13.
+
 SimpleComplex/Utils 1.x, 2019-02-02
 -----------------------------------
 - Time::diffConstant() must fix that native diff()|\DateInterval calculation
