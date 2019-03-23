@@ -2,7 +2,7 @@
 /**
  * SimpleComplex PHP Utils
  * @link      https://github.com/simplecomplex/php-utils
- * @copyright Copyright (c) 2017-2018 Jacob Friis Mathiasen
+ * @copyright Copyright (c) 2017-2019 Jacob Friis Mathiasen
  * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
  */
 declare(strict_types=1);
@@ -474,9 +474,11 @@ class Utils
     /**
      * Get all or a single received request header(s) in any server environment.
      *
-     * nginx workaround.
+     * Case-sensitive; fixes case inconsistencies in actual header names,
+     * so that 'content-length' gets listed as 'Content-Length'.
      *
-     * Content-Type and Content-Length are always empty unless POST/PUT request.
+     * Compatible with nginx (and other non-Apache webserver); then uses
+     * HTTP_ and CONTENT_ $_SERVER variables.
      *
      * @param string $name
      *      Empty: get all headers.
@@ -488,54 +490,37 @@ class Utils
     public function getRequestHeader(string $name = '')
     {
         // Save headers, because costly to build if no getallheaders() function.
-        static $headers = [];
-
-        if ($name) {
-            if ($headers) {
-                return $headers[$name] ?? null;
-            }
+        static $headers;
+        if ($headers === null) {
+            $headers = [];
+            // Apache.
             if (function_exists('getallheaders')) {
-                if (!($headers = getallheaders())) {
-                    $headers = [];
+                $hdrs = getallheaders();
+                // getallheaders() may return false; for un-documented reason.
+                if ($hdrs) {
+                    foreach ($hdrs as $key => $val) {
+                        $headers[ucwords(strtolower(str_replace('_', '-', $key)), '-')] = $val;
+                    }
                 }
-                return $headers[$name] ?? null;
             }
-            // nginx + arg name.
-            if (empty($_SERVER)) {
-                return null;
-            }
-            $snake_upper = strtoupper(str_replace('-', '_', $name));
-            if (isset($_SERVER[$snake_upper])) {
-                return $_SERVER[$snake_upper];
-            }
-            return $_SERVER['HTTP_' . $snake_upper] ?? null;
-        }
-        elseif ($headers) {
-            return $headers;
-        }
-        elseif (function_exists('getallheaders')) {
-            if (!($headers = getallheaders())) {
-                $headers = [];
-            }
-            return $headers;
-        }
-
-        // nginx + all headers.
-        if (empty($_SERVER)) {
-            return [];
-        }
-        foreach ($_SERVER as $key => $val) {
-            if (strpos($key, 'HTTP_') === 0) {
-                $headers[ucwords(strtolower(str_replace('_', '-', substr($key, 5))), '-')] = $val;
-            }
-            // Content-Type, Content-Length, Content-Md5 (and possibly more)
-            // don't get HTTP_ prefixed.
-            // Those headers are btw empty unless request method POST/PUT.
-            elseif (strpos($key, 'CONTENT_') === 0) {
-                $headers[ucwords(strtolower(str_replace('_', '-', $key)), '-')] = $val;
+            // nginx (non-Apache).
+            if (!$headers
+                && !empty($_SERVER)
+            ) {
+                foreach ($_SERVER as $key => $val) {
+                    if (strpos($key, 'HTTP_') === 0) {
+                        $headers[ucwords(strtolower(str_replace('_', '-', substr($key, 5))), '-')] = $val;
+                    }
+                    // Content-Type, Content-Length, Content-Md5 (and possibly more)
+                    // don't get HTTP_ prefixed.
+                    // Those headers are btw empty unless request method POST/PUT.
+                    elseif (strpos($key, 'CONTENT_') === 0) {
+                        $headers[ucwords(strtolower(str_replace('_', '-', $key)), '-')] = $val;
+                    }
+                }
             }
         }
-        return $headers;
+        return !$name ? $headers : ($headers[$name] ?? null);
     }
 
     /**
