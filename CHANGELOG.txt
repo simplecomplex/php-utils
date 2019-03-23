@@ -1,3 +1,10 @@
+SimpleComplex/Utils 1.x, 2019-03-23
+-----------------------------------
+- Utils::getRequestHeader() is now case-sensitive fixing case inconsistencies
+  in actual header names; 'content-length' gets listed as 'Content-Length'.
+  And fixed clumsy and probably wrong non-Apache algo, in same method.
+- Release 1.14.
+
 SimpleComplex/Utils 1.x, 2019-02-03
 -----------------------------------
 - Release 1.13.
