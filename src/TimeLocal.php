@@ -13,8 +13,8 @@ namespace SimpleComplex\Utils;
  * Time which uses local (default) timezone, or secures that timezone
  * matches local timezone.
  *
- * Secures that presumable (but not actual) local timezone getters return
- * values according to local timezone.
+ * Secures that presumable (but not actual) locally timezone'd getters
+ * return values according to local timezone.
  * @see Time::getYear()
  * @see Time::getMonth()
  * @see Time::getDate()

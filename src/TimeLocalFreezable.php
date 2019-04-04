@@ -10,31 +10,14 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
- * Freezable Time which uses local (default) timezone, or secures that timezone
- * matches local timezone.
+ * Deprecated, because TimeLocal is now freezable by inheritance.
  *
- * Works like TimeLocal but cannot extend that class, because of PHP extension
- * restriction (only one parent).
+ * @deprecated Use TimeLocal instead.
  *
- * @see \SimpleComplex\Utils\TimeFreezable
  * @see \SimpleComplex\Utils\TimeLocal
  *
  * @package SimpleComplex\Utils
  */
-class TimeLocalFreezable extends TimeFreezable
+class TimeLocalFreezable extends TimeLocal
 {
-    /**
-     * Sets timezone to local (default) upon initial construction, if the
-     * timezone doesn't match local timezone.
-     *
-     * @param string $time
-     * @param \DateTimeZone $timezone
-     */
-    public function __construct($time = 'now', /*\DateTimeZone*/ $timezone = null)
-    {
-        parent::__construct($time, $timezone);
-        if (!$this->timezoneIsLocal) {
-            $this->setTimezone(static::$timezoneLocal);
-        }
-    }
 }
