@@ -46,11 +46,11 @@ class TimeTest extends TestCase
         $tz_default = (new Time())->getTimezone()->getName();
         if ($tz_default == 'UTC' || $tz_default == 'Z') {
             static::assertTrue(Time::checkTimezoneDefault('UTC'));
-            static::assertFalse(Time::checkTimezoneDefault('Europe/Copenhagen'));
+            static::assertFalse(Time::checkTimezoneDefault(BootstrapTest::TIMEZONE));
             /**
              * @throws \LogicException
              */
-            Time::checkTimezoneDefault('Europe/Copenhagen', true);
+            Time::checkTimezoneDefault(BootstrapTest::TIMEZONE, true);
         } else {
             static::assertFalse(Time::checkTimezoneDefault('UTC'));
             /**
@@ -257,7 +257,7 @@ class TimeTest extends TestCase
         static::assertSame(1, $first->diffConstant($last)->totalMonths);
 
         // This would fail if that bug wasn't handled.
-        date_default_timezone_set('Europe/Copenhagen');
+        date_default_timezone_set(BootstrapTest::TIMEZONE);
         $first = (new Time('2019-02-01'))->setToDateStart();
         $last = (new Time('2019-03-01'))->setToDateStart();
         static::assertSame(1, $first->diffConstant($last)->totalMonths);
@@ -266,13 +266,13 @@ class TimeTest extends TestCase
         date_default_timezone_set($tz_default);
 
         // When baseline is non-UTC: use verbatim clone.
-        $first = (new Time('2019-02-01', new \DateTimeZone('Europe/Copenhagen')))->setToDateStart();
+        $first = (new Time('2019-02-01', new \DateTimeZone(BootstrapTest::TIMEZONE)))->setToDateStart();
         $last = (new Time('2019-03-01', new \DateTimeZone('UTC')))->setToDateStart();
         static::assertSame(1, $first->diffConstant($last, true)->totalMonths);
 
         // When deviant is non-UTC (and base is UTC), move deviant into UTC.
         $first = (new Time('2019-02-01', new \DateTimeZone('UTC')))->setToDateStart();
-        $last = (new Time('2019-03-01', new \DateTimeZone('Europe/Copenhagen')))->setToDateStart();
+        $last = (new Time('2019-03-01', new \DateTimeZone(BootstrapTest::TIMEZONE)))->setToDateStart();
         static::assertSame(0, $first->diffConstant($last, true)->totalMonths);
 
         /**
@@ -281,5 +281,47 @@ class TimeTest extends TestCase
          * @see \SimpleComplex\Utils\Time::diffConstant()
          */
         static::assertSame(0, $first->diffConstant($last, false)->totalMonths);
+    }
+
+    public static function testResolve()
+    {
+        date_default_timezone_set(BootstrapTest::TIMEZONE);
+
+        $datetime_local = new \DateTime();
+        $datetime_utc = $datetime_local->setTimezone(new \DateTimeZone('UTC'));
+        $time_local = Time::createFromDateTime($datetime_local);
+        $time_utc = Time::createFromDateTime($datetime_utc);
+        /*
+        TestHelper::logVariable(__FUNCTION__, [
+            'time local' => Time::resolve($time_local),
+            'time utc, keep foreign' => Time::resolve($time_utc, true),
+            'time utc' => Time::resolve($time_utc),
+            'datetime local' => Time::resolve($datetime_local),
+            'datetime utc, keep foreign' => Time::resolve($datetime_utc, true),
+            'datetime utc' => Time::resolve($datetime_utc),
+        ]);*/
+
+        $t = Time::resolve(0);
+        static::assertInstanceOf(Time::class, $t);
+        static::assertSame('1970-01-01T00:00:00Z', $t->toISOUTC());
+
+        $t = Time::resolve(0, true);
+        static::assertInstanceOf(Time::class, $t);
+        static::assertSame('1970-01-01T00:00:00Z', $t->toISOUTC());
+
+        $t = Time::resolve(-1);
+        static::assertInstanceOf(Time::class, $t);
+        static::assertSame('1969-12-31T23:59:59Z', $t->toISOUTC());
+
+        $t = Time::resolve($datetime_utc);
+        //TestHelper::logVariable(__FUNCTION__, $t);
+        static::assertInstanceOf(Time::class, $t);
+        static::assertSame($time_local->toISOUTC(), $t->toISOUTC());
+        static::assertTrue($t->timezoneIsLocal());
+
+        // Bad URL encoding; + transformed to space.
+        $t = Time::resolve('2019-04-05T10:14:47 02:00');
+        static::assertInstanceOf(Time::class, $t);
+        static::assertSame('2019-04-05T10:14:47+02:00', $t->toISOZonal());
     }
 }

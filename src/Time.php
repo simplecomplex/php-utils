@@ -188,6 +188,82 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     }
 
     /**
+     * Resolves \DateTime|string|int to new Time, and defaults to set timezone
+     * to local (default) timezone.
+     *
+     * @see Time::setTimezoneToLocal()
+     *
+     * If arg $time is Time is will be cloned if any transformations necessary.
+     *
+     * Fixes that iso-8061 string from HTTP path or query argument
+     * may have lost timezone + sign, due to URL encoding.
+     *
+     * The \DateTime constructor's fails to interprete some formats correctly.
+     * These (silent) failures are not handle by this method, but notable anyway:
+     * - timezone for year or year+month (YYYYT+HH:ii/YYYY-MMT+HH:ii)
+     *   produces weird offset (7 hours?)
+     *
+     * @param \DateTime|string|int $time
+     * @param bool $keepForeignTimezone
+     *      False: set to local (default) timezone.
+     *
+     * @return Time
+     *
+     * @throws \TypeError
+     */
+    public static function resolve($time, $keepForeignTimezone = false) : Time
+    {
+        /** @var Time $o */
+        $o = null;
+        if (!($time instanceof \DateTime)) {
+            $subject = $time;
+            if (is_string($subject)) {
+                // Empty string is acceptable; \DateTime constructor
+                // interpretes '' as 'now'.
+
+                // Fix that iso-8061 from HTTP path or query argument
+                // may have lost timezone + sign, due to URL encoding:
+                // - minimal length: 1970-01-01T+02:00
+                // - T is not supported correctly before position 10
+                // - space and colon must be after T
+                // - must start with 4 digits.
+                if (strlen($subject) >= 17
+                    && ($pos_t = strpos($subject, 'T')) >= 10
+                    && strpos($subject, ' ') > $pos_t && strpos($subject, ':') > $pos_t
+                    && ctype_digit(substr($subject, 0, 4))
+                ) {
+                    $subject = str_replace(' ', '+', $subject);
+                }
+                $o = new static($subject);
+            }
+            elseif (is_int($subject)) {
+                $o = (new static())->setTimestamp($subject);
+            }
+            else {
+                throw new \TypeError(
+                    'Arg $time type[' . Utils::getType($time) . '] is not \\DateTime|string|int.'
+                );
+            }
+        }
+        else {
+            if (!($time instanceof Time)) {
+                $o = Time::createFromDateTime($time);
+            }
+            else {
+                if (!$keepForeignTimezone) {
+                    return (clone $time)->setTimezoneToLocal();
+                }
+                return $time;
+            }
+        }
+
+        if (!$keepForeignTimezone) {
+            return $o->setTimezoneToLocal();
+        }
+        return $o;
+    }
+
+    /**
      * Checks whether the new object's timezone matches local (default) timezone.
      *
      * Memorizes local (default) timezone first time called.
@@ -276,7 +352,17 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     }
 
     /**
-     * Set the object's timezone to local (default).
+     * Set the object's timezone to local (default), unless already local.
+     *
+     * Safeguards against unexpected behaviour when creating datetime
+     * from non-PHP source (like Javascript), which may serialize using UTC
+     * as timezone instead of local.
+     * And secures that ISO-8601 stringifiers that don't include timezone
+     * information - like getDateTimeISO() - behave as (presumably) expected;
+     * returning values according to local timezone.
+     * @see Time::getDateTimeISO()
+     * @see Time::getHours()
+     * @see Time::timezoneIsLocal()
      *
      * @return $this|\DateTime
      *
@@ -290,7 +376,11 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
         if ($this->frozen) {
             throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
         }
-        parent::setTimezone(static::$timezoneLocal);
+        if (!$this->timezoneIsLocal) {
+            parent::setTimezone(static::$timezoneLocal);
+            $this->timezoneName = static::$timezoneLocalName;
+            $this->timezoneIsLocal = true;
+        }
         return $this;
     }
 
