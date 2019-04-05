@@ -228,8 +228,9 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
                 // - space and colon must be after T
                 // - must start with 4 digits.
                 if (strlen($subject) >= 17
-                    && ($pos_t = strpos($subject, 'T')) >= 10
-                    && strpos($subject, ' ') > $pos_t && strpos($subject, ':') > $pos_t
+                    && ($pos_t = strpos($subject, 'T')) && $pos_t >= 10
+                    && ($pos_space = strpos($subject, ' ')) && $pos_space > $pos_t
+                    && ($pos_colon = strpos($subject, ':')) && $pos_colon > $pos_t
                     && ctype_digit(substr($subject, 0, 4))
                 ) {
                     $subject = str_replace(' ', '+', $subject);
@@ -250,7 +251,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
                 $o = Time::createFromDateTime($time);
             }
             else {
-                if (!$keepForeignTimezone) {
+                if (!$keepForeignTimezone && !$time->timezoneIsLocal()) {
                     return (clone $time)->setTimezoneToLocal();
                 }
                 return $time;
