@@ -246,6 +246,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
                 );
             }
         }
+        // Is \DateTime.
         else {
             if (!($time instanceof Time)) {
                 $o = Time::createFromDateTime($time);
