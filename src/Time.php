@@ -12,11 +12,17 @@ namespace SimpleComplex\Utils;
 use SimpleComplex\Utils\Interfaces\FreezableInterface;
 
 /**
- * DateTime with getters almost like Javascript Date, and stringable.
+ * Extended datetime fixing shortcomings and defects of native \DateTime.
  *
- * Freezable.
+ * Features:
+ * - is stringable
+ * - JSON serializes to string ISO-8601 with timezone marker
+ * - freezable
+ * - enhanced timezone awareness
+ * - diff (diffConstant, that is) works correctly across differing timezones
+ * - simpler and safer getters and setters
  *
- * Fixes that native diff() doesn't work across differing timezones.
+ * @see TimeIntervalConstant
  *
  * @package SimpleComplex\Utils
  */
@@ -188,7 +194,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     }
 
     /**
-     * Resolves \DateTime|string|int to new Time, and defaults to set timezone
+     * Resolves \DateTime|string|int to Time, and defaults to set timezone
      * to local (default) timezone.
      *
      * @see Time::setTimezoneToLocal()
@@ -200,7 +206,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
      *
      * The \DateTime constructor's fails to interprete some formats correctly.
      * These (silent) failures are not handle by this method, but notable anyway:
-     * - timezone for year or year+month (YYYYT+HH:ii/YYYY-MMT+HH:ii)
+     * - timezone for year or year+month only (YYYYT+HH:ii/YYYY-MMT+HH:ii)
      *   produces weird offset (7 hours?)
      *
      * @param \DateTime|string|int $time
@@ -208,6 +214,8 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
      *      False: set to local (default) timezone.
      *
      * @return Time
+     *      Identical object if arg time already is Time and no transformations
+     *      necessary.
      *
      * @throws \TypeError
      */
@@ -248,14 +256,14 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
         }
         // Is \DateTime.
         else {
-            if (!($time instanceof Time)) {
-                $o = Time::createFromDateTime($time);
-            }
-            else {
+            if ($time instanceof Time) {
                 if (!$keepForeignTimezone && !$time->timezoneIsLocal()) {
                     return (clone $time)->setTimezoneToLocal();
                 }
                 return $time;
+            }
+            else {
+                $o = Time::createFromDateTime($time);
             }
         }
 
@@ -388,6 +396,13 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
 
     /**
      * Whether this object's timezone is same as local (default) timezone.
+     *
+     * The ability of handling differing timezones is a blessing and a curse.
+     * In Javascript the timezone aspect is simple, there's always only local
+     * and UTC, and it's transparent which getters and setters work with which
+     * timezone.
+     * With the PHP \DateTime things are more muddled.
+     * @see Time::setTimezoneToLocal()
      *
      * @return bool
      */
