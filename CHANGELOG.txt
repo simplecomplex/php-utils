@@ -1,3 +1,7 @@
+SimpleComplex/Utils 2.x, 2019-04-08
+-----------------------------------
+- Release 2.0.
+
 SimpleComplex/Utils 2.x, 2019-04-04
 -----------------------------------
 - Time is now freezable by itself, and classes TimeFreezable, TimeLocalFreezable
