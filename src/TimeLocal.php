@@ -13,16 +13,20 @@ namespace SimpleComplex\Utils;
  * Time which uses local (default) timezone, or secures that timezone
  * matches local timezone.
  *
- * Secures that presumable (but not actual) local timezone getters return
- * values according to local timezone.
- * @see Time::getYear()
- * @see Time::getMonth()
- * @see Time::getDate()
- * @see Time::getMinutes()
+ * In most cases obsolete, setting timezone to local upon instantiation
+ * has the same effect.
+ * @see Time::setTimezoneToLocal()
+ * @see Time::resolve()
  *
  * Safeguards against unexpected behaviour when creating datetime from non-PHP
- * source, which may serialize using UTC as timezone instead of local (like
- * Javascript).
+ * source (like Javascript), which may serialize using UTC as timezone
+ * instead of local.
+ * And secures that ISO-8601 stringifiers that don't include timezone
+ * information - like getDateTimeISO() - behave as (presumably) expected;
+ * returning values according to local timezone.
+ * @see Time::getDateTimeISO()
+ * @see Time::getHours()
+ * @see Time::timezoneIsLocal()
  *
  * @see \SimpleComplex\Utils\Time
  *

@@ -9,12 +9,24 @@ declare(strict_types=1);
 
 namespace SimpleComplex\Utils;
 
+use SimpleComplex\Utils\Interfaces\FreezableInterface;
+
 /**
- * DateTime with getters almost like Javascript Date, and stringable.
+ * Extended datetime fixing shortcomings and defects of native \DateTime.
+ *
+ * Features:
+ * - is stringable
+ * - JSON serializes to string ISO-8601 with timezone marker
+ * - freezable
+ * - enhanced timezone awareness
+ * - diff (diffConstant, that is) works correctly across differing timezones
+ * - simpler and safer getters and setters
+ *
+ * @see TimeIntervalConstant
  *
  * @package SimpleComplex\Utils
  */
-class Time extends \DateTime implements \JsonSerializable
+class Time extends \DateTime implements \JsonSerializable, FreezableInterface
 {
     /**
      * Local (default) timezone object.
@@ -73,6 +85,11 @@ class Time extends \DateTime implements \JsonSerializable
      * @var string
      */
     protected $jsonSerializePrecision = '';
+
+    /**
+     * @var bool
+     */
+    protected $frozen = false;
 
     /**
      * Get the local (default) timezone which gets memorized first time
@@ -177,6 +194,86 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * Resolves \DateTime|string|int to Time, and defaults to set timezone
+     * to local (default) timezone.
+     *
+     * @see Time::setTimezoneToLocal()
+     *
+     * If arg $time is Time is will be cloned if any transformations necessary.
+     *
+     * Fixes that iso-8061 string from HTTP path or query argument
+     * may have lost timezone + sign, due to URL encoding.
+     *
+     * The \DateTime constructor's fails to interprete some formats correctly.
+     * These (silent) failures are not handle by this method, but notable anyway:
+     * - timezone for year or year+month only (YYYYT+HH:ii/YYYY-MMT+HH:ii)
+     *   produces weird offset (7 hours?)
+     *
+     * @param \DateTime|string|int $time
+     * @param bool $keepForeignTimezone
+     *      False: set to local (default) timezone.
+     *
+     * @return Time
+     *      Identical object if arg time already is Time and no transformations
+     *      necessary.
+     *
+     * @throws \TypeError
+     */
+    public static function resolve($time, $keepForeignTimezone = false) : Time
+    {
+        /** @var Time $o */
+        $o = null;
+        if (!($time instanceof \DateTime)) {
+            $subject = $time;
+            if (is_string($subject)) {
+                // Empty string is acceptable; \DateTime constructor
+                // interpretes '' as 'now'.
+
+                // Fix that iso-8061 from HTTP path or query argument
+                // may have lost timezone + sign, due to URL encoding:
+                // - minimal length: 1970-01-01T+02:00
+                // - T is not supported correctly before position 10
+                // - space and colon must be after T
+                // - must start with 4 digits.
+                if (strlen($subject) >= 17
+                    && ($pos_t = strpos($subject, 'T')) && $pos_t >= 10
+                    && ($pos_space = strpos($subject, ' ')) && $pos_space > $pos_t
+                    && ($pos_colon = strpos($subject, ':')) && $pos_colon > $pos_t
+                    && ctype_digit(substr($subject, 0, 4))
+                ) {
+                    $subject = str_replace(' ', '+', $subject);
+                }
+                $o = new static($subject);
+            }
+            elseif (is_int($subject)) {
+                $o = (new static())->setTimestamp($subject);
+            }
+            else {
+                throw new \TypeError(
+                    'Arg $time type[' . Utils::getType($time) . '] is not \\DateTime|string|int.'
+                );
+            }
+        }
+        // Is \DateTime.
+        else {
+            if ($time instanceof Time) {
+                if (!$keepForeignTimezone && !$time->timezoneIsLocal()) {
+                    return (clone $time)->setTimezoneToLocal();
+                }
+                return $time;
+            }
+            else {
+                $o = Time::createFromDateTime($time);
+            }
+        }
+
+        if (!$keepForeignTimezone) {
+            return $o->setTimezoneToLocal();
+        }
+        return $o;
+    }
+
+    /**
      * Checks whether the new object's timezone matches local (default) timezone.
      *
      * Memorizes local (default) timezone first time called.
@@ -205,6 +302,37 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * The clone will be unfrozen.
+     *
+     * @return void
+     */
+    public function __clone() /*: void*/
+    {
+        $this->frozen = false;
+        // \DateTime has no __clone() method in PHP 7.0.
+        //parent::__clone();
+    }
+
+    /**
+     * Chainable.
+     *
+     * @return $this|TimeFreezable
+     */
+    public function freeze() /*: object*/
+    {
+        $this->frozen = true;
+        return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFrozen() : bool
+    {
+        return $this->frozen;
+    }
+
+    /**
      * Checks whether the object's new timezone matches local (default) timezone.
      * @see Time::timezoneIsLocal()
      *
@@ -212,11 +340,16 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * @return $this|\DateTime
      *
+     * @throws \RuntimeException
+     *      Frozen.
      * @throws \Exception
      *      Propagated from \DateTime::setTimezone().
      */
     public function setTimezone($timezone) : \DateTime /*self invariant*/
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         parent::setTimezone($timezone);
         // Flag whether this object's timezone is same as local (default).
         $tz_name = $this->getTimezone()->getName();
@@ -229,29 +362,47 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * Set the object's timezone to local (default).
+     * Set the object's timezone to local (default), unless already local.
+     *
+     * Safeguards against unexpected behaviour when creating datetime
+     * from non-PHP source (like Javascript), which may serialize using UTC
+     * as timezone instead of local.
+     * And secures that ISO-8601 stringifiers that don't include timezone
+     * information - like getDateTimeISO() - behave as (presumably) expected;
+     * returning values according to local timezone.
+     * @see Time::getDateTimeISO()
+     * @see Time::getHours()
+     * @see Time::timezoneIsLocal()
      *
      * @return $this|\DateTime
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated from \DateTime::setTimezone().
      */
     public function setTimezoneToLocal() : \DateTime /*self invariant*/
     {
-        parent::setTimezone(static::$timezoneLocal);
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        if (!$this->timezoneIsLocal) {
+            parent::setTimezone(static::$timezoneLocal);
+            $this->timezoneName = static::$timezoneLocalName;
+            $this->timezoneIsLocal = true;
+        }
         return $this;
     }
 
     /**
-     * @deprecated Use timezoneIsLocal() instead.
-     * @see Time::timezoneIsLocal()
-     *
-     * @return bool
-     */
-    public function offsetIsLocal() : bool
-    {
-        return $this->timezoneIsLocal;
-    }
-
-    /**
      * Whether this object's timezone is same as local (default) timezone.
+     *
+     * The ability of handling differing timezones is a blessing and a curse.
+     * In Javascript the timezone aspect is simple, there's always only local
+     * and UTC, and it's transparent which getters and setters work with which
+     * timezone.
+     * With the PHP \DateTime things are more muddled.
+     * @see Time::setTimezoneToLocal()
      *
      * @return bool
      */
@@ -380,6 +531,24 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * @param string $modify
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function modify($modify) : \DateTime /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::modify($modify);
+    }
+
+    /**
      * Unlike \Datetime::modify() this throws exception on failure.
      *
      * \Datetime::modify() emits warning and returns false on failure.
@@ -388,16 +557,87 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * @return $this|Time
      *
+     * @throws \RuntimeException
+     *      Frozen.
      * @throws \InvalidArgumentException
      *      Arg format invalid.
      */
     public function modifySafely(string $modify) : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         $modified = $this->modify($modify);
         if (($modified instanceof \DateTime)) {
             return $this;
         }
         throw new \InvalidArgumentException('Arg modify[' . $modify . '] is invalid.');
+    }
+
+    /**
+     * @param \DateInterval $interval
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function add(/*\DateInterval*/ $interval) : \DateTime /*self invariant*/
+    {
+        // NB: Argument type hinting (\DateInterval $interval)
+        // would provoke E_WARNING when cloning.
+        // Catch 22: Specs say that native \DateTime method is type hinted,
+        // but warning when cloning says it isn't.
+
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::add($interval);
+    }
+
+    /**
+     * @param \DateInterval $interval
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function sub(/*\DateInterval*/ $interval) : \DateTime /*self invariant*/
+    {
+        // NB: Argument type hinting (\DateInterval $interval)
+        // would provoke E_WARNING when cloning.
+        // Catch 22: Specs say that native \DateTime method is type hinted,
+        // but warning when cloning says it isn't.
+
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::sub($interval);
+    }
+
+    /**
+     * @param int $year
+     * @param int $month
+     * @param int $day
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function setDate($year, $month, $day) : \DateTime /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::setDate($year, $month, $day);
     }
 
     /**
@@ -421,6 +661,9 @@ class Time extends \DateTime implements \JsonSerializable
      */
     public function setTime($hour, $minute, $second = 0, $microseconds = 0) : \DateTime /*self invariant*/
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         if (PHP_MAJOR_VERSION == 7 && !PHP_MINOR_VERSION) {
             return parent::setTime($hour, $minute, $second);
         }
@@ -428,12 +671,56 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
+     * @param int $year
+     * @param int $week
+     * @param int $day
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function setISODate($year, $week, $day = 1) : \DateTime /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::setIsoDate($year, $week, $day);
+    }
+
+    /**
+     * @param int $unixtimestamp
+     *
+     * @return $this|\DateTime|TimeFreezable
+     *
+     * @throws \RuntimeException
+     *      Frozen.
+     * @throws \Exception
+     *      Propagated.
+     */
+    public function setTimestamp($unixtimestamp) : \DateTime /*self invariant*/
+    {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+        return parent::setTimestamp($unixtimestamp);
+    }
+
+    /**
      * Convenience method; set to midnight 00:00:00.000000.
      *
      * @return $this|Time
+     *
+     * @throws \RuntimeException
+     *      Frozen.
      */
     public function setToDateStart() : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         return $this->setTime(0, 0, 0, 0);
     }
 
@@ -445,20 +732,25 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * @return Time
      *
+     * @throws \RuntimeException
+     *      Frozen.
      * @throws \InvalidArgumentException
      *      Arg month not null or 1 through 12.
      */
     public function setToFirstDayOfMonth(int $month = null) : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         if ($month !== null) {
             if ($month < 1 || $month > 12) {
                 throw new \InvalidArgumentException('Arg month[' . $month . '] isn\'t null or 1 through 12.');
             }
             $mnth = $month;
-        } else {
+        }
+        else {
             $mnth = (int) $this->format('m');
         }
-
         return $this->setDate(
             (int) $this->format('Y'),
             $mnth,
@@ -474,20 +766,25 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * @return Time
      *
+     * @throws \RuntimeException
+     *      Frozen.
      * @throws \InvalidArgumentException
      *      Arg month not null or 1 through 12.
      */
     public function setToLastDayOfMonth(int $month = null) : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         if ($month !== null) {
             if ($month < 1 || $month > 12) {
                 throw new \InvalidArgumentException('Arg month[' . $month . '] isn\'t null or 1 through 12.');
             }
             $mnth = $month;
-        } else {
+        }
+        else {
             $mnth = (int) $this->format('m');
         }
-
         return $this->setDate(
             (int) $this->format('Y'),
             $mnth,
@@ -525,9 +822,16 @@ class Time extends \DateTime implements \JsonSerializable
      *      Subtracts if negative.
      *
      * @return $this|Time
+     *
+     * @throws \RuntimeException
+     *      Frozen.
      */
     public function modifyDate(int $years, int $months = 0, int $days = 0) : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+
         if ($years) {
             $year = (int) $this->format('Y');
             $month = (int) $this->format('m');
@@ -600,9 +904,16 @@ class Time extends \DateTime implements \JsonSerializable
      *      Ignored when PHP 7.0 (<7.1).
      *
      * @return $this|Time
+     *
+     * @throws \RuntimeException
+     *      Frozen.
      */
     public function modifyTime(int $hours, int $minutes = 0, int $seconds = 0, int $microseconds = 0) : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
+
         $modifiers = [];
         if ($hours) {
             $modifiers[] = ($hours > 0 ? '+' : '-') . abs($hours) . ' ' . (abs($hours) > 1 ? 'hours' : 'hour');
@@ -676,9 +987,6 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * Beware that timezone (unlike Javascript) may not be local.
      * @see TimeLocal
-     * @see Time::getDateISOlocal()
-     * @see Time::getTimeISOlocal()
-     * @see Time::getDateTimeISOlocal()
      *
      * @return int
      */
@@ -690,9 +998,6 @@ class Time extends \DateTime implements \JsonSerializable
     /**
      * Beware that timezone (unlike Javascript) may not be local.
      * @see TimeLocal
-     * @see Time::getDateISOlocal()
-     * @see Time::getTimeISOlocal()
-     * @see Time::getDateTimeISOlocal()
      *
      * @return int
      */
@@ -704,9 +1009,6 @@ class Time extends \DateTime implements \JsonSerializable
     /**
      * Beware that timezone (unlike Javascript) may not be local.
      * @see TimeLocal
-     * @see Time::getDateISOlocal()
-     * @see Time::getTimeISOlocal()
-     * @see Time::getDateTimeISOlocal()
      *
      * @return int
      */
@@ -718,9 +1020,6 @@ class Time extends \DateTime implements \JsonSerializable
     /**
      * Beware that timezone (unlike Javascript) may not be local.
      * @see TimeLocal
-     * @see Time::getDateISOlocal()
-     * @see Time::getTimeISOlocal()
-     * @see Time::getDateTimeISOlocal()
      *
      * @return int
      */
@@ -732,9 +1031,6 @@ class Time extends \DateTime implements \JsonSerializable
     /**
      * Beware that timezone (unlike Javascript) may not be local.
      * @see TimeLocal
-     * @see Time::getDateISOlocal()
-     * @see Time::getTimeISOlocal()
-     * @see Time::getDateTimeISOlocal()
      *
      * @return int
      */
@@ -774,26 +1070,6 @@ class Time extends \DateTime implements \JsonSerializable
     }
 
     /**
-     * Format to Y-m-d.
-     *
-     * Deprecated because doesn't ensure local timezone despite it's name.
-     * @deprecated
-     * @see Time::getDateISO()
-     * @see Time::toDateISOLocal()
-     *
-     * @return string
-     */
-    public function getDateISOlocal() : string
-    {
-        trigger_error(
-            'Method Time::' . __FUNCTION__ . '() is deprecated because doesn\'t deliver as it\'s name promises. Use instead '
-            . 'getDateISO() or toDateISOLocal().',
-            E_USER_DEPRECATED
-        );
-        return $this->format('Y-m-d');
-    }
-
-    /**
      * Format to Y-m-d, using the object's timezone.
      *
      * Beware that timezone (unlike Javascript) may not be local.
@@ -804,28 +1080,6 @@ class Time extends \DateTime implements \JsonSerializable
     public function getDateISO() : string
     {
         return $this->format('Y-m-d');
-    }
-
-    /**
-     * Format to H:i:s|H:i.
-     *
-     * Deprecated because doesn't ensure local timezone despite it's name.
-     * @deprecated
-     * @see Time::getTimeISO()
-     * @see Time::toTimeISOLocal()
-     *
-     * @param bool $noSeconds
-     *
-     * @return string
-     */
-    public function getTimeISOlocal(bool $noSeconds = false) : string
-    {
-        trigger_error(
-            'Method Time::' . __FUNCTION__ . '() is deprecated because doesn\'t deliver as it\'s name promises. Use instead '
-            . 'getTimeISO() or toTimeISOLocal().',
-            E_USER_DEPRECATED
-        );
-        return $this->format(!$noSeconds ? 'H:i:s' : 'H:i');
     }
 
     /**
@@ -841,28 +1095,6 @@ class Time extends \DateTime implements \JsonSerializable
     public function getTimeISO(bool $noSeconds = false) : string
     {
         return $this->format(!$noSeconds ? 'H:i:s' : 'H:i');
-    }
-
-    /**
-     * Format to Y-m-d H:i:s|Y-m-d H:i.
-     *
-     * Deprecated because doesn't ensure local timezone despite it's name.
-     * @deprecated
-     * @see Time::getDateTimeISO()
-     * @see Time::toDateTimeISOLocal()
-     *
-     * @param bool $noSeconds
-     *
-     * @return string
-     */
-    public function getDateTimeISOlocal(bool $noSeconds = false) : string
-    {
-        trigger_error(
-            'Method Time::' . __FUNCTION__ . '() is deprecated because doesn\'t deliver as it\'s name promises. Use instead '
-            . 'getDateTimeISO() or toDateTimeISOLocal().',
-            E_USER_DEPRECATED
-        );
-        return $this->format(!$noSeconds ? 'Y-m-d H:i:s' : 'Y-m-d H:i');
     }
 
     /**
@@ -1048,11 +1280,16 @@ class Time extends \DateTime implements \JsonSerializable
      *
      * @return $this|Time
      *
+     * @throws \RuntimeException
+     *      Frozen.
      * @throws \InvalidArgumentException
      *      Arg precision not empty or milliseconds|microseconds.
      */
     public function setJsonSerializePrecision(string $precision) : Time
     {
+        if ($this->frozen) {
+            throw new \RuntimeException(get_class($this) . ' is read-only, frozen.');
+        }
         switch ($precision) {
             case '':
             case 'milliseconds':

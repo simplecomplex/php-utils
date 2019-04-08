@@ -2,7 +2,7 @@
 /**
  * SimpleComplex PHP Utils
  * @link      https://github.com/simplecomplex/php-utils
- * @copyright Copyright (c) 2017-2018 Jacob Friis Mathiasen
+ * @copyright Copyright (c) 2017-2019 Jacob Friis Mathiasen
  * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
  */
 declare(strict_types=1);
@@ -11,6 +11,8 @@ namespace SimpleComplex\Utils;
 
 /**
  * Wrapped native DateInterval plus totalling props for months thru seconds.
+ *
+ * @see Time::diffConstant()
  *
  * Constant, not only immutable; attempting to set a property spells exception.
  *
@@ -54,6 +56,8 @@ class TimeIntervalConstant extends Explorable
     protected $explorableIndex;
 
     /**
+     * @see Time::diffConstant()
+     *
      * @param \DateInterval $interval
      */
     public function __construct(\DateInterval $interval)

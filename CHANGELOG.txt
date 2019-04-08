@@ -1,3 +1,14 @@
+SimpleComplex/Utils 2.x, 2019-04-08
+-----------------------------------
+- Release 2.0.
+
+SimpleComplex/Utils 2.x, 2019-04-04
+-----------------------------------
+- Time is now freezable by itself, and classes TimeFreezable, TimeLocalFreezable
+  are thus obsolete and deprecated.
+- Time: removed deprecated methods
+  offsetIsLocal, getDateISOlocal, getTimeISOlocal, getDateTimeISOlocal.
+
 SimpleComplex/Utils 1.x, 2019-03-23
 -----------------------------------
 - Utils::getRequestHeader() is now case-sensitive fixing case inconsistencies

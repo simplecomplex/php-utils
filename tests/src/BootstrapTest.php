@@ -27,6 +27,8 @@ class BootstrapTest extends TestCase
 {
     protected static $booted = false;
 
+    const TIMEZONE = 'Europe/Copenhagen';
+
     /**
      * Only prepares dependencies at first call.
      *
@@ -42,6 +44,8 @@ class BootstrapTest extends TestCase
         $container = Dependency::container();
 
         static::assertInstanceOf(ContainerInterface::class, $container);
+
+        date_default_timezone_set(static::TIMEZONE);
 
         return $container;
     }
