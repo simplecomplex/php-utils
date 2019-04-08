@@ -316,7 +316,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     /**
      * Chainable.
      *
-     * @return $this|TimeFreezable
+     * @return $this|Time
      */
     public function freeze() /*: object*/
     {
@@ -533,7 +533,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     /**
      * @param string $modify
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -577,7 +577,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     /**
      * @param \DateInterval $interval
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -600,7 +600,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     /**
      * @param \DateInterval $interval
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -625,7 +625,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
      * @param int $month
      * @param int $day
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -675,7 +675,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
      * @param int $week
      * @param int $day
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.
@@ -693,7 +693,7 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     /**
      * @param int $unixtimestamp
      *
-     * @return $this|\DateTime|TimeFreezable
+     * @return $this|\DateTime|Time
      *
      * @throws \RuntimeException
      *      Frozen.

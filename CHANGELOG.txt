@@ -1,6 +1,8 @@
 SimpleComplex/Utils 2.x, 2019-04-08
 -----------------------------------
 - Release 2.0.
+- Removed obsolete classes TimeFreezable, TimeLocalFreezable.
+- Updated release 2.0.
 
 SimpleComplex/Utils 2.x, 2019-04-04
 -----------------------------------
