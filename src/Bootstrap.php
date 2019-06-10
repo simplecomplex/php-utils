@@ -2,7 +2,7 @@
 /**
  * SimpleComplex PHP Utils
  * @link      https://github.com/simplecomplex/php-utils
- * @copyright Copyright (c) 2017-2018 Jacob Friis Mathiasen
+ * @copyright Copyright (c) 2017-2019 Jacob Friis Mathiasen
  * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
  */
 declare(strict_types=1);
@@ -377,6 +377,10 @@ class Bootstrap
                                 echo "\033[01;31m[error]\033[0m ";
                         }
                         echo $msg  . (!$trace ? '' : "\n- Check log.") . "\n";
+                        // Don't err/die on notice.
+                        if ($level == 'notice') {
+                            return true;
+                        }
                         exit;
                     default:
                         // Don't err/die on notice.
