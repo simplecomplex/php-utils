@@ -1,3 +1,7 @@
+SimpleComplex/Utils 2.x, 2019-10-12
+-----------------------------------
+- Time.monthLengthDays() should default to the instance' month.
+
 SimpleComplex/Utils 2.x, 2019-06-10
 -----------------------------------
 - Bootstrap error handler: CLI shan't die on PHP error having notice level.

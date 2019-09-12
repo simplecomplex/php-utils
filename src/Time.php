@@ -951,7 +951,8 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
     /**
      * Number of days in a month of year.
      *
-     * @param int $month
+     * @param int|null $month
+     *      Null: month of this object.
      * @param int|null $year
      *      Null: year of this object.
      *
@@ -960,9 +961,10 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
      * @throws \InvalidArgumentException
      *      Arg month not 1 through 12.
      */
-    public function monthLengthDays(int $month, int $year = null) : int
+    public function monthLengthDays(int $month = null, int $year = null) : int
     {
-        switch ($month) {
+        $mnth = $month ?? $this->getMonth();
+        switch ($mnth) {
             case 1:
             case 3:
             case 5:
