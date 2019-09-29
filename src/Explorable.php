@@ -2,7 +2,7 @@
 /**
  * SimpleComplex PHP Utils
  * @link      https://github.com/simplecomplex/php-utils
- * @copyright Copyright (c) 2017-2018 Jacob Friis Mathiasen
+ * @copyright Copyright (c) 2017-2019 Jacob Friis Mathiasen
  * @license   https://github.com/simplecomplex/php-utils/blob/master/LICENSE (MIT License)
  */
 declare(strict_types=1);
@@ -142,6 +142,29 @@ abstract class Explorable implements \Countable, \Iterator /*~ Traversable*/, \J
             }
         }
         return $o;
+    }
+
+    /**
+     * Dumps publicly readable properties to array.
+     *
+     * @param bool $recursive
+     *
+     * @return array
+     */
+    public function toArray(bool $recursive = false) : array
+    {
+        $a = [];
+        if (!$recursive) {
+            foreach ($this->explorableIndex as $property) {
+                $a[$property] = $this->{$property};
+            }
+        } else {
+            foreach ($this->explorableIndex as $property) {
+                $value = $this->{$property};
+                $a[$property] = !($value instanceof Explorable) ? $value : $value->toArray(true);
+            }
+        }
+        return $a;
     }
 
     /**

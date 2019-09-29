@@ -1,4 +1,9 @@
-SimpleComplex/Utils 2.x, 2019-10-12
+SimpleComplex/Utils 2.x, 2019-09-29
+-----------------------------------
+- Explorable toArray().
+- Release 2.2.
+
+SimpleComplex/Utils 2.x, 2019-09-12
 -----------------------------------
 - Time.monthLengthDays() should default to the instance' month.
 
