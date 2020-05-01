@@ -126,6 +126,9 @@ class Bootstrap
                         new $json_log($container->get('config'));
                 },
                 'inspect' => function() use ($container, $inspect) {
+                    if (method_exists($inspect, 'configure')) {
+                        return (new $inspect())->configure($container->get('config'));
+                    }
                     return new $inspect($container->get('config'));
                 },
                 'locale' => function() use ($container, $locale) {
@@ -212,6 +215,9 @@ class Bootstrap
 
         if (class_exists($inspect)) {
             Dependency::genericSet('inspect', function() use ($container, $inspect) {
+                if (method_exists($inspect, 'configure')) {
+                    return (new $inspect())->configure($container->get('config'));
+                }
                 return new $inspect($container->get('config'));
             });
         }
