@@ -27,12 +27,13 @@ class UserMessageException extends \RuntimeException
      * @param int $code
      * @param \Throwable|null $previous
      * @param string|null $userMessage
+     *      Also used as fallback for empty arg $message; counter laziness.
      */
     public function __construct(
         $message = '', $code = 0, \Throwable $previous = null,
         string $userMessage = null
     ) {
-        parent::__construct($message, $code, $previous);
+        parent::__construct($message ? $message : ($userMessage ?? ''), $code, $previous);
         $this->userMessage = $userMessage;
     }
 
