@@ -1,3 +1,11 @@
+SimpleComplex/Utils 2.x, 2020-06-09
+-----------------------------------
+- Bootstrap support Inspect which takes config arg by method configure()
+  instead of constructor self.
+- UserMessageException should use userMessage as fallback for empty message;
+  counter developer laziness.
+- Release 2.3.
+
 SimpleComplex/Utils 2.x, 2019-09-29
 -----------------------------------
 - Explorable toArray().
