@@ -101,10 +101,14 @@ class Time extends \DateTime implements \JsonSerializable, FreezableInterface
      * @see Time::$timezoneLocal
      * @see Time::$timezoneLocalName
      *
-     * @return \DateTimeZone|int
+     * @return \DateTimeZone|null
+     *      Null: Time constructor not called yet.
      */
-    public static function getTimezoneLocalInternal()
+    public static function getTimezoneLocalInternal() /*: ?\DateTimeZone*/
     {
+        if (!static::$timezoneLocal) {
+            return null;
+        }
         return clone static::$timezoneLocal;
     }
 
