@@ -10,6 +10,9 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
+ * @deprecated Use SimpleComplex\Time\TimeInterval instead.
+ *
+ *
  * Wrapped native DateInterval plus totalling props for months thru seconds.
  *
  * @see Time::diffConstant()

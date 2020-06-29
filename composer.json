@@ -17,9 +17,6 @@
         "psr/container": "^1.0",
         "psr/log": "^1.0"
     },
-    "require-dev": {
-        "phpunit/phpunit": "^6.5"
-    },
     "suggest": {
         "ext-mbstring": "PHP native multibyte features.",
         "simplecomplex/inspect": "Utils' CLI command features do NOT work without Inspect, however CliEnvironment do."

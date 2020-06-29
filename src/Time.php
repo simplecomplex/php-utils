@@ -12,6 +12,9 @@ namespace SimpleComplex\Utils;
 use SimpleComplex\Utils\Interfaces\FreezableInterface;
 
 /**
+ * @deprecated Use SimpleComplex\Time\Time instead.
+ *
+ *
  * Extended datetime fixing shortcomings and defects of native \DateTime.
  *
  * Features:

@@ -10,6 +10,9 @@ declare(strict_types=1);
 namespace SimpleComplex\Utils;
 
 /**
+ * @deprecated Use SimpleComplex\Time\TimeLocal instead.
+ *
+ *
  * Time which uses local (default) timezone, or secures that timezone
  * matches local timezone.
  *
